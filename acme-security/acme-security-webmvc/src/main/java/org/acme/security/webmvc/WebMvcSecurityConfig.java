@@ -7,10 +7,13 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.acme.security.core.AuthenticationService;
 import org.acme.security.core.SecurityConstants;
+import org.acme.security.core.UserInformation;
+import org.acme.security.core.UserInformationUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -63,7 +66,19 @@ public class WebMvcSecurityConfig {
         return new AuthenticationManager() {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                return authenticationService.createAuthenticatedAuthentication(authentication.getPrincipal());
+                // Marshal String username to UserInformation immediately
+                Object principal = authentication.getPrincipal();
+                UserInformation userInformation;
+
+                if (principal instanceof UserInformation) {
+                    userInformation = (UserInformation) principal;
+                } else if (principal instanceof String username) {
+                    userInformation = UserInformationUtil.fromUsername(username);
+                } else {
+                    throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
+                }
+
+                return authenticationService.createAuthenticatedAuthentication(userInformation);
             }
         };
     }

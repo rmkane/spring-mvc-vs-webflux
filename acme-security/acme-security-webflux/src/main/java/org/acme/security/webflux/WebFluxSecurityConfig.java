@@ -1,7 +1,7 @@
 package org.acme.security.webflux;
 
 import org.acme.security.core.AuthenticationService;
-import org.acme.security.core.SecurityConstants;
+import org.acme.security.core.UserInformationUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -64,13 +64,14 @@ public class WebFluxSecurityConfig {
         return exchange -> {
             String username = RequestHeaderExtractor.extractUsername(exchange.getRequest());
 
-            if (username == null || username.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE));
+            try {
+                var userInformation = UserInformationUtil.fromUsername(username);
+                return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
+                        userInformation,
+                        null));
+            } catch (BadCredentialsException e) {
+                return Mono.error(e);
             }
-
-            return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
-                    username.trim(),
-                    null));
         };
     }
 
