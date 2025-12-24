@@ -1,7 +1,6 @@
 package org.acme.security.webflux;
 
 import org.acme.security.core.AuthenticationService;
-import org.acme.security.core.UserInformationUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -51,13 +50,29 @@ public class WebFluxSecurityConfig {
     @Bean
     public ReactiveAuthenticationManager reactiveAuthenticationManager() {
         return authentication -> {
+            // Extract username from principal (should be String from header)
+            Object principal = authentication.getPrincipal();
+            String username;
+
+            if (principal instanceof String principalString) {
+                username = principalString;
+            } else if (principal instanceof org.acme.security.core.UserInformation userInfo) {
+                username = userInfo.getUsername();
+            } else {
+                return Mono.error(new BadCredentialsException(
+                        "Invalid principal type: " + principal.getClass().getName()));
+            }
+
             // Wrap blocking authentication in Mono.fromCallable() to run on blocking
             // scheduler
             // This prevents blocking the reactive event loop thread
             return Mono.fromCallable(() -> {
                 try {
-                    return authenticationService
-                            .createAuthenticatedAuthentication(authentication.getPrincipal());
+                    // Pass username to auth service, which will:
+                    // 1. Lookup UserPrincipal from auth layer
+                    // 2. Create UserInformation (derivative) from UserPrincipal
+                    // 3. Return authenticated Authentication with UserInformation as principal
+                    return authenticationService.createAuthenticatedAuthentication(username);
                 } catch (BadCredentialsException e) {
                     throw e;
                 }
@@ -72,14 +87,15 @@ public class WebFluxSecurityConfig {
         return exchange -> {
             String username = RequestHeaderExtractor.extractUsername(exchange.getRequest());
 
-            try {
-                var userInformation = UserInformationUtil.fromUsername(username);
-                return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
-                        userInformation,
-                        null));
-            } catch (BadCredentialsException e) {
-                return Mono.error(e);
+            if (username == null || username.trim().isEmpty()) {
+                return Mono.error(new BadCredentialsException("Missing or empty x-username header"));
             }
+
+            // Pass username as String principal - will be converted to UserInformation
+            // by AuthenticationService after looking up UserPrincipal from auth layer
+            return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
+                    username.trim(),
+                    null));
         };
     }
 

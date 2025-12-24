@@ -1,4 +1,4 @@
-package org.acme.security.core;
+package org.acme.auth.core;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -24,9 +24,9 @@ public class UserLookupService {
      * @return a UserPrincipal with the user's roles from the database
      * @throws BadCredentialsException if the username is invalid or user not found
      */
-    public UserPrincipal createUser(String username) {
+    public UserPrincipal lookupUser(String username) {
         if (username == null || username.trim().isEmpty()) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE);
+            throw new BadCredentialsException("Missing or empty username");
         }
 
         UserPrincipal userPrincipal = userPrincipalRepository.findByUsername(username.trim());

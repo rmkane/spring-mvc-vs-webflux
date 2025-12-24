@@ -1,20 +1,19 @@
-package org.acme.api.config;
+package org.acme.auth.r2dbc;
 
 import java.util.List;
 
+import org.acme.auth.core.UserPrincipal;
+import org.acme.auth.core.UserPrincipalRepository;
 import org.acme.persistence.r2dbc.User;
 import org.acme.persistence.r2dbc.UserRepository;
 import org.acme.persistence.r2dbc.UserRoleRepository;
-import org.acme.security.core.UserPrincipal;
-import org.acme.security.core.UserPrincipalRepository;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * R2DBC implementation of UserPrincipalRepository for WebFlux security. Queries
- * the database reactively using Spring Data R2DBC to find users and their
- * roles.
+ * R2DBC implementation of UserPrincipalRepository. Queries the database
+ * reactively using Spring Data R2DBC to find users and their roles.
  * <p>
  * Note: This implementation uses blocking operations on a blocking scheduler
  * since the UserPrincipalRepository interface is synchronous. The blocking

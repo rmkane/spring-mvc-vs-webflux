@@ -83,6 +83,9 @@ test:
 JAVA_MODULES_LIST = \
 	acme-api/acme-api-mvc \
 	acme-api/acme-api-webflux \
+	acme-auth/acme-auth-core \
+	acme-auth/acme-auth-jpa \
+	acme-auth/acme-auth-r2dbc \
 	acme-security/acme-security-core \
 	acme-security/acme-security-webmvc \
 	acme-security/acme-security-webflux \

@@ -1,19 +1,19 @@
-package org.acme.api.config;
+package org.acme.auth.jpa;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.acme.auth.core.UserPrincipal;
+import org.acme.auth.core.UserPrincipalRepository;
 import org.acme.persistence.jpa.User;
 import org.acme.persistence.jpa.UserRepository;
-import org.acme.security.core.UserPrincipal;
-import org.acme.security.core.UserPrincipalRepository;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 
 /**
- * JPA implementation of UserPrincipalRepository for MVC security. Queries the
- * database using Spring Data JPA to find users and their roles.
+ * JPA implementation of UserPrincipalRepository. Queries the database using
+ * Spring Data JPA to find users and their roles.
  */
 @Component
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package org.acme.security.core;
+package org.acme.auth.core;
 
 /**
  * Abstraction for user lookup that returns a UserPrincipal with roles.

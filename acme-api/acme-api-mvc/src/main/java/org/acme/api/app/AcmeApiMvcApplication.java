@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = {
         "org.acme.api",
+        "org.acme.auth",
         "org.acme.persistence.jpa",
         "org.acme.security"
 })

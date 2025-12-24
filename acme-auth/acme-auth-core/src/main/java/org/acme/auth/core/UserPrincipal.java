@@ -1,4 +1,4 @@
-package org.acme.security.core;
+package org.acme.auth.core;
 
 import java.util.Collection;
 import java.util.List;

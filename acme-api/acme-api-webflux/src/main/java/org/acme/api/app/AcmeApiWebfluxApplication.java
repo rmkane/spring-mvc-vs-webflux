@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 
 @SpringBootApplication(scanBasePackages = {
         "org.acme.api",
+        "org.acme.auth",
         "org.acme.persistence.r2dbc",
         "org.acme.security"
 })

@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.acme.security.core.AuthenticationService;
 import org.acme.security.core.SecurityConstants;
 import org.acme.security.core.UserInformation;
-import org.acme.security.core.UserInformationUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -66,19 +65,23 @@ public class WebMvcSecurityConfig {
         return new AuthenticationManager() {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                // Marshal String username to UserInformation immediately
+                // Extract username from principal (should be String from header)
                 Object principal = authentication.getPrincipal();
-                UserInformation userInformation;
+                String username;
 
-                if (principal instanceof UserInformation) {
-                    userInformation = (UserInformation) principal;
-                } else if (principal instanceof String username) {
-                    userInformation = UserInformationUtil.fromUsername(username);
+                if (principal instanceof String principalString) {
+                    username = principalString;
+                } else if (principal instanceof UserInformation userInfo) {
+                    username = userInfo.getUsername();
                 } else {
                     throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
                 }
 
-                return authenticationService.createAuthenticatedAuthentication(userInformation);
+                // Pass username to auth service, which will:
+                // 1. Lookup UserPrincipal from auth layer
+                // 2. Create UserInformation (derivative) from UserPrincipal
+                // 3. Return authenticated Authentication with UserInformation as principal
+                return authenticationService.createAuthenticatedAuthentication(username);
             }
         };
     }

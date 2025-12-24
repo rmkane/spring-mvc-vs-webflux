@@ -6,33 +6,29 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.acme.security</groupId>
-        <artifactId>acme-security</artifactId>
+        <groupId>org.acme.auth</groupId>
+        <artifactId>acme-auth</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
-    <groupId>org.acme.security</groupId>
-    <artifactId>acme-security-core</artifactId>
+    <groupId>org.acme.auth</groupId>
+    <artifactId>acme-auth-jpa</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
-    <name>Acme Security Core</name>
-    <description>Core security logic for authentication and authorization</description>
+    <name>Acme Auth JPA</name>
+    <description>JPA implementation of user lookup for authentication</description>
 
     <dependencies>
         <dependency>
             <groupId>org.acme.auth</groupId>
             <artifactId>acme-auth-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.acme.persistence</groupId>
+            <artifactId>acme-persistence-jpa</artifactId>
             <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-core</artifactId>
-        </dependency>
-        <!-- SLF4J API for logging (Lombok @Slf4j requires this) -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
