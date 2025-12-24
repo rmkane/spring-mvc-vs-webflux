@@ -5,7 +5,7 @@
 # Operations: get-all, get <id>, create <title> <author> <isbn>, update <id> <title> <author> <isbn>, delete <id>
 
 BASE_URL="http://localhost:8081/api/books"
-USERNAME="${X_USERNAME:-Bob}"
+USERNAME="${X_USERNAME:-readwrite}"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -24,7 +24,12 @@ print_usage() {
     echo "  delete <id>                - Delete a book by ID"
     echo ""
     echo "Environment variable:"
-    echo "  X_USERNAME                 - Username for authentication (default: Bob)"
+    echo "  X_USERNAME                 - Username for authentication (default: readwrite)"
+    echo ""
+    echo "Available users (from database):"
+    echo "  noaccess                   - No roles (403 Forbidden on all operations)"
+    echo "  readonly                   - ROLE_READ_ONLY (can read, cannot write)"
+    echo "  readwrite                  - ROLE_READ_ONLY + ROLE_READ_WRITE (full access)"
 }
 
 get_all() {

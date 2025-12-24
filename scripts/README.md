@@ -48,13 +48,38 @@ Both scripts support the same operations:
 
 ## Authentication
 
-Both scripts use the `x-username` header for authentication. You can customize the username by setting the `X_USERNAME` environment variable:
+Both scripts use the `x-username` header for authentication. The username is looked up in the database, and the user's roles determine what operations they can perform.
+
+### Available Users
+
+The database is seeded with three users for testing:
+
+- **`noaccess`** - No roles
+  - All operations return `403 Forbidden`
+  
+- **`readonly`** - Has `ROLE_READ_ONLY`
+  - ✅ Can perform: `get-all`, `get <id>`
+  - ❌ Cannot perform: `create`, `update`, `delete` (returns `403 Forbidden`)
+  
+- **`readwrite`** - Has `ROLE_READ_ONLY` + `ROLE_READ_WRITE`
+  - ✅ Can perform: All operations (full access)
+
+### Customizing Username
+
+You can customize the username by setting the `X_USERNAME` environment variable:
 
 ```bash
-X_USERNAME=Alice ./scripts/test-mvc.sh get-all
+# Test with read-only user
+X_USERNAME=readonly ./scripts/test-mvc.sh get-all
+
+# Test with no-access user (will fail)
+X_USERNAME=noaccess ./scripts/test-mvc.sh get-all
+
+# Test with read-write user (full access)
+X_USERNAME=readwrite ./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
 ```
 
-By default, the scripts use `Bob` as the username.
+By default, the scripts use `readwrite` as the username.
 
 ## Requirements
 
@@ -62,6 +87,8 @@ By default, the scripts use `Bob` as the username.
 - `jq` - for pretty-printing JSON (optional, script will work without it)
 
 ## Examples
+
+### Basic Operations (using default `readwrite` user)
 
 ```bash
 # Get all books from MVC API
@@ -78,4 +105,20 @@ By default, the scripts use `Bob` as the username.
 
 # Delete book with ID 1 from MVC API
 ./scripts/test-mvc.sh delete 1
+```
+
+### Testing Role-Based Access Control
+
+```bash
+# Test read-only access (should succeed)
+X_USERNAME=readonly ./scripts/test-mvc.sh get-all
+
+# Test read-only access (should fail with 403)
+X_USERNAME=readonly ./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
+
+# Test no-access user (should fail with 403)
+X_USERNAME=noaccess ./scripts/test-mvc.sh get-all
+
+# Test full access (should succeed)
+X_USERNAME=readwrite ./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
 ```

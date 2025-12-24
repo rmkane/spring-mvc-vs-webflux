@@ -20,6 +20,7 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import lombok.RequiredArgsConstructor;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -50,12 +51,19 @@ public class WebFluxSecurityConfig {
     @Bean
     public ReactiveAuthenticationManager reactiveAuthenticationManager() {
         return authentication -> {
-            try {
-                return Mono.just(authenticationService
-                        .createAuthenticatedAuthentication(authentication.getPrincipal()));
-            } catch (BadCredentialsException e) {
-                return Mono.error(e);
-            }
+            // Wrap blocking authentication in Mono.fromCallable() to run on blocking
+            // scheduler
+            // This prevents blocking the reactive event loop thread
+            return Mono.fromCallable(() -> {
+                try {
+                    return authenticationService
+                            .createAuthenticatedAuthentication(authentication.getPrincipal());
+                } catch (BadCredentialsException e) {
+                    throw e;
+                }
+            })
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .onErrorMap(BadCredentialsException.class, e -> e);
         };
     }
 
