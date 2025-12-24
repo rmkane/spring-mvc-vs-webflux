@@ -17,11 +17,11 @@ public class DevSecurityConfig {
     public SecurityWebFilterChain devSecurityWebFilterChain(ServerHttpSecurity http) {
         ServerWebExchangeMatcher swaggerMatcher = exchange -> {
             String path = exchange.getRequest().getURI().getPath();
-            boolean matches = path.startsWith("/swagger-ui") 
+            boolean matches = path.startsWith("/swagger-ui")
                     || path.startsWith("/v3/api-docs")
                     || path.equals("/swagger-ui.html")
                     || path.equals("/error");
-            return matches 
+            return matches
                     ? ServerWebExchangeMatcher.MatchResult.match()
                     : ServerWebExchangeMatcher.MatchResult.notMatch();
         };
@@ -29,10 +29,8 @@ public class DevSecurityConfig {
         return http
                 .securityMatcher(swaggerMatcher)
                 .authorizeExchange(auth -> auth
-                        .anyExchange().permitAll()
-                )
+                        .anyExchange().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .build();
     }
 }
-

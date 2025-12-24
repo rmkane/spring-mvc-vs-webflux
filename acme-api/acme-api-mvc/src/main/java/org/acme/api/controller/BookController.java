@@ -1,18 +1,20 @@
 package org.acme.api.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.acme.api.service.BookService;
 import org.acme.persistence.jpa.Book;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/books")
@@ -52,8 +54,7 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
     })
     public ResponseEntity<Book> findById(
-            @Parameter(description = "Book ID", required = true)
-            @PathVariable(name = "id") Long id) {
+            @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
         Book book = bookService.findById(id);
         return ResponseEntity.ok(book);
     }
@@ -66,8 +67,7 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
     })
     public ResponseEntity<Book> update(
-            @Parameter(description = "Book ID", required = true)
-            @PathVariable(name = "id") Long id,
+            @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id,
             @RequestBody Book book) {
         Book updated = bookService.update(id, book);
         return ResponseEntity.ok(updated);
@@ -81,10 +81,8 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
     })
     public ResponseEntity<Void> delete(
-            @Parameter(description = "Book ID", required = true)
-            @PathVariable(name = "id") Long id) {
+            @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
         bookService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }
-

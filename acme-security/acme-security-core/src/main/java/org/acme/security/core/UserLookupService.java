@@ -1,8 +1,8 @@
 package org.acme.security.core;
 
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+
+import org.springframework.stereotype.Service;
 
 @Service
 public class UserLookupService {
@@ -21,4 +21,3 @@ public class UserLookupService {
                 .build();
     }
 }
-

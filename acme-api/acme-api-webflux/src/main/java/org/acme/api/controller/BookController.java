@@ -1,15 +1,18 @@
 package org.acme.api.controller;
 
+import org.acme.api.service.BookService;
+import org.acme.persistence.r2dbc.Book;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import lombok.RequiredArgsConstructor;
-import org.acme.api.service.BookService;
-import org.acme.persistence.r2dbc.Book;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -50,8 +53,7 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
     })
     public Mono<Book> findById(
-            @Parameter(description = "Book ID", required = true)
-            @PathVariable(name = "id") Long id) {
+            @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
         return bookService.findById(id);
     }
 
@@ -63,8 +65,7 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
     })
     public Mono<Book> update(
-            @Parameter(description = "Book ID", required = true)
-            @PathVariable(name = "id") Long id,
+            @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id,
             @RequestBody Book book) {
         return bookService.update(id, book);
     }
@@ -77,9 +78,7 @@ public class BookController {
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
     })
     public Mono<Void> delete(
-            @Parameter(description = "Book ID", required = true)
-            @PathVariable(name = "id") Long id) {
+            @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
         return bookService.delete(id);
     }
 }
-

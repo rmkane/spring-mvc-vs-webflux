@@ -18,4 +18,3 @@ public class AcmeApiMvcApplication {
         SpringApplication.run(AcmeApiMvcApplication.class, args);
     }
 }
-

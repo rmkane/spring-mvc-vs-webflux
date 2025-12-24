@@ -4,7 +4,7 @@
 		dbs-up db-jpa-up db-r2dbc-up \
 		dbs-down db-jpa-down db-r2dbc-down \
 		dbs-logs db-jpa-logs db-r2dbc-logs \
-		build clean test \
+		build clean test format lint \
 		run-mvc run-webflux stop-mvc stop-webflux stop-all \
 		docker-build-mvc docker-build-webflux \
 		docker-run-mvc docker-run-webflux
@@ -27,6 +27,8 @@ help:
 	@echo "  build          - Build all Maven modules"
 	@echo "  clean          - Clean all Maven modules"
 	@echo "  test           - Run all tests"
+	@echo "  format         - Format all Java code with Spotless"
+	@echo "  lint           - Check code formatting (does not modify files)"
 	@echo ""
 	@echo "Run Applications:"
 	@echo "  run-mvc        - Build and run MVC API"
@@ -76,6 +78,27 @@ clean:
 
 test:
 	mvn test
+
+# Java modules with source code (exclude POM-only modules)
+JAVA_MODULES_LIST = \
+	acme-api/acme-api-mvc \
+	acme-api/acme-api-webflux \
+	acme-security/acme-security-core \
+	acme-security/acme-security-webmvc \
+	acme-security/acme-security-webflux \
+	acme-persistence/acme-persistence-jpa \
+	acme-persistence/acme-persistence-r2dbc
+
+# Convert space-separated list to comma-separated
+JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))
+space := $(empty) $(empty)
+comma := ,
+
+format:
+	mvn spotless:apply -pl $(JAVA_MODULES)
+
+lint:
+	mvn spotless:check -pl $(JAVA_MODULES)
 
 run-mvc: build
 	cd acme-api/acme-api-mvc && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev

@@ -1,6 +1,7 @@
 package org.acme.security.webmvc;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.acme.security.core.UserLookupService;
 import org.acme.security.core.UserPrincipal;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -33,15 +35,14 @@ public class WebMvcSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(requestHeaderAuthenticationFilter(), RequestHeaderAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
-                            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Missing or invalid x-username header\"}");
-                        })
-                );
+                            response.getWriter().write(
+                                    "{\"error\":\"Unauthorized\",\"message\":\"Missing or invalid x-username header\"}");
+                        }));
 
         return http.build();
     }
@@ -71,10 +72,8 @@ public class WebMvcSecurityConfig {
                 return org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated(
                         userPrincipal,
                         null,
-                        userPrincipal.getAuthorities()
-                );
+                        userPrincipal.getAuthorities());
             }
         };
     }
 }
-

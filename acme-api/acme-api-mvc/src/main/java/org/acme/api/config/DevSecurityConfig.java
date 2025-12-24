@@ -18,11 +18,9 @@ public class DevSecurityConfig {
         http
                 .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/error")
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
-                )
+                        .anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
 }
-

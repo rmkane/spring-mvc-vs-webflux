@@ -1,21 +1,23 @@
 package org.acme.security.webflux;
 
-import lombok.RequiredArgsConstructor;
 import org.acme.security.core.UserLookupService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
-import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
-import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
-import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
+
+import lombok.RequiredArgsConstructor;
+
 import reactor.core.publisher.Mono;
 
 @Configuration
@@ -35,15 +37,13 @@ public class WebFluxSecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(auth -> auth
-                        .anyExchange().authenticated()
-                )
+                        .anyExchange().authenticated())
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .authenticationManager(reactiveAuthenticationManager())
                 .addFilterAt(authenticationWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(authenticationEntryPoint())
-                )
+                        .authenticationEntryPoint(authenticationEntryPoint()))
                 .build();
     }
 
@@ -60,8 +60,7 @@ public class WebFluxSecurityConfig {
                     .map(userPrincipal -> UsernamePasswordAuthenticationToken.authenticated(
                             userPrincipal,
                             null,
-                            userPrincipal.getAuthorities()
-                    ));
+                            userPrincipal.getAuthorities()));
         };
     }
 
@@ -76,8 +75,7 @@ public class WebFluxSecurityConfig {
 
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
                     username.trim(),
-                    null
-            ));
+                    null));
         };
     }
 

@@ -1,9 +1,11 @@
 package org.acme.api.service;
 
-import lombok.RequiredArgsConstructor;
 import org.acme.persistence.r2dbc.Book;
 import org.acme.persistence.r2dbc.BookRepository;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -41,4 +43,3 @@ public class BookService {
         return bookRepository.deleteById(id);
     }
 }
-

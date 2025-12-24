@@ -1,12 +1,13 @@
 package org.acme.api.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.acme.persistence.jpa.Book;
 import org.acme.persistence.jpa.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -43,4 +44,3 @@ public class BookService {
         bookRepository.deleteById(id);
     }
 }
-
