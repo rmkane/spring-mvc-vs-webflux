@@ -1,12 +1,12 @@
 package org.acme.api.util;
 
-import org.acme.security.core.UserPrincipal;
+import org.acme.security.core.UserInformation;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 public class SecurityContextUtil {
 
-    public static UserPrincipal getCurrentUserPrincipal() {
+    public static UserInformation getCurrentUserInformation() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || authentication.getPrincipal() == null) {
@@ -15,10 +15,10 @@ public class SecurityContextUtil {
 
         Object principal = authentication.getPrincipal();
 
-        if (principal instanceof UserPrincipal) {
-            return (UserPrincipal) principal;
+        if (principal instanceof UserInformation userInformation) {
+            return userInformation;
         }
 
-        throw new IllegalStateException("Principal is not of type UserPrincipal: " + principal.getClass().getName());
+        throw new IllegalStateException("Principal is not of type UserInformation: " + principal.getClass().getName());
     }
 }

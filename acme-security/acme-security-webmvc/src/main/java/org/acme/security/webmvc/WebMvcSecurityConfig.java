@@ -1,13 +1,16 @@
 package org.acme.security.webmvc;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.acme.security.core.UserLookupService;
-import org.acme.security.core.UserPrincipal;
+import org.acme.security.core.AuthenticationService;
+import org.acme.security.core.SecurityConstants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,6 +20,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -25,8 +30,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebMvcSecurityConfig {
 
-    private static final String USERNAME_HEADER = "x-username";
-    private final UserLookupService userLookupService;
+    private final AuthenticationService authenticationService;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,10 +43,7 @@ public class WebMvcSecurityConfig {
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json");
-                            response.getWriter().write(
-                                    "{\"error\":\"Unauthorized\",\"message\":\"Missing or invalid x-username header\"}");
+                            writeUnauthorizedResponse(response);
                         }));
 
         return http.build();
@@ -50,7 +52,7 @@ public class WebMvcSecurityConfig {
     @Bean
     public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() {
         RequestHeaderAuthenticationFilter filter = new RequestHeaderAuthenticationFilter();
-        filter.setPrincipalRequestHeader(USERNAME_HEADER);
+        filter.setPrincipalRequestHeader(SecurityConstants.USERNAME_HEADER);
         filter.setExceptionIfHeaderMissing(false);
         filter.setAuthenticationManager(authenticationManager());
         return filter;
@@ -61,19 +63,17 @@ public class WebMvcSecurityConfig {
         return new AuthenticationManager() {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                String username = (String) authentication.getPrincipal();
-
-                if (username == null || username.trim().isEmpty()) {
-                    throw new BadCredentialsException("Missing or empty x-username header");
-                }
-
-                UserPrincipal userPrincipal = userLookupService.createUser(username);
-
-                return org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated(
-                        userPrincipal,
-                        null,
-                        userPrincipal.getAuthorities());
+                return authenticationService.createAuthenticatedAuthentication(authentication.getPrincipal());
             }
         };
+    }
+
+    private void writeUnauthorizedResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+        ErrorResponse errorResponse = new ErrorResponse("Unauthorized", SecurityConstants.UNAUTHORIZED_MESSAGE);
+        objectMapper.writeValue(response.getOutputStream(), errorResponse);
     }
 }

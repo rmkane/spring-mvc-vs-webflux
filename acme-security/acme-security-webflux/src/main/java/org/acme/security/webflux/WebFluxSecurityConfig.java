@@ -1,6 +1,7 @@
 package org.acme.security.webflux;
 
-import org.acme.security.core.UserLookupService;
+import org.acme.security.core.AuthenticationService;
+import org.acme.security.core.SecurityConstants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -26,8 +27,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class WebFluxSecurityConfig {
 
-    private static final String USERNAME_HEADER = "x-username";
-    private final UserLookupService userLookupService;
+    private final AuthenticationService authenticationService;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -50,27 +50,22 @@ public class WebFluxSecurityConfig {
     @Bean
     public ReactiveAuthenticationManager reactiveAuthenticationManager() {
         return authentication -> {
-            String username = (String) authentication.getPrincipal();
-
-            if (username == null || username.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException("Missing or empty x-username header"));
+            try {
+                return Mono.just(authenticationService
+                        .createAuthenticatedAuthentication(authentication.getPrincipal()));
+            } catch (BadCredentialsException e) {
+                return Mono.error(e);
             }
-
-            return Mono.fromCallable(() -> userLookupService.createUser(username))
-                    .map(userPrincipal -> UsernamePasswordAuthenticationToken.authenticated(
-                            userPrincipal,
-                            null,
-                            userPrincipal.getAuthorities()));
         };
     }
 
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
         return exchange -> {
-            String username = exchange.getRequest().getHeaders().getFirst(USERNAME_HEADER);
+            String username = RequestHeaderExtractor.extractUsername(exchange.getRequest());
 
             if (username == null || username.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException("Missing or empty x-username header"));
+                return Mono.error(new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE));
             }
 
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
