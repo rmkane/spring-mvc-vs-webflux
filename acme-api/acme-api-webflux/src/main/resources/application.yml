@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: acme-api-webflux
+  
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5433/acme_r2dbc
+    username: acme_user
+    password: acme_password
+  
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    url: jdbc:postgresql://localhost:5433/acme_r2dbc
+    user: acme_user
+    password: acme_password
+
+logging:
+  level:
+    org.acme: DEBUG
+    org.springframework.security: DEBUG
+

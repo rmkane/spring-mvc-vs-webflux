@@ -1,0 +1,47 @@
+services:
+  postgres-jpa:
+    image: postgres:17-alpine
+    container_name: acme-postgres-jpa
+    environment:
+      POSTGRES_DB: acme_jpa
+      POSTGRES_USER: acme_user
+      POSTGRES_PASSWORD: acme_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-jpa-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acme_user -d acme_jpa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - acme-network
+
+  postgres-r2dbc:
+    image: postgres:17-alpine
+    container_name: acme-postgres-r2dbc
+    environment:
+      POSTGRES_DB: acme_r2dbc
+      POSTGRES_USER: acme_user
+      POSTGRES_PASSWORD: acme_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-r2dbc-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acme_user -d acme_r2dbc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - acme-network
+
+volumes:
+  postgres-jpa-data:
+  postgres-r2dbc-data:
+
+networks:
+  acme-network:
+    driver: bridge
+
