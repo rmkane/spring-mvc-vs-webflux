@@ -16,9 +16,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
 
@@ -38,15 +37,14 @@ public class WebMvcSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(requestHeaderAuthenticationFilter(), RequestHeaderAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            writeUnauthorizedResponse(response);
-                        }));
+                        .authenticationEntryPoint(
+                                (request, response, authException) -> writeUnauthorizedResponse(response)));
 
         return http.build();
     }
@@ -62,27 +60,24 @@ public class WebMvcSecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager() {
-        return new AuthenticationManager() {
-            @Override
-            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                // Extract DN from principal (should be String from header)
-                Object principal = authentication.getPrincipal();
-                String dn;
+        return (authentication) -> {
+            // Extract DN from principal (should be String from header)
+            Object principal = authentication.getPrincipal();
+            String dn;
 
-                if (principal instanceof String principalString) {
-                    dn = principalString;
-                } else if (principal instanceof UserInformation userInfo) {
-                    dn = userInfo.getDn();
-                } else {
-                    throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
-                }
-
-                // Pass DN to auth service, which will:
-                // 1. Lookup UserInfo from auth service by DN
-                // 2. Create UserInformation (derivative) from UserInfo
-                // 3. Return authenticated Authentication with UserInformation as principal
-                return authenticationService.createAuthenticatedAuthentication(dn);
+            if (principal instanceof String principalString) {
+                dn = principalString;
+            } else if (principal instanceof UserInformation userInfo) {
+                dn = userInfo.getDn();
+            } else {
+                throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
             }
+
+            // Pass DN to auth service, which will:
+            // 1. Look up UserInfo from auth service by DN
+            // 2. Create UserInformation (derivative) from UserInfo
+            // 3. Return authenticated Authentication with UserInformation as principal
+            return authenticationService.createAuthenticatedAuthentication(dn);
         };
     }
 

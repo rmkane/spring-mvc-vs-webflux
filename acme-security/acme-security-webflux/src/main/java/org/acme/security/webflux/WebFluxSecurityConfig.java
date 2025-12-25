@@ -36,11 +36,11 @@ public class WebFluxSecurityConfig {
         authenticationWebFilter.setServerAuthenticationConverter(serverAuthenticationConverter());
 
         return http
-                .csrf(csrf -> csrf.disable())
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(auth -> auth
                         .anyExchange().authenticated())
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .formLogin(formLogin -> formLogin.disable())
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .authenticationManager(reactiveAuthenticationManager())
                 .addFilterAt(authenticationWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .exceptionHandling(exceptions -> exceptions
@@ -70,7 +70,7 @@ public class WebFluxSecurityConfig {
             return Mono.fromCallable(() -> {
                 try {
                     // Pass DN to auth service, which will:
-                    // 1. Lookup UserInfo from auth service by DN
+                    // 1. Look up UserInfo from auth service by DN
                     // 2. Create UserInformation (derivative) from UserInfo
                     // 3. Return authenticated Authentication with UserInformation as principal
                     return authenticationService.createAuthenticatedAuthentication(dn);

@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.acme</groupId>
-        <artifactId>acme-starter-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../acme-pom/acme-starter-parent</relativePath>
-    </parent>
+	<parent>
+		<groupId>org.acme</groupId>
+		<artifactId>acme-starter-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../acme-pom/acme-starter-parent</relativePath>
+	</parent>
 
-    <groupId>org.acme.security</groupId>
-    <artifactId>acme-security</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
+	<groupId>org.acme.security</groupId>
+	<artifactId>acme-security</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
 
-    <name>Acme Security</name>
-    <description>Security module with core, WebMVC, and WebFlux implementations</description>
+	<name>Acme Security</name>
+	<description>Security module with core, WebMVC, and WebFlux implementations</description>
 
-    <modules>
-        <module>acme-security-core</module>
-        <module>acme-security-webmvc</module>
-        <module>acme-security-webflux</module>
-    </modules>
+	<modules>
+		<module>acme-security-core</module>
+		<module>acme-security-webmvc</module>
+		<module>acme-security-webflux</module>
+	</modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
 </project>
 

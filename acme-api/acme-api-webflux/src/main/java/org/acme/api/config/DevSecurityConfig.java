@@ -30,7 +30,7 @@ public class DevSecurityConfig {
                 .securityMatcher(swaggerMatcher)
                 .authorizeExchange(auth -> auth
                         .anyExchange().permitAll())
-                .csrf(csrf -> csrf.disable())
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .build();
     }
 }

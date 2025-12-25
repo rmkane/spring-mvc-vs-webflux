@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.acme</groupId>
-    <artifactId>acme</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
+	<groupId>org.acme</groupId>
+	<artifactId>acme</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
 
-    <name>Acme Multi-Module Project</name>
-    <description>Multi-module Spring Boot application comparing MVC and WebFlux implementations</description>
+	<name>Acme Multi-Module Project</name>
+	<description>Multi-module Spring Boot application comparing MVC and WebFlux implementations</description>
 
-    <modules>
-        <module>acme-pom</module>
-        <module>acme-auth-client</module>
-        <module>acme-auth-service</module>
-        <module>acme-security</module>
-        <module>acme-persistence</module>
-        <module>acme-api</module>
-    </modules>
+	<modules>
+		<module>acme-pom</module>
+		<module>acme-auth-client</module>
+		<module>acme-auth-service</module>
+		<module>acme-security</module>
+		<module>acme-persistence</module>
+		<module>acme-api</module>
+	</modules>
 </project>
 
