@@ -1,65 +1,63 @@
 package org.acme.security.core;
 
-import org.acme.auth.core.UserPrincipal;
+import org.acme.auth.client.UserInfo;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 /**
- * Utility class for creating UserInformation objects from raw username strings
- * or from UserPrincipal objects returned by the auth layer.
+ * Utility class for creating UserInformation objects from raw DN strings or
+ * from UserInfo objects returned by the auth service.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UserInformationUtil {
 
     /**
-     * Marshals a raw username string into a UserInformation object. Trims
-     * whitespace and validates the username.
+     * Marshals a raw DN string into a UserInformation object. Trims whitespace and
+     * validates the DN.
      *
-     * @param username the raw username string
-     * @return a UserInformation object with the normalized username
-     * @throws BadCredentialsException if the username is null or empty after
-     *                                 trimming
+     * @param dn the raw Distinguished Name string
+     * @return a UserInformation object with the normalized DN
+     * @throws BadCredentialsException if the DN is null or empty after trimming
      */
-    public static UserInformation fromUsername(String username) {
-        if (username == null) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE);
+    public static UserInformation fromDn(String dn) {
+        if (dn == null) {
+            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
 
-        String normalized = username.trim();
+        String normalized = dn.trim();
 
         if (normalized.isEmpty()) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
 
         return UserInformation.builder()
-                .username(normalized)
+                .dn(normalized)
                 .build();
     }
 
     /**
-     * Creates a UserInformation object from a UserPrincipal returned by the auth
-     * layer. This is a derivative object that extracts the username from the
-     * UserPrincipal.
+     * Creates a UserInformation object from a UserInfo returned by the auth
+     * service. This is a derivative object that extracts the DN from the UserInfo.
      *
-     * @param userPrincipal the UserPrincipal from the auth layer
-     * @return a UserInformation object with the username from UserPrincipal
-     * @throws BadCredentialsException if the UserPrincipal is null or has no
-     *                                 username
+     * @param userInfo the UserInfo from the auth service
+     * @return a UserInformation object with the DN from UserInfo
+     * @throws BadCredentialsException if the UserInfo is null or has no DN
      */
-    public static UserInformation fromUserPrincipal(UserPrincipal userPrincipal) {
-        if (userPrincipal == null) {
-            throw new BadCredentialsException("UserPrincipal cannot be null");
+    public static UserInformation fromUserInfo(UserInfo userInfo) {
+        if (userInfo == null) {
+            throw new BadCredentialsException("UserInfo cannot be null");
         }
 
-        String username = userPrincipal.getUsername();
-        if (username == null || username.trim().isEmpty()) {
-            throw new BadCredentialsException("UserPrincipal has no username");
+        // getUsername() returns the DN (for Spring Security compatibility)
+        String dn = userInfo.getUsername();
+        if (dn == null || dn.trim().isEmpty()) {
+            throw new BadCredentialsException("UserInfo has no DN");
         }
 
         return UserInformation.builder()
-                .username(username.trim())
+                .dn(dn.trim())
                 .build();
     }
 }

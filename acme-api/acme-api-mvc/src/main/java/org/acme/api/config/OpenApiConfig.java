@@ -20,18 +20,18 @@ public class OpenApiConfig {
                         .title("Acme API - MVC")
                         .version("1.0.0")
                         .description("REST API for managing books using Spring MVC. " +
-                                "Use the 'Authorize' button above to set the x-username header for authentication.")
+                                "Use the 'Authorize' button above to set the x-dn header for authentication.")
                         .contact(new Contact()
                                 .name("Acme Team")
                                 .email("api@acme.org")))
-                .addSecurityItem(new SecurityRequirement().addList("x-username"))
+                .addSecurityItem(new SecurityRequirement().addList("x-dn"))
                 .components(new Components()
-                        .addSecuritySchemes("x-username", new SecurityScheme()
+                        .addSecuritySchemes("x-dn", new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name("x-username")
+                                .name("x-dn")
                                 .description(
-                                        "Username for authentication. Enter any username (e.g., 'Bob', 'Alice') to authenticate. "
+                                        "Distinguished Name (DN) for authentication. Enter a user DN (e.g., 'cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org') to authenticate. "
                                                 +
                                                 "This header is required for all API endpoints. Click 'Authorize' button to set this value globally.")));
     }

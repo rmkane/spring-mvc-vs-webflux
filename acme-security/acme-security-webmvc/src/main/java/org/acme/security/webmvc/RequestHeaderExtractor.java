@@ -8,21 +8,21 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 /**
- * Utility class for extracting the username header from MVC requests.
+ * Utility class for extracting the DN header from MVC requests.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestHeaderExtractor {
 
     /**
-     * Extracts the username from an MVC HttpServletRequest.
+     * Extracts the Distinguished Name (DN) from an MVC HttpServletRequest.
      *
      * @param request the HttpServletRequest
-     * @return the username header value, or null if not present
+     * @return the DN header value, or null if not present
      */
-    public static String extractUsername(HttpServletRequest request) {
+    public static String extractDn(HttpServletRequest request) {
         if (request == null) {
             return null;
         }
-        return request.getHeader(SecurityConstants.USERNAME_HEADER);
+        return request.getHeader(SecurityConstants.DN_HEADER);
     }
 }

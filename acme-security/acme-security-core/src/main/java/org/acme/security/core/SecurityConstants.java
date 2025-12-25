@@ -2,7 +2,7 @@ package org.acme.security.core;
 
 public interface SecurityConstants {
 
-    String USERNAME_HEADER = "x-username";
-    String UNAUTHORIZED_MESSAGE = "Missing or invalid x-username header";
-    String MISSING_USERNAME_MESSAGE = "Missing or empty x-username header";
+    String DN_HEADER = "x-dn";
+    String UNAUTHORIZED_MESSAGE = "Missing or invalid x-dn header";
+    String MISSING_DN_MESSAGE = "Missing or empty x-dn header";
 }

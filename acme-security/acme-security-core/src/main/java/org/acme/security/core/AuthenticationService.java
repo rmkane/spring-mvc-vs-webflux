@@ -2,8 +2,8 @@ package org.acme.security.core;
 
 import java.util.stream.Collectors;
 
-import org.acme.auth.core.UserLookupService;
-import org.acme.auth.core.UserPrincipal;
+import org.acme.auth.client.AuthServiceClient;
+import org.acme.auth.client.UserInfo;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AuthenticationService {
 
-    private final UserLookupService userLookupService;
+    private final AuthServiceClient authServiceClient;
 
     /**
      * Validates and normalizes a UserInformation object from the authentication
@@ -31,56 +31,56 @@ public class AuthenticationService {
      */
     public UserInformation validateUserInformation(Object principal) {
         if (principal == null) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
 
         if (principal instanceof UserInformation userInfo) {
-            String username = userInfo.getUsername();
-            if (!StringUtils.hasText(username)) {
-                throw new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE);
+            String dn = userInfo.getDn();
+            if (!StringUtils.hasText(dn)) {
+                throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
             }
             return userInfo;
         }
 
         // Fallback for String (backward compatibility)
-        if (principal instanceof String username) {
-            return UserInformationUtil.fromUsername(username);
+        if (principal instanceof String dn) {
+            return UserInformationUtil.fromDn(dn);
         }
 
         throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
     }
 
     /**
-     * Creates an authenticated Authentication object from a username string. This
-     * is the core authentication logic shared between MVC and WebFlux.
+     * Creates an authenticated Authentication object from a DN string. This is the
+     * core authentication logic shared between MVC and WebFlux.
      * <p>
-     * The flow is: 1. Lookup the user in the auth layer to get UserPrincipal (with
-     * roles) 2. Create UserInformation (derivative) from UserPrincipal 3. Use
-     * UserInformation as the principal with roles from UserPrincipal
+     * The flow is: 1. Lookup the user in the auth service by DN to get UserInfo
+     * (with roles) 2. Create UserInformation (derivative) from UserInfo 3. Use
+     * UserInformation as the principal with roles from UserInfo
      *
-     * @param username the username from the request header
+     * @param dn the Distinguished Name from the request header
      * @return an authenticated Authentication object
      */
-    public Authentication createAuthenticatedAuthentication(String username) {
-        if (!StringUtils.hasText(username)) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_USERNAME_MESSAGE);
+    public Authentication createAuthenticatedAuthentication(String dn) {
+        if (!StringUtils.hasText(dn)) {
+            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
 
-        // Lookup user in auth layer to get UserPrincipal with roles
-        UserPrincipal userPrincipal = userLookupService.lookupUser(username.trim());
+        // Lookup user from auth service by DN to get UserInfo with roles
+        UserInfo userInfo = authServiceClient.lookupUser(dn.trim());
 
-        // Create UserInformation (derivative) from UserPrincipal
-        UserInformation userInformation = UserInformationUtil.fromUserPrincipal(userPrincipal);
+        // Create UserInformation (derivative) from UserInfo
+        UserInformation userInformation = UserInformationUtil.fromUserInfo(userInfo);
 
-        String roles = userPrincipal.getAuthorities().stream()
+        String roles = userInfo.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(", "));
 
-        log.debug("User authenticated: username={}, roles=[{}]", userInformation.getUsername(), roles);
+        log.debug("User authenticated: dn={}, roles=[{}]", userInformation.getDn(), roles);
 
         return UsernamePasswordAuthenticationToken.authenticated(
                 userInformation,
                 null,
-                userPrincipal.getAuthorities());
+                userInfo.getAuthorities());
     }
 }

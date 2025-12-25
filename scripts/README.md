@@ -48,38 +48,30 @@ Both scripts support the same operations:
 
 ## Authentication
 
-Both scripts use the `x-username` header for authentication. The username is looked up in the database, and the user's roles determine what operations they can perform.
+Both scripts use the `x-dn` header for authentication. The Distinguished Name (DN) is looked up in the database, and the user's roles determine what operations they can perform.
 
 ### Available Users
 
-The database is seeded with three users for testing:
+The database is seeded with users from `USERS.md`. The default user is:
 
-- **`noaccess`** - No roles
-  - All operations return `403 Forbidden`
-  
-- **`readonly`** - Has `ROLE_READ_ONLY`
-  - ✅ Can perform: `get-all`, `get <id>`
-  - ❌ Cannot perform: `create`, `update`, `delete` (returns `403 Forbidden`)
-  
-- **`readwrite`** - Has `ROLE_READ_ONLY` + `ROLE_READ_WRITE`
+- **`cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`** - Has `ROLE_READ_WRITE`
   - ✅ Can perform: All operations (full access)
 
-### Customizing Username
+See `USERS.md` for the complete list of available users and their DNs.
 
-You can customize the username by setting the `X_USERNAME` environment variable:
+### Customizing DN
+
+You can customize the DN by setting the `X_DN` environment variable:
 
 ```bash
-# Test with read-only user
-X_USERNAME=readonly ./scripts/test-mvc.sh get-all
+# Test with a different user DN
+X_DN="cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org" ./scripts/test-mvc.sh get-all
 
-# Test with no-access user (will fail)
-X_USERNAME=noaccess ./scripts/test-mvc.sh get-all
-
-# Test with read-write user (full access)
-X_USERNAME=readwrite ./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
+# Test with full access user (default)
+./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
 ```
 
-By default, the scripts use `readwrite` as the username.
+By default, the scripts use `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org` as the DN.
 
 ## Requirements
 
@@ -110,15 +102,9 @@ By default, the scripts use `readwrite` as the username.
 ### Testing Role-Based Access Control
 
 ```bash
-# Test read-only access (should succeed)
-X_USERNAME=readonly ./scripts/test-mvc.sh get-all
+# Test with different user DNs (adjust roles as needed in database)
+X_DN="cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org" ./scripts/test-mvc.sh get-all
 
-# Test read-only access (should fail with 403)
-X_USERNAME=readonly ./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
-
-# Test no-access user (should fail with 403)
-X_USERNAME=noaccess ./scripts/test-mvc.sh get-all
-
-# Test full access (should succeed)
-X_USERNAME=readwrite ./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
+# Test full access (default user)
+./scripts/test-mvc.sh create "New Book" "Author" "ISBN-123"
 ```

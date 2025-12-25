@@ -38,6 +38,12 @@ public class Book {
     @Column("created_at")
     private LocalDateTime createdAt;
 
+    @Column("created_by")
+    private String createdBy;
+
     @Column("updated_at")
     private LocalDateTime updatedAt;
+
+    @Column("updated_by")
+    private String updatedBy;
 }

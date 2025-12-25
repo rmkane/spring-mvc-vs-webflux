@@ -15,7 +15,8 @@
 
     <modules>
         <module>acme-pom</module>
-        <module>acme-auth</module>
+        <module>acme-auth-client</module>
+        <module>acme-auth-service</module>
         <module>acme-security</module>
         <module>acme-persistence</module>
         <module>acme-api</module>

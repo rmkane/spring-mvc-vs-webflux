@@ -7,21 +7,21 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 /**
- * Utility class for extracting the username header from WebFlux requests.
+ * Utility class for extracting the DN header from WebFlux requests.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestHeaderExtractor {
 
     /**
-     * Extracts the username from a WebFlux ServerHttpRequest.
+     * Extracts the Distinguished Name (DN) from a WebFlux ServerHttpRequest.
      *
      * @param request the ServerHttpRequest
-     * @return the username header value, or null if not present
+     * @return the DN header value, or null if not present
      */
-    public static String extractUsername(ServerHttpRequest request) {
+    public static String extractDn(ServerHttpRequest request) {
         if (request == null) {
             return null;
         }
-        return request.getHeaders().getFirst(SecurityConstants.USERNAME_HEADER);
+        return request.getHeaders().getFirst(SecurityConstants.DN_HEADER);
     }
 }

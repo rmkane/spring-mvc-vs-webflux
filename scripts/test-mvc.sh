@@ -5,7 +5,7 @@
 # Operations: get-all, get <id>, create <title> <author> <isbn>, update <id> <title> <author> <isbn>, delete <id>
 
 BASE_URL="http://localhost:8080/api/books"
-USERNAME="${X_USERNAME:-readwrite}"
+DN="${X_DN:-cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org}"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -24,18 +24,18 @@ print_usage() {
     echo "  delete <id>                - Delete a book by ID"
     echo ""
     echo "Environment variable:"
-    echo "  X_USERNAME                 - Username for authentication (default: readwrite)"
+    echo "  X_DN                       - Distinguished Name (DN) for authentication"
+    echo "                              (default: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org)"
     echo ""
     echo "Available users (from database):"
-    echo "  noaccess                   - No roles (403 Forbidden on all operations)"
-    echo "  readonly                   - ROLE_READ_ONLY (can read, cannot write)"
-    echo "  readwrite                  - ROLE_READ_ONLY + ROLE_READ_WRITE (full access)"
+    echo "  cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org"
+    echo "    - ROLE_READ_WRITE (full access)"
 }
 
 get_all() {
     echo -e "${BLUE}GET ${BASE_URL}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
-        -H "x-username: ${USERNAME}" \
+        -H "x-dn: ${DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}")
     local http_code=$(echo "$response" | tail -n1)
@@ -55,7 +55,7 @@ get_one() {
 
     echo -e "${BLUE}GET ${BASE_URL}/${id}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
-        -H "x-username: ${USERNAME}" \
+        -H "x-dn: ${DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}/${id}")
     local http_code=$(echo "$response" | tail -n1)
@@ -89,7 +89,7 @@ EOF
     echo -e "${BLUE}Body: ${json_body}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
         -X POST \
-        -H "x-username: ${USERNAME}" \
+        -H "x-dn: ${DN}" \
         -H "Content-Type: application/json" \
         -d "${json_body}" \
         "${BASE_URL}")
@@ -125,7 +125,7 @@ EOF
     echo -e "${BLUE}Body: ${json_body}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
         -X PUT \
-        -H "x-username: ${USERNAME}" \
+        -H "x-dn: ${DN}" \
         -H "Content-Type: application/json" \
         -d "${json_body}" \
         "${BASE_URL}/${id}")
@@ -147,7 +147,7 @@ delete() {
     echo -e "${BLUE}DELETE ${BASE_URL}/${id}${NC}"
     local http_code=$(curl -s -w "%{http_code}" -o /dev/null \
         -X DELETE \
-        -H "x-username: ${USERNAME}" \
+        -H "x-dn: ${DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}/${id}")
     echo -e "HTTP Status: ${http_code}"

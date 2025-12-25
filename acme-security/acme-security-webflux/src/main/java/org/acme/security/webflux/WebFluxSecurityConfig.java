@@ -50,14 +50,14 @@ public class WebFluxSecurityConfig {
     @Bean
     public ReactiveAuthenticationManager reactiveAuthenticationManager() {
         return authentication -> {
-            // Extract username from principal (should be String from header)
+            // Extract DN from principal (should be String from header)
             Object principal = authentication.getPrincipal();
-            String username;
+            String dn;
 
             if (principal instanceof String principalString) {
-                username = principalString;
+                dn = principalString;
             } else if (principal instanceof org.acme.security.core.UserInformation userInfo) {
-                username = userInfo.getUsername();
+                dn = userInfo.getDn();
             } else {
                 return Mono.error(new BadCredentialsException(
                         "Invalid principal type: " + principal.getClass().getName()));
@@ -68,11 +68,11 @@ public class WebFluxSecurityConfig {
             // This prevents blocking the reactive event loop thread
             return Mono.fromCallable(() -> {
                 try {
-                    // Pass username to auth service, which will:
-                    // 1. Lookup UserPrincipal from auth layer
-                    // 2. Create UserInformation (derivative) from UserPrincipal
+                    // Pass DN to auth service, which will:
+                    // 1. Lookup UserInfo from auth service by DN
+                    // 2. Create UserInformation (derivative) from UserInfo
                     // 3. Return authenticated Authentication with UserInformation as principal
-                    return authenticationService.createAuthenticatedAuthentication(username);
+                    return authenticationService.createAuthenticatedAuthentication(dn);
                 } catch (BadCredentialsException e) {
                     throw e;
                 }
@@ -85,16 +85,16 @@ public class WebFluxSecurityConfig {
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
         return exchange -> {
-            String username = RequestHeaderExtractor.extractUsername(exchange.getRequest());
+            String dn = RequestHeaderExtractor.extractDn(exchange.getRequest());
 
-            if (username == null || username.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException("Missing or empty x-username header"));
+            if (dn == null || dn.trim().isEmpty()) {
+                return Mono.error(new BadCredentialsException("Missing or empty x-dn header"));
             }
 
-            // Pass username as String principal - will be converted to UserInformation
-            // by AuthenticationService after looking up UserPrincipal from auth layer
+            // Pass DN as String principal - will be converted to UserInformation
+            // by AuthenticationService after looking up UserInfo from auth service
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
-                    username.trim(),
+                    dn.trim(),
                     null));
         };
     }

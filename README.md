@@ -1,7 +1,7 @@
 <!-- omit in toc -->
 # Acme Multi-Module Spring Boot Application
 
-A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (reactive) implementations with header-based authentication and role-based access control.
+A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (reactive) implementations with LDAP-like DN-based authentication and role-based access control.
 
 <!-- omit in toc -->
 ## Table of Contents
@@ -14,25 +14,25 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Starting Databases](#starting-databases)
   - [Running Applications](#running-applications)
 - [Architecture Overview](#architecture-overview)
-  - [Authentication Layer (`acme-auth`)](#authentication-layer-acme-auth)
+  - [Authentication Service (`acme-auth-service`)](#authentication-service-acme-auth-service)
   - [Security Layer (`acme-security`)](#security-layer-acme-security)
   - [Persistence Layer](#persistence-layer)
 - [MVC Route (Traditional/Blocking)](#mvc-route-traditionalblocking)
-  - [Framework](#framework)
-  - [Security](#security)
-  - [Persistence](#persistence)
-  - [Return Types](#return-types)
-  - [Port](#port)
+  - [MVC Framework](#mvc-framework)
+  - [MVC Security](#mvc-security)
+  - [MVC Persistence](#mvc-persistence)
+  - [MVC Return Types](#mvc-return-types)
+  - [MVC Port](#mvc-port)
 - [WebFlux Route (Reactive/Non-blocking)](#webflux-route-reactivenon-blocking)
-  - [Framework](#framework-1)
-  - [Security](#security-1)
-  - [Persistence](#persistence-1)
-  - [Return Types](#return-types-1)
-  - [Port](#port-1)
+  - [WebFlux Framework](#webflux-framework)
+  - [WebFlux Security](#webflux-security)
+  - [WebFlux Persistence](#webflux-persistence)
+  - [WebFlux Return Types](#webflux-return-types)
+  - [WebFlux Port](#webflux-port)
 - [How They Are The Same](#how-they-are-the-same)
 - [How They Are Different](#how-they-are-different)
   - [Execution Model](#execution-model)
-  - [Return Types](#return-types-2)
+  - [Return Types Comparison](#return-types-comparison)
   - [Database Access](#database-access)
   - [Security Context Access](#security-context-access)
   - [Performance Characteristics](#performance-characteristics)
@@ -62,9 +62,10 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Dependency Relationships](#dependency-relationships)
   - [Architecture Flow](#architecture-flow)
 - [Key Components](#key-components)
-  - [Authentication (`acme-auth`)](#authentication-acme-auth)
+  - [Authentication Service Components (`acme-auth-service`)](#authentication-service-components-acme-auth-service)
+  - [Authentication Client (`acme-auth-client`)](#authentication-client-acme-auth-client)
   - [Security (`acme-security`)](#security-acme-security)
-  - [Persistence](#persistence-2)
+  - [Persistence Components](#persistence-components)
   - [API](#api)
 - [License](#license)
 
@@ -85,10 +86,9 @@ spring-mvc-vs-webflux/
 ├── acme-pom/                       # Dependency management
 │   ├── acme-dependencies/          # BOM for dependency versions
 │   └── acme-starter-parent/        # Parent POM with plugin management
-├── acme-auth/                      # Authentication layer
-│   ├── acme-auth-core/             # Core auth interfaces and services
-│   ├── acme-auth-jpa/              # JPA implementation of user lookup
-│   └── acme-auth-r2dbc/            # R2DBC implementation of user lookup
+├── acme-auth-client/               # REST client wrapper for auth service
+├── acme-auth-service/              # Standalone authentication service
+│   └── src/main/java/              # Spring Boot application with REST API
 ├── acme-security/                  # Security layer
 │   ├── acme-security-core/         # Core security logic
 │   ├── acme-security-webmvc/       # MVC security configuration
@@ -120,16 +120,26 @@ make build
 ```bash
 make db-jpa-up      # Start JPA database (port 5432)
 make db-r2dbc-up    # Start R2DBC database (port 5433)
-# Or start both:
-make db-jpa-up db-r2dbc-up
+make db-auth-up     # Start Auth database (port 5434)
+# Or start all:
+make dbs-up
 ```
 
-This starts two PostgreSQL databases:
+This starts three PostgreSQL databases:
 
 - **postgres-jpa**: Port 5432 for MVC/JPA API
 - **postgres-r2dbc**: Port 5433 for WebFlux/R2DBC API
+- **postgres-auth**: Port 5434 for Auth Service
 
 ### Running Applications
+
+**Auth Service (must be started first):**
+
+```bash
+make run-auth
+```
+
+Runs on port 8082. This service must be running before starting the API applications.
 
 **MVC API:**
 
@@ -149,25 +159,28 @@ Runs on port 8081
 
 ## Architecture Overview
 
-### Authentication Layer (`acme-auth`)
+### Authentication Service (`acme-auth-service`)
 
-The authentication layer handles all user lookup logic:
+The authentication service is a **standalone Spring Boot application** that runs in its own container:
 
-- **`acme-auth-core`**: Defines `UserPrincipal`, `UserPrincipalRepository` interface, and `UserLookupService`
-- **`acme-auth-jpa`**: JPA implementation of `UserPrincipalRepository` for MVC
-- **`acme-auth-r2dbc`**: R2DBC implementation of `UserPrincipalRepository` for WebFlux
-- Queries database for users and their roles
-- Returns `UserPrincipal` with roles from database (ROLE_READ_ONLY, ROLE_READ_WRITE)
+- **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
+- **Database**: Has its own PostgreSQL database (`acme_auth` on port 5434)
+- **Flyway Migrations**: Manages user and role tables with seed data (LDAP-like structure)
+- **Isolation**: Completely isolated from main application databases
+- **Port**: Runs on port 8082
+- Returns `UserInfoResponse` with DN, givenName, surname, and roles (ROLE_READ_ONLY, ROLE_READ_WRITE)
+- **LDAP-like Structure**: Users have DN (Distinguished Name), givenName, and surname instead of username
 
 ### Security Layer (`acme-security`)
 
 The security layer handles authentication mechanics:
 
-- Extracts `x-username` header from HTTP requests
-- Calls auth layer to lookup user and get `UserPrincipal`
-- Creates `UserInformation` (derivative) from `UserPrincipal` as the principal
+- Extracts `x-dn` header from HTTP requests (DN = Distinguished Name)
+- **Calls auth service via REST** using `AuthServiceClient` to lookup user by DN
+- Creates `UserInformation` (derivative) from `UserInfo` returned by auth service
 - Missing header returns `401 Unauthorized`
 - Headers are supplied through ingress layer (SSL/TLS termination handled upstream)
+- **No direct database access** - all user lookups go through the auth service
 
 ### Persistence Layer
 
@@ -178,67 +191,68 @@ The security layer handles authentication mechanics:
 
 ## MVC Route (Traditional/Blocking)
 
-### Framework
+### MVC Framework
 
 - Spring MVC (Servlet-based)
 
-### Security
+### MVC Security
 
-- `RequestHeaderAuthenticationFilter` extracts `x-username` header
-- Custom `AuthenticationManager` calls auth layer's `UserLookupService`
-- Creates `UserInformation` from `UserPrincipal` returned by auth layer
+- `RequestHeaderAuthenticationFilter` extracts `x-dn` header
+- Custom `AuthenticationManager` calls `AuthServiceClient` to lookup user by DN
+- Creates `UserInformation` from `UserInfo` returned by auth service
 - `SecurityContextHolder` for accessing principal (thread-local)
 
-### Persistence
+### MVC Persistence
 
 - JPA/Spring Data JPA (blocking database operations)
 - PostgreSQL on port 5432 (`acme_jpa` database)
+- **Note**: User data is NOT stored here - users are managed by the auth service
 
-### Return Types
+### MVC Return Types
 
 - `ResponseEntity<T>`, standard Java objects
 - Blocking, synchronous operations
 
-### Port
+### MVC Port
 
 - 8080
 
 ## WebFlux Route (Reactive/Non-blocking)
 
-### Framework
+### WebFlux Framework
 
 - Spring WebFlux (Reactive)
 
-### Security
+### WebFlux Security
 
-- Custom `ServerHttpAuthenticationConverter` extracts `x-username` header
-- Reactive `AuthenticationManager` calls auth layer's `UserLookupService`
-- Creates `UserInformation` from `UserPrincipal` returned by auth layer
+- Custom `ServerHttpAuthenticationConverter` extracts `x-dn` header
+- Reactive `AuthenticationManager` calls `AuthServiceClient` to lookup user by DN
+- Creates `UserInformation` from `UserInfo` returned by auth service
 - `ReactiveSecurityContextHolder` or `@AuthenticationPrincipal` for accessing principal
 
-### Persistence
+### WebFlux Persistence
 
 - R2DBC (reactive, non-blocking database operations)
 - PostgreSQL on port 5433 (`acme_r2dbc` database)
 
-### Return Types
+### WebFlux Return Types
 
 - `Mono<T>`, `Flux<T>` (reactive types)
 - Non-blocking, reactive operations
 
-### Port
+### WebFlux Port
 
 - 8081
 
 ## How They Are The Same
 
-- **Same Security Mechanism**: Both use `x-username` header for authentication
-- **Same Authentication Flow**: Both call auth layer to lookup users from database
-- **Same User Principal**: Both create `UserInformation` (derivative) from `UserPrincipal` with roles from database
+- **Same Security Mechanism**: Both use `x-dn` header for authentication (DN = Distinguished Name)
+- **Same Authentication Flow**: Both call auth service via REST to lookup users by DN
+- **Same User Principal**: Both create `UserInformation` (derivative) from `UserInfo` with roles from auth service
 - **Same Role-Based Access Control**: Both use `@PreAuthorize` annotations with database-backed roles
 - **Same API Endpoints**: Both expose `/api/books` with same CRUD operations
 - **Same Business Logic**: Same service layer functionality
-- **Same Database Schema**: Both use identical `books`, `users`, and `user_roles` table structures
+- **Same Database Schema**: Both use identical `books` table structure (users are in auth service database)
 - **Same Error Handling**: Missing header returns `401 Unauthorized` in both
 
 ## How They Are Different
@@ -248,7 +262,7 @@ The security layer handles authentication mechanics:
 - **MVC**: Blocking, thread-per-request model
 - **WebFlux**: Non-blocking, event-loop model
 
-### Return Types
+### Return Types Comparison
 
 - **MVC**: `ResponseEntity<Book>`, `List<Book>`, standard Java types
 - **WebFlux**: `Mono<Book>`, `Flux<Book>`, reactive types
@@ -272,32 +286,42 @@ The security layer handles authentication mechanics:
 
 - **MVC**: 8080
 - **WebFlux**: 8081
+- **Auth Service**: 8082
 
 ## Security Implementation
 
 ### Header-Based Authentication
 
-Both implementations extract the `x-username` header from HTTP requests. The flow is:
+Both implementations extract the `x-dn` header (Distinguished Name) from HTTP requests. The flow is:
 
-1. Security layer extracts username from header
-2. Security layer calls auth layer's `UserLookupService` to query database
-3. Auth layer returns `UserPrincipal` with roles from database
-4. Security layer creates `UserInformation` (derivative) from `UserPrincipal`
-5. `UserInformation` is stored as the principal in SecurityContext
+1. Security layer extracts DN from header
+2. Security layer calls `AuthServiceClient` which makes REST call to auth service (`http://localhost:8082/api/auth/users/{dn}`)
+3. Auth service queries its own database (`acme_auth`) for user by DN and roles
+4. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
+5. `AuthServiceClient` converts response to `UserInfo`
+6. Security layer creates `UserInformation` (derivative) from `UserInfo`
+7. `UserInformation` is stored as the principal in SecurityContext
 
 ### Missing Header
 
-If the `x-username` header is missing or empty, both implementations return `401 Unauthorized`.
+If the `x-dn` header is missing or empty, both implementations return `401 Unauthorized`.
 
 ### User Lookup
 
-The auth layer (`UserLookupService`) queries the database for users and their roles:
+The auth service queries its own database (`acme_auth`) for users by DN and their roles:
 
-- **Database-backed users**: Three test users are seeded:
-  - `noaccess`: No roles
-  - `readonly`: `ROLE_READ_ONLY` role
-  - `readwrite`: `ROLE_READ_ONLY` and `ROLE_READ_WRITE` roles
-- **Roles**: `ROLE_READ_ONLY`, `ROLE_READ_WRITE` (from database, not hardcoded)
+- **Standalone Service**: Auth service runs on port 8082 with its own database (port 5434)
+- **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
+- **LDAP-like Structure**: Users have DN, givenName, and surname (no username field)
+- **Database-backed users**: Users are seeded in auth service database with LDAP-like DNs:
+  - `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org` - Has `ROLE_READ_WRITE` (full access)
+  - `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org` - Has `ROLE_READ_WRITE` (full access)
+  - `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org` - Has `ROLE_READ_ONLY` (read-only access)
+  - `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=example,dc=com` - Has `ROLE_READ_ONLY` (read-only access)
+  - `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=example,dc=com` - No roles assigned
+  - Users have DN (Distinguished Name), givenName, and surname fields
+- **Roles**: `ROLE_READ_ONLY`, `ROLE_READ_WRITE` (from auth service database, not hardcoded)
+- **Isolation**: User data is completely isolated from main application databases
 
 ### Role-Based Access Control
 
@@ -310,27 +334,31 @@ Service methods are protected with `@PreAuthorize` annotations:
 
 ### Deployment Context
 
-Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ingress layer above, which forwards headers (including `x-username`) to the applications.
+Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ingress layer above, which forwards headers (including `x-dn`) to the applications.
 
 ## Testing the APIs
 
 ### Example Request (MVC)
 
 ```bash
-curl -H "x-username: readonly" http://localhost:8080/api/books
+curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8080/api/books
 ```
 
 ### Example Request (WebFlux)
 
 ```bash
-curl -H "x-username: readwrite" http://localhost:8081/api/books
+curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8081/api/books
 ```
 
 **Available test users:**
 
-- `noaccess`: No roles (will fail on protected endpoints)
-- `readonly`: Can read books (GET operations)
-- `readwrite`: Can read and write books (all CRUD operations)
+Users are seeded in the auth service database with LDAP-like DNs:
+
+- `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`: Has `ROLE_READ_WRITE` (full access)
+- `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org`: Has `ROLE_READ_WRITE` (full access)
+- `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org`: Has `ROLE_READ_ONLY` (read-only access)
+- `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=example,dc=com`: Has `ROLE_READ_ONLY` (read-only access)
+- `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=example,dc=com`: No roles assigned
 
 ### Missing Header (Returns 401)
 
@@ -343,7 +371,8 @@ curl http://localhost:8080/api/books  # Returns 401 Unauthorized
 **Create Book (requires READ_WRITE role):**
 
 ```bash
-curl -X POST -H "x-username: readwrite" -H "Content-Type: application/json" \
+curl -X POST -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
+  -H "Content-Type: application/json" \
   -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789"}' \
   http://localhost:8080/api/books
 ```
@@ -351,19 +380,22 @@ curl -X POST -H "x-username: readwrite" -H "Content-Type: application/json" \
 **Get All Books (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
-curl -H "x-username: readonly" http://localhost:8080/api/books
+curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
+  http://localhost:8080/api/books
 ```
 
 **Get Book by ID (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
-curl -H "x-username: readonly" http://localhost:8080/api/books/1
+curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
+  http://localhost:8080/api/books/1
 ```
 
 **Update Book (requires READ_WRITE role):**
 
 ```bash
-curl -X PUT -H "x-username: readwrite" -H "Content-Type: application/json" \
+curl -X PUT -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
+  -H "Content-Type: application/json" \
   -d '{"title":"Updated Title","author":"Updated Author"}' \
   http://localhost:8080/api/books/1
 ```
@@ -371,10 +403,11 @@ curl -X PUT -H "x-username: readwrite" -H "Content-Type: application/json" \
 **Delete Book (requires READ_WRITE role):**
 
 ```bash
-curl -X DELETE -H "x-username: readwrite" http://localhost:8080/api/books/1
+curl -X DELETE -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
+  http://localhost:8080/api/books/1
 ```
 
-**Note:** See `scripts/test-mvc.sh` and `scripts/test-webflux.sh` for comprehensive test scripts.
+**Note:** See `scripts/test-mvc.sh` and `scripts/test-webflux.sh` for comprehensive test scripts. Use the `X_DN` environment variable to set the DN.
 
 ## Development Workflow
 
@@ -383,6 +416,9 @@ curl -X DELETE -H "x-username: readwrite" http://localhost:8080/api/books/1
    ```bash
    make db-jpa-up      # Start JPA database
    make db-r2dbc-up    # Start R2DBC database
+   make db-auth-up     # Start Auth database
+   # Or start all:
+   make dbs-up
    ```
 
 2. **Build project:**
@@ -391,19 +427,25 @@ curl -X DELETE -H "x-username: readwrite" http://localhost:8080/api/books/1
    make build
    ```
 
-3. **Run MVC API:**
+3. **Start Auth Service (must be started first):**
+
+   ```bash
+   make run-auth
+   ```
+
+4. **Run MVC API:**
 
    ```bash
    make run-mvc
    ```
 
-4. **Run WebFlux API:**
+5. **Run WebFlux API:**
 
    ```bash
    make run-webflux
    ```
 
-5. **Run tests:**
+6. **Run tests:**
 
    ```bash
    make test
@@ -414,6 +456,7 @@ curl -X DELETE -H "x-username: readwrite" http://localhost:8080/api/books/1
 ### Build Docker Images
 
 ```bash
+make docker-build-auth
 make docker-build-mvc
 make docker-build-webflux
 ```
@@ -421,6 +464,11 @@ make docker-build-webflux
 ### Run in Docker
 
 ```bash
+# Start all services with docker-compose
+docker compose up -d
+
+# Or run individually:
+make docker-run-auth
 make docker-run-mvc
 make docker-run-webflux
 ```
@@ -429,12 +477,18 @@ make docker-run-webflux
 
 ### Database Operations
 
+- `make dbs-up` - Start all PostgreSQL databases
 - `make db-jpa-up` - Start JPA PostgreSQL database
 - `make db-r2dbc-up` - Start R2DBC PostgreSQL database
+- `make db-auth-up` - Start Auth PostgreSQL database
+- `make dbs-down` - Stop all databases
 - `make db-jpa-down` - Stop JPA database
 - `make db-r2dbc-down` - Stop R2DBC database
+- `make db-auth-down` - Stop Auth database
+- `make dbs-logs` - View all database logs
 - `make db-jpa-logs` - View JPA database logs
 - `make db-r2dbc-logs` - View R2DBC database logs
+- `make db-auth-logs` - View Auth database logs
 
 ### Build Operations
 
@@ -446,15 +500,20 @@ make docker-run-webflux
 
 ### Run Applications
 
+- `make run-auth` - Build and run Auth Service (must be started first)
 - `make run-mvc` - Build and run MVC API
 - `make run-webflux` - Build and run WebFlux API
+- `make stop-auth` - Stop Auth Service
 - `make stop-mvc` - Stop MVC API
 - `make stop-webflux` - Stop WebFlux API
+- `make stop-all` - Stop all applications
 
 ### Docker Operations
 
+- `make docker-build-auth` - Build Docker image for Auth Service
 - `make docker-build-mvc` - Build Docker image for MVC API
 - `make docker-build-webflux` - Build Docker image for WebFlux API
+- `make docker-run-auth` - Run Auth Service in Docker container
 - `make docker-run-mvc` - Run MVC API in Docker container
 - `make docker-run-webflux` - Run WebFlux API in Docker container
 
@@ -463,7 +522,8 @@ make docker-run-webflux
 ### Module Organization
 
 - **acme-pom**: Dependency management (BOM and parent POM)
-- **acme-auth**: Authentication layer with user lookup logic (JPA and R2DBC implementations)
+- **acme-auth-client**: REST client wrapper for calling acme-auth-service
+- **acme-auth-service**: Standalone authentication service with REST API and its own database
 - **acme-security**: Security layer with core logic and framework-specific configs
 - **acme-persistence**: Data access layer with JPA and R2DBC implementations
 - **acme-api**: API layer with MVC and WebFlux REST controllers
@@ -472,50 +532,61 @@ make docker-run-webflux
 
 - `acme-api-mvc` depends on `acme-security-webmvc` and `acme-persistence-jpa`
 - `acme-api-webflux` depends on `acme-security-webflux` and `acme-persistence-r2dbc`
-- `acme-security-webmvc` depends on `acme-auth-jpa` (not persistence directly)
-- `acme-security-webflux` depends on `acme-auth-r2dbc` (not persistence directly)
+- `acme-security-core` depends on `acme-auth-client` which provides `AuthServiceClient`
+- `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean
+- `acme-auth-service` is a standalone Spring Boot application (no dependencies on other modules)
 - All modules inherit from `acme-starter-parent` which inherits from `acme-dependencies`
 
 ### Architecture Flow
 
-```
-Request → Security Layer → Auth Layer → Persistence Layer → Database
+```none
+Request → Security Layer → AuthServiceClient → Auth Service (REST) → Auth Database
                 ↓
          UserInformation (principal)
 ```
 
-1. Security extracts `x-username` header
-2. Security calls auth layer's `UserLookupService`
-3. Auth layer queries persistence layer for user and roles
-4. Auth layer returns `UserPrincipal` with roles
-5. Security creates `UserInformation` (derivative) from `UserPrincipal`
-6. `UserInformation` is stored as principal in SecurityContext
+1. Security extracts `x-dn` header (Distinguished Name)
+2. Security calls `AuthServiceClient.lookupUser(dn)`
+3. `AuthServiceClient` makes REST call to auth service: `GET /api/auth/users/{dn}`
+4. Auth service queries its own database (`acme_auth`) for user by DN and roles
+5. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
+6. `AuthServiceClient` converts response to `UserInfo`
+7. Security creates `UserInformation` (derivative) from `UserInfo`
+8. `UserInformation` is stored as principal in SecurityContext
 
 ## Key Components
 
-### Authentication (`acme-auth`)
+### Authentication Service Components (`acme-auth-service`)
 
-- `UserPrincipal`: User principal with roles (from auth layer)
-- `UserPrincipalRepository`: Interface for user lookup (JPA and R2DBC implementations)
-- `UserLookupService`: Service that queries database for users and roles
+- **Standalone Service**: Runs on port 8082 in its own container
+- **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
+- **Database**: Own PostgreSQL database (`acme_auth` on port 5434)
+- **Entities**: `User` (with DN, givenName, surname), `UserRole` for RBAC
+- **Migrations**: Flyway migrations for users and roles tables with seed data (LDAP-like structure)
+- **Response**: Returns `UserInfoResponse` with DN, givenName, surname, and roles
+
+### Authentication Client (`acme-auth-client`)
+
+- `UserInfo`: User information model with DN, givenName, surname, and roles (implements `UserDetails`)
+- `AuthServiceClient`: REST client for calling acme-auth-service by DN
+- `AuthServiceClientConfig`: Spring configuration for creating AuthServiceClient bean
 
 ### Security (`acme-security`)
 
-- `UserInformation`: Principal object (derivative of `UserPrincipal`) stored in SecurityContext
-- `AuthenticationService`: Creates authenticated `Authentication` from username
-- `WebMvcSecurityConfig`: MVC security configuration
-- `WebFluxSecurityConfig`: WebFlux security configuration
+- `UserInformation`: Principal object (derivative of `UserInfo`) stored in SecurityContext with DN
+- `AuthServiceClient`: REST client for calling auth service to lookup users by DN
+- `AuthenticationService`: Creates authenticated `Authentication` from DN (uses `AuthServiceClient`)
+- `WebMvcSecurityConfig`: MVC security configuration (extracts `x-dn` header)
+- `WebFluxSecurityConfig`: WebFlux security configuration (extracts `x-dn` header)
 
-### Persistence
+### Persistence Components
 
-- `Book`: Entity class (JPA and R2DBC versions)
+- `Book`: Entity class (JPA and R2DBC versions) with `createdBy` and `updatedBy` audit fields
 - `BookRepository`: Repository interface (JpaRepository and ReactiveCrudRepository)
-- `User` and `UserRole`: Entities for RBAC
+- **Note**: `User` and `UserRole` entities are in `acme-auth-service`, not in main application databases
 - Flyway migrations:
-  - V1: Initial schema (books table)
+  - V1: Initial schema (books table with audit fields)
   - V2: Seed data (books)
-  - V3: User and role tables
-  - V4: User and role seed data (noaccess, readonly, readwrite)
 
 ### API
 

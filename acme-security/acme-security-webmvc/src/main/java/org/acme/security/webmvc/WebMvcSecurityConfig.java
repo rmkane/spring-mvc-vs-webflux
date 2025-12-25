@@ -54,7 +54,7 @@ public class WebMvcSecurityConfig {
     @Bean
     public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() {
         RequestHeaderAuthenticationFilter filter = new RequestHeaderAuthenticationFilter();
-        filter.setPrincipalRequestHeader(SecurityConstants.USERNAME_HEADER);
+        filter.setPrincipalRequestHeader(SecurityConstants.DN_HEADER);
         filter.setExceptionIfHeaderMissing(false);
         filter.setAuthenticationManager(authenticationManager());
         return filter;
@@ -65,23 +65,23 @@ public class WebMvcSecurityConfig {
         return new AuthenticationManager() {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                // Extract username from principal (should be String from header)
+                // Extract DN from principal (should be String from header)
                 Object principal = authentication.getPrincipal();
-                String username;
+                String dn;
 
                 if (principal instanceof String principalString) {
-                    username = principalString;
+                    dn = principalString;
                 } else if (principal instanceof UserInformation userInfo) {
-                    username = userInfo.getUsername();
+                    dn = userInfo.getDn();
                 } else {
                     throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
                 }
 
-                // Pass username to auth service, which will:
-                // 1. Lookup UserPrincipal from auth layer
-                // 2. Create UserInformation (derivative) from UserPrincipal
+                // Pass DN to auth service, which will:
+                // 1. Lookup UserInfo from auth service by DN
+                // 2. Create UserInformation (derivative) from UserInfo
                 // 3. Return authenticated Authentication with UserInformation as principal
-                return authenticationService.createAuthenticatedAuthentication(username);
+                return authenticationService.createAuthenticatedAuthentication(dn);
             }
         };
     }

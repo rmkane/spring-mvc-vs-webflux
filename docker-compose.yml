@@ -37,9 +37,46 @@ services:
     networks:
       - acme-network
 
+  postgres-auth:
+    image: postgres:17-alpine
+    container_name: acme-postgres-auth
+    environment:
+      POSTGRES_DB: acme_auth
+      POSTGRES_USER: acme_user
+      POSTGRES_PASSWORD: acme_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acme_user -d acme_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - acme-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: acme-auth-service/Dockerfile
+    container_name: acme-auth-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/acme_auth
+      SPRING_DATASOURCE_USERNAME: acme_user
+      SPRING_DATASOURCE_PASSWORD: acme_password
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    networks:
+      - acme-network
+
 volumes:
   postgres-jpa-data:
   postgres-r2dbc-data:
+  postgres-auth-data:
 
 networks:
   acme-network:

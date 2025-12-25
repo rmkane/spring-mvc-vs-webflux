@@ -7,5 +7,5 @@ import lombok.Getter;
 @Builder
 public class UserInformation {
 
-    private final String username;
+    private final String dn;
 }

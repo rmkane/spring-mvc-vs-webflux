@@ -28,7 +28,7 @@ public class BookController {
     @Operation(summary = "Create a new book", description = "Creates a new book in the system")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Book created successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
     public ResponseEntity<Book> create(@RequestBody Book book) {
         Book created = bookService.create(book);
@@ -39,7 +39,7 @@ public class BookController {
     @Operation(summary = "Get all books", description = "Retrieves all books from the system")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of books"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
     public ResponseEntity<List<Book>> findAll() {
         List<Book> books = bookService.findAll();
@@ -51,7 +51,7 @@ public class BookController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Book found"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
     public ResponseEntity<Book> findById(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
@@ -64,7 +64,7 @@ public class BookController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Book updated successfully"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
     public ResponseEntity<Book> update(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id,
@@ -78,7 +78,7 @@ public class BookController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Book deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-username header")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
     public ResponseEntity<Void> delete(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {

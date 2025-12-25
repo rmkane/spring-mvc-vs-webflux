@@ -22,22 +22,26 @@ public class BookService {
     @PreAuthorize("hasRole('READ_WRITE')")
     public Mono<Book> create(Book book) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing CREATE action for book: title={}, author={}",
-                        user.getUsername(), book.getTitle(), book.getAuthor()))
+                .doOnNext(user -> {
+                    log.debug("User {} performing CREATE action for book: title={}, author={}",
+                            user.getDn(), book.getTitle(), book.getAuthor());
+                    book.setCreatedBy(user.getDn());
+                    book.setUpdatedBy(user.getDn());
+                })
                 .flatMap(user -> bookRepository.save(book));
     }
 
     @PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")
     public Flux<Book> findAll() {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing READ ALL action", user.getUsername()))
+                .doOnNext(user -> log.debug("User {} performing READ ALL action", user.getDn()))
                 .flatMapMany(user -> bookRepository.findAll());
     }
 
     @PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")
     public Mono<Book> findById(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing READ action for book id={}", user.getUsername(), id))
+                .doOnNext(user -> log.debug("User {} performing READ action for book id={}", user.getDn(), id))
                 .flatMap(user -> bookRepository.findById(id)
                         .switchIfEmpty(Mono.error(new RuntimeException("Book not found with id: " + id))));
     }
@@ -46,13 +50,14 @@ public class BookService {
     public Mono<Book> update(Long id, Book book) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
                 .doOnNext(user -> log.debug("User {} performing UPDATE action for book id={}, title={}",
-                        user.getUsername(), id, book.getTitle()))
+                        user.getDn(), id, book.getTitle()))
                 .flatMap(user -> findById(id)
                         .flatMap(existingBook -> {
                             existingBook.setTitle(book.getTitle());
                             existingBook.setAuthor(book.getAuthor());
                             existingBook.setIsbn(book.getIsbn());
                             existingBook.setPublicationYear(book.getPublicationYear());
+                            existingBook.setUpdatedBy(user.getDn());
                             return bookRepository.save(existingBook);
                         }));
     }
@@ -60,7 +65,7 @@ public class BookService {
     @PreAuthorize("hasRole('READ_WRITE')")
     public Mono<Void> delete(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing DELETE action for book id={}", user.getUsername(), id))
+                .doOnNext(user -> log.debug("User {} performing DELETE action for book id={}", user.getDn(), id))
                 .flatMap(user -> bookRepository.deleteById(id));
     }
 }

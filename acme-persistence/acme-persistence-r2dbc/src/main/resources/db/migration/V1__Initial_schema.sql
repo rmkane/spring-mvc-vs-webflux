@@ -5,7 +5,9 @@ CREATE TABLE books (
     isbn VARCHAR(50) UNIQUE,
     publication_year INTEGER,
     created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP
+    created_by VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100)
 );
 
 CREATE INDEX idx_books_author ON books(author);
