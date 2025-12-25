@@ -94,12 +94,10 @@ spring-mvc-vs-webflux/
 │   ├── acme-security-core/         # Core security logic
 │   ├── acme-security-webmvc/       # MVC security configuration
 │   └── acme-security-webflux/      # WebFlux security configuration
-├── acme-persistence/               # Persistence layer
-│   ├── acme-persistence-jpa/       # JPA repositories and entities
-│   └── acme-persistence-r2dbc/     # R2DBC repositories and entities
-└── acme-api/                       # API layer
-    ├── acme-api-mvc/               # MVC REST API
-    └── acme-api-webflux/           # WebFlux REST API
+├── acme-persistence-jpa/           # JPA repositories and entities
+├── acme-persistence-r2dbc/         # R2DBC repositories and entities
+├── acme-api-mvc/                   # MVC REST API
+└── acme-api-webflux/               # WebFlux REST API
 ```
 
 ## Getting Started
@@ -542,8 +540,10 @@ make docker-run-webflux
 - **acme-auth-client**: REST client wrapper for calling acme-auth-service
 - **acme-auth-service**: Standalone authentication service with REST API and its own database
 - **acme-security**: Security layer with core logic and framework-specific configs
-- **acme-persistence**: Data access layer with JPA and R2DBC implementations
-- **acme-api**: API layer with MVC and WebFlux REST controllers
+- **acme-persistence-jpa**: JPA data access layer
+- **acme-persistence-r2dbc**: R2DBC data access layer
+- **acme-api-mvc**: MVC REST API
+- **acme-api-webflux**: WebFlux REST API
 
 ### Dependency Relationships
 

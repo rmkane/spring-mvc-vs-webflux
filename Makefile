@@ -131,15 +131,15 @@ test:
 
 # Java modules with source code (exclude POM-only modules)
 JAVA_MODULES_LIST = \
-	acme-api/acme-api-mvc \
-	acme-api/acme-api-webflux \
+	acme-api-mvc \
+	acme-api-webflux \
 	acme-auth-client \
 	acme-auth-service \
 	acme-security/acme-security-core \
 	acme-security/acme-security-webmvc \
 	acme-security/acme-security-webflux \
-	acme-persistence/acme-persistence-jpa \
-	acme-persistence/acme-persistence-r2dbc
+	acme-persistence-jpa \
+	acme-persistence-r2dbc
 
 # Convert space-separated list to comma-separated
 JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))
@@ -153,10 +153,10 @@ lint:
 	mvn spotless:check -pl $(JAVA_MODULES)
 
 run-mvc: build
-	cd acme-api/acme-api-mvc && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
+	cd acme-api-mvc && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
 
 run-webflux: build
-	cd acme-api/acme-api-webflux && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
+	cd acme-api-webflux && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
 
 run-auth: build
 	cd acme-auth-service && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
@@ -173,10 +173,10 @@ stop-auth:
 stop-all: stop-mvc stop-webflux stop-auth
 
 docker-build-mvc:
-	cd acme-api/acme-api-mvc && docker build -t acme-api-mvc:latest .
+	cd acme-api-mvc && docker build -t acme-api-mvc:latest .
 
 docker-build-webflux:
-	cd acme-api/acme-api-webflux && docker build -t acme-api-webflux:latest .
+	cd acme-api-webflux && docker build -t acme-api-webflux:latest .
 
 docker-build-auth:
 	cd acme-auth-service && docker build -t acme-auth-service:latest .

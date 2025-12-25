@@ -6,39 +6,33 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.acme.api</groupId>
-		<artifactId>acme-api</artifactId>
+		<groupId>org.acme</groupId>
+		<artifactId>acme-starter-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
+		<relativePath>../acme-pom/acme-starter-parent</relativePath>
 	</parent>
 
 	<groupId>org.acme.api</groupId>
-	<artifactId>acme-api-webflux</artifactId>
+	<artifactId>acme-api-mvc</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 
-	<name>Acme API WebFlux</name>
-	<description>WebFlux API with R2DBC persistence</description>
+	<name>Acme API MVC</name>
+	<description>MVC API with JPA persistence</description>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.acme.security</groupId>
-			<artifactId>acme-security-webflux</artifactId>
+			<artifactId>acme-security-webmvc</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.acme.persistence</groupId>
-			<artifactId>acme-persistence-r2dbc</artifactId>
+			<artifactId>acme-persistence-jpa</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-tomcat</artifactId>
-				</exclusion>
-			</exclusions>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -46,7 +40,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

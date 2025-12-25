@@ -14,20 +14,18 @@ COPY acme-security/acme-security-core/pom.xml ./acme-security/acme-security-core
 COPY acme-security/acme-security-webflux/pom.xml ./acme-security/acme-security-webflux/
 
 # Copy persistence module
-COPY acme-persistence/pom.xml ./acme-persistence/
-COPY acme-persistence/acme-persistence-r2dbc/pom.xml ./acme-persistence/acme-persistence-r2dbc/
+COPY acme-persistence-r2dbc/pom.xml ./acme-persistence-r2dbc/
 
 # Copy API module
-COPY acme-api/pom.xml ./acme-api/
-COPY acme-api/acme-api-webflux/pom.xml ./acme-api/acme-api-webflux/
+COPY acme-api-webflux/pom.xml ./acme-api-webflux/
 
 # Copy source code
 COPY acme-security ./acme-security
-COPY acme-persistence/acme-persistence-r2dbc ./acme-persistence/acme-persistence-r2dbc
-COPY acme-api/acme-api-webflux ./acme-api/acme-api-webflux
+COPY acme-persistence-r2dbc ./acme-persistence-r2dbc
+COPY acme-api-webflux ./acme-api-webflux
 
 # Build
-RUN mvn clean package -DskipTests -pl acme-api/acme-api-webflux -am
+RUN mvn clean package -DskipTests -pl acme-api-webflux -am
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine
@@ -36,7 +34,7 @@ WORKDIR /app
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
-COPY --from=build /app/acme-api/acme-api-webflux/target/*.jar app.jar
+COPY --from=build /app/acme-api-webflux/target/*.jar app.jar
 
 EXPOSE 8081
 

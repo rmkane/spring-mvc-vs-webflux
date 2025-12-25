@@ -14,20 +14,18 @@ COPY acme-security/acme-security-core/pom.xml ./acme-security/acme-security-core
 COPY acme-security/acme-security-webmvc/pom.xml ./acme-security/acme-security-webmvc/
 
 # Copy persistence module
-COPY acme-persistence/pom.xml ./acme-persistence/
-COPY acme-persistence/acme-persistence-jpa/pom.xml ./acme-persistence/acme-persistence-jpa/
+COPY acme-persistence-jpa/pom.xml ./acme-persistence-jpa/
 
 # Copy API module
-COPY acme-api/pom.xml ./acme-api/
-COPY acme-api/acme-api-mvc/pom.xml ./acme-api/acme-api-mvc/
+COPY acme-api-mvc/pom.xml ./acme-api-mvc/
 
 # Copy source code
 COPY acme-security ./acme-security
-COPY acme-persistence/acme-persistence-jpa ./acme-persistence/acme-persistence-jpa
-COPY acme-api/acme-api-mvc ./acme-api/acme-api-mvc
+COPY acme-persistence-jpa ./acme-persistence-jpa
+COPY acme-api-mvc ./acme-api-mvc
 
 # Build
-RUN mvn clean package -DskipTests -pl acme-api/acme-api-mvc -am
+RUN mvn clean package -DskipTests -pl acme-api-mvc -am
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine
@@ -36,7 +34,7 @@ WORKDIR /app
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
-COPY --from=build /app/acme-api/acme-api-mvc/target/*.jar app.jar
+COPY --from=build /app/acme-api-mvc/target/*.jar app.jar
 
 EXPOSE 8080
 
