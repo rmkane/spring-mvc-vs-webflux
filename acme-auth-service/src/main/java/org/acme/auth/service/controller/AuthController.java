@@ -1,7 +1,6 @@
 package org.acme.auth.service.controller;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.acme.auth.service.dto.UserInfoResponse;
 import org.acme.auth.service.repository.UserRepository;
@@ -31,7 +30,7 @@ public class AuthController {
                 .map(user -> {
                     List<String> roles = user.getRoles().stream()
                             .map(role -> role.getRoleName())
-                            .collect(Collectors.toList());
+                            .toList();
 
                     log.debug("Found user: dn={}, givenName={}, surname={}, roles={}",
                             user.getDn(), user.getGivenName(), user.getSurname(), roles);
