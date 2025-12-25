@@ -3,6 +3,7 @@ package org.acme.auth.service.controller;
 import java.util.List;
 
 import org.acme.auth.service.dto.UserInfoResponse;
+import org.acme.auth.service.entity.UserRole;
 import org.acme.auth.service.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,7 @@ public class AuthController {
         return userRepository.findByDn(dn)
                 .map(user -> {
                     List<String> roles = user.getRoles().stream()
-                            .map(role -> role.getRoleName())
+                            .map(UserRole::getRoleName)
                             .toList();
 
                     log.debug("Found user: dn={}, givenName={}, surname={}, roles={}",
