@@ -17,6 +17,10 @@ import lombok.extern.slf4j.Slf4j;
  * Wraps the AuthServiceClient and provides caching to reduce calls to the auth
  * service. Cache TTL is configurable via {@code cache.users.ttl} in
  * application.yml.
+ * <p>
+ * Cache hits and misses are logged by the LoggingCache wrapper configured in
+ * CacheConfig. This allows using {@code @Cacheable} while still having
+ * visibility into cache performance.
  */
 @Slf4j
 @Service
@@ -31,6 +35,8 @@ public class CachedUserLookupService {
      * <p>
      * User lookups are cached using the "users" cache keyed by DN. Cache TTL is
      * configurable via {@code cache.users.ttl} in application.yml.
+     * <p>
+     * Cache hits and misses are logged at DEBUG level by the LoggingCache wrapper.
      *
      * @param dn the Distinguished Name to lookup
      * @return UserInfo with DN, name, and roles

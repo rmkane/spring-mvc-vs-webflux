@@ -1,9 +1,12 @@
 package org.acme.security.core.config;
 
 import java.time.Duration;
+import java.util.Collection;
 
+import org.acme.security.core.cache.LoggingCache;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -35,24 +38,39 @@ public class CacheConfig {
     private Duration usersCacheTtl;
 
     /**
-     * Default Caffeine cache manager. Only created if no other CacheManager bean is
-     * provided by the application. This allows APIs to provide their own cache
-     * implementation (e.g., Hazelcast, Redis) by defining their own CacheManager
-     * bean.
+     * Default Caffeine cache manager with logging support. Only created if no other
+     * CacheManager bean is provided by the application. This allows APIs to provide
+     * their own cache implementation (e.g., Hazelcast, Redis) by defining their own
+     * CacheManager bean.
      * <p>
      * Cache TTL is configurable via {@code cache.users.ttl} in application.yml.
+     * <p>
+     * Wraps caches with LoggingCache to log cache hits and misses.
      *
-     * @return CaffeineCacheManager with "users" cache
+     * @return CacheManager with "users" cache wrapped in LoggingCache
      */
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("users");
-        cacheManager.setCaffeine(
+        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("users");
+        caffeineCacheManager.setCaffeine(
                 Caffeine.newBuilder()
                         .expireAfterWrite(usersCacheTtl)
                         .maximumSize(1000)
                         .recordStats());
-        return cacheManager;
+
+        // Wrap with logging cache manager
+        return new CacheManager() {
+            @Override
+            public Cache getCache(String name) {
+                Cache cache = caffeineCacheManager.getCache(name);
+                return cache != null ? new LoggingCache(cache) : null;
+            }
+
+            @Override
+            public Collection<String> getCacheNames() {
+                return caffeineCacheManager.getCacheNames();
+            }
+        };
     }
 }
