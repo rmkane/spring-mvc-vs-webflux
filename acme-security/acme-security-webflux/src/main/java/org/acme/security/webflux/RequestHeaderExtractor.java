@@ -1,6 +1,6 @@
 package org.acme.security.webflux;
 
-import org.acme.security.core.SecurityConstants;
+import org.acme.security.core.model.SecurityConstants;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import lombok.AccessLevel;

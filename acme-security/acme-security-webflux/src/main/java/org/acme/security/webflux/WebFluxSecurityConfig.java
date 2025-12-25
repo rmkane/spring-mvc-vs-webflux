@@ -1,6 +1,7 @@
 package org.acme.security.webflux;
 
-import org.acme.security.core.AuthenticationService;
+import org.acme.security.core.model.UserInformation;
+import org.acme.security.core.service.AuthenticationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -56,7 +57,7 @@ public class WebFluxSecurityConfig {
 
             if (principal instanceof String principalString) {
                 dn = principalString;
-            } else if (principal instanceof org.acme.security.core.UserInformation userInfo) {
+            } else if (principal instanceof UserInformation userInfo) {
                 dn = userInfo.getDn();
             } else {
                 return Mono.error(new BadCredentialsException(

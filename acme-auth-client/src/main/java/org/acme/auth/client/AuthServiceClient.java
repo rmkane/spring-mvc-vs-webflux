@@ -1,5 +1,7 @@
 package org.acme.auth.client;
 
+import java.util.List;
+
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.client.RestClient;
 
@@ -63,6 +65,6 @@ public class AuthServiceClient {
      * org.acme.auth.service.dto.UserInfoResponse but is defined here to avoid
      * creating a dependency from the client to the service module.
      */
-    public record UserInfoResponse(String dn, String givenName, String surname, java.util.List<String> roles) {
+    public record UserInfoResponse(String dn, String givenName, String surname, List<String> roles) {
     }
 }

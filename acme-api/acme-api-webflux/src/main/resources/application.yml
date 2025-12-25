@@ -22,6 +22,12 @@ auth:
   service:
     base-url: http://localhost:8082
 
+cache:
+  users:
+    # Cache TTL for user lookups (ISO-8601 duration format)
+    # Examples: PT5M (5 minutes), PT30M (30 minutes), PT1H (1 hour)
+    ttl: PT5M
+
 logging:
   level:
     org.acme: DEBUG

@@ -5,7 +5,7 @@ import java.util.List;
 import org.acme.api.util.SecurityContextUtil;
 import org.acme.persistence.jpa.Book;
 import org.acme.persistence.jpa.BookRepository;
-import org.acme.security.core.UserInformation;
+import org.acme.security.core.model.UserInformation;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

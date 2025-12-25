@@ -2,7 +2,7 @@ package org.acme.security.webmvc;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.acme.security.core.SecurityConstants;
+import org.acme.security.core.model.SecurityConstants;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

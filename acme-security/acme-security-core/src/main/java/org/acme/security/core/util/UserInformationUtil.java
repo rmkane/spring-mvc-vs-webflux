@@ -1,6 +1,8 @@
-package org.acme.security.core;
+package org.acme.security.core.util;
 
 import org.acme.auth.client.UserInfo;
+import org.acme.security.core.model.SecurityConstants;
+import org.acme.security.core.model.UserInformation;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import lombok.AccessLevel;

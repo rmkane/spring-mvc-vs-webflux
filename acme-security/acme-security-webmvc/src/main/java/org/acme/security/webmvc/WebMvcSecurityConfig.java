@@ -5,9 +5,9 @@ import java.nio.charset.StandardCharsets;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.acme.security.core.AuthenticationService;
-import org.acme.security.core.SecurityConstants;
-import org.acme.security.core.UserInformation;
+import org.acme.security.core.model.SecurityConstants;
+import org.acme.security.core.model.UserInformation;
+import org.acme.security.core.service.AuthenticationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;

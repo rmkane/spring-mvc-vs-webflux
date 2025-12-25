@@ -1,4 +1,4 @@
-package org.acme.security.core;
+package org.acme.security.core.model;
 
 public interface SecurityConstants {
 
