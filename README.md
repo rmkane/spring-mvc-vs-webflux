@@ -41,6 +41,7 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Header-Based Authentication](#header-based-authentication)
   - [Missing Header](#missing-header)
   - [User Lookup](#user-lookup)
+  - [User Lookup Caching](#user-lookup-caching)
   - [Role-Based Access Control](#role-based-access-control)
   - [Deployment Context](#deployment-context)
 - [Testing the APIs](#testing-the-apis)
@@ -295,12 +296,14 @@ The security layer handles authentication mechanics:
 Both implementations extract the `x-dn` header (Distinguished Name) from HTTP requests. The flow is:
 
 1. Security layer extracts DN from header
-2. Security layer calls `AuthServiceClient` which makes REST call to auth service (`http://localhost:8082/api/auth/users/{dn}`)
-3. Auth service queries its own database (`acme_auth`) for user by DN and roles
-4. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
-5. `AuthServiceClient` converts response to `UserInfo`
-6. Security layer creates `UserInformation` (derivative) from `UserInfo`
-7. `UserInformation` is stored as the principal in SecurityContext
+2. Security layer calls `CachedUserLookupService` which checks cache first
+3. On cache miss, `CachedUserLookupService` calls `AuthServiceClient` which makes REST call to auth service (`http://localhost:8082/api/auth/users/{dn}`)
+4. Auth service queries its own database (`acme_auth`) for user by DN and roles
+5. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
+6. `AuthServiceClient` converts response to `UserInfo`
+7. Result is cached and returned to security layer
+8. Security layer creates `UserInformation` (derivative) from `UserInfo`
+9. `UserInformation` is stored as the principal in SecurityContext
 
 ### Missing Header
 
@@ -322,6 +325,20 @@ The auth service queries its own database (`acme_auth`) for users by DN and thei
   - Users have DN (Distinguished Name), givenName, and surname fields
 - **Roles**: `ROLE_READ_ONLY`, `ROLE_READ_WRITE` (from auth service database, not hardcoded)
 - **Isolation**: User data is completely isolated from main application databases
+
+### User Lookup Caching
+
+User lookups are cached in the security layer to reduce calls to the auth service:
+
+- **Default Cache**: Caffeine (in-memory) with configurable TTL via `cache.users.ttl` in `application.yml`
+- **Cache Key**: DN (Distinguished Name)
+- **Cache Name**: `users`
+- **Flexible**: Each API can override the default cache provider by providing its own `CacheManager` bean
+  - Default: Caffeine (in-memory, works out of the box)
+  - Can use: Hazelcast, Redis, or any Spring Cache-compatible provider
+  - Security layer is cache-provider agnostic - just needs a `CacheManager` bean
+- **Configuration**: Cache TTL configurable per API via `cache.users.ttl` property (default: 5 minutes)
+- **Transparent**: Caching is handled by the security layer - APIs don't need to know about it
 
 ### Role-Based Access Control
 
@@ -540,19 +557,22 @@ make docker-run-webflux
 ### Architecture Flow
 
 ```none
-Request → Security Layer → AuthServiceClient → Auth Service (REST) → Auth Database
-                ↓
-         UserInformation (principal)
+Request → Security Layer → CachedUserLookupService → [Cache Check] → AuthServiceClient → Auth Service (REST) → Auth Database
+                ↓                                                              ↓
+         UserInformation (principal)                                    Cache (on miss)
 ```
 
 1. Security extracts `x-dn` header (Distinguished Name)
-2. Security calls `AuthServiceClient.lookupUser(dn)`
-3. `AuthServiceClient` makes REST call to auth service: `GET /api/auth/users/{dn}`
-4. Auth service queries its own database (`acme_auth`) for user by DN and roles
-5. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
-6. `AuthServiceClient` converts response to `UserInfo`
-7. Security creates `UserInformation` (derivative) from `UserInfo`
-8. `UserInformation` is stored as principal in SecurityContext
+2. Security calls `CachedUserLookupService.lookupUser(dn)` (cached)
+3. Cache is checked first - if hit, returns cached `UserInfo`
+4. On cache miss, `CachedUserLookupService` calls `AuthServiceClient.lookupUser(dn)`
+5. `AuthServiceClient` makes REST call to auth service: `GET /api/auth/users/{dn}`
+6. Auth service queries its own database (`acme_auth`) for user by DN and roles
+7. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
+8. `AuthServiceClient` converts response to `UserInfo`
+9. Result is cached and returned to security layer
+10. Security creates `UserInformation` (derivative) from `UserInfo`
+11. `UserInformation` is stored as principal in SecurityContext
 
 ## Key Components
 
@@ -574,8 +594,10 @@ Request → Security Layer → AuthServiceClient → Auth Service (REST) → Aut
 ### Security (`acme-security`)
 
 - `UserInformation`: Principal object (derivative of `UserInfo`) stored in SecurityContext with DN
+- `CachedUserLookupService`: Caches user lookups to reduce calls to auth service (uses `@Cacheable`)
 - `AuthServiceClient`: REST client for calling auth service to lookup users by DN
-- `AuthenticationService`: Creates authenticated `Authentication` from DN (uses `AuthServiceClient`)
+- `AuthenticationService`: Creates authenticated `Authentication` from DN (uses `CachedUserLookupService`)
+- `CacheConfig`: Default Caffeine cache configuration (can be overridden by APIs with their own `CacheManager`)
 - `WebMvcSecurityConfig`: MVC security configuration (extracts `x-dn` header)
 - `WebFluxSecurityConfig`: WebFlux security configuration (extracts `x-dn` header)
 
