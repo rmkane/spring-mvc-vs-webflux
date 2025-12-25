@@ -32,4 +32,6 @@ logging:
   level:
     org.acme: DEBUG
     org.springframework.security: DEBUG
+    io.netty.resolver.dns.DnsServerAddressStreamProviders: OFF
+    org.springdoc.core.events.SpringDocAppInitializer: ERROR
 

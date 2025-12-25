@@ -31,6 +31,13 @@
 	<logger name="org.springframework.web" level="INFO"/>
 	<logger name="org.springframework.security" level="INFO"/>
 
+	<!-- Reduce noise from other loggers -->
+	<logger name="org.springframework.boot" level="INFO"/>
+	<!-- Suppress SpringDoc startup warnings about enabled endpoints -->
+	<logger name="org.springdoc.core.events.SpringDocAppInitializer" level="ERROR"/>
+	<!-- Suppress Hibernate deprecation warning for explicit dialect (we prefer explicit configuration) -->
+	<logger name="org.hibernate.orm.deprecation" level="ERROR"/>
+
 	<!-- Root Logger -->
 	<root level="INFO">
 		<appender-ref ref="CONSOLE"/>

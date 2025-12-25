@@ -2,6 +2,7 @@ package org.acme.security.core.config;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Objects;
 
 import org.acme.security.core.cache.LoggingCache;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,8 @@ public class CacheConfig {
     @Value("${cache.users.ttl:PT5M}")
     private Duration usersCacheTtl;
 
+    private static final String USERS_CACHE_NAME = "users";
+
     /**
      * Default Caffeine cache manager with logging support. Only created if no other
      * CacheManager bean is provided by the application. This allows APIs to provide
@@ -52,17 +55,22 @@ public class CacheConfig {
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager() {
-        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager("users");
-        caffeineCacheManager.setCaffeine(
-                Caffeine.newBuilder()
-                        .expireAfterWrite(usersCacheTtl)
-                        .maximumSize(1000)
-                        .recordStats());
+        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager(USERS_CACHE_NAME);
+        Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
+                .expireAfterWrite(usersCacheTtl)
+                .maximumSize(1000)
+                .recordStats();
+        caffeineCacheManager.setCaffeine(caffeineBuilder);
 
-        // Wrap with logging cache manager
+        // Wrap with logging cache manager - reuse LoggingCache instances
+        Cache usersCache = new LoggingCache(caffeineCacheManager.getCache(USERS_CACHE_NAME));
+
         return new CacheManager() {
             @Override
             public Cache getCache(String name) {
+                if (Objects.equals(name, USERS_CACHE_NAME)) {
+                    return usersCache;
+                }
                 Cache cache = caffeineCacheManager.getCache(name);
                 return cache != null ? new LoggingCache(cache) : null;
             }

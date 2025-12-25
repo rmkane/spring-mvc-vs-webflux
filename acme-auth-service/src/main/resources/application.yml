@@ -12,11 +12,13 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
+        # Explicitly set dialect for clarity (Hibernate can auto-detect, but explicit is preferred)
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
@@ -29,4 +31,6 @@ logging:
   level:
     org.acme: DEBUG
     org.springframework.web: INFO
+    org.springdoc.core.events.SpringDocAppInitializer: ERROR
+    org.hibernate.orm.deprecation: ERROR
 
