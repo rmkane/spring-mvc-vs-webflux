@@ -1,5 +1,11 @@
 server:
   port: 8082
+  ssl:
+    enabled: true
+    key-store: classpath:ssl/auth-service-keystore.jks
+    key-store-password: changeit
+    key-store-type: JKS
+    key-alias: auth-service
 
 spring:
   application:

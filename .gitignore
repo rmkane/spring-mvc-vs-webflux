@@ -66,3 +66,8 @@ application-local.properties
 *.bak
 *.cache
 
+# SSL Certificates (generated in root certs/ directory, not committed)
+# Note: Certificates in src/main/resources/ssl/ are committed for development
+/certs/
+*.cer
+

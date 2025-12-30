@@ -29,7 +29,13 @@ spring:
 
 auth:
   service:
-    base-url: http://localhost:8082
+    base-url: https://localhost:8082
+    ssl:
+      enabled: true
+      truststore:
+        path: classpath:ssl/auth-service-truststore.jks
+        password: changeit
+        type: JKS
 
 cache:
   users:
