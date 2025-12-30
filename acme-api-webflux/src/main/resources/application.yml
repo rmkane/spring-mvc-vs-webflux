@@ -27,6 +27,10 @@ auth:
         path: classpath:ssl/auth-service-truststore.jks
         password: changeit
         type: JKS
+      keystore:
+        path: classpath:ssl/api-webflux-keystore.jks
+        password: changeit
+        type: JKS
 
 cache:
   users:

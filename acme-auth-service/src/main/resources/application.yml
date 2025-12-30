@@ -6,6 +6,10 @@ server:
     key-store-password: changeit
     key-store-type: JKS
     key-alias: auth-service
+    trust-store: classpath:ssl/auth-service-truststore.jks
+    trust-store-password: changeit
+    trust-store-type: JKS
+    client-auth: need
 
 spring:
   application:
