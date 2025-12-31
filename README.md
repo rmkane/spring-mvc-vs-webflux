@@ -49,6 +49,7 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Example Request (WebFlux)](#example-request-webflux)
   - [Missing Header (Returns 401)](#missing-header-returns-401)
   - [CRUD Operations](#crud-operations)
+  - [Integration Testing](#integration-testing)
 - [Development Workflow](#development-workflow)
 - [Docker](#docker)
   - [Build Docker Images](#build-docker-images)
@@ -83,21 +84,23 @@ Both implementations provide the same functionality but use different execution 
 
 ```none
 spring-mvc-vs-webflux/
-├── pom.xml                         # Root aggregator
-├── acme-pom/                       # Dependency management
-│   ├── acme-dependencies/          # BOM for dependency versions
-│   └── acme-starter-parent/        # Parent POM with plugin management
-├── acme-auth-client/               # REST client wrapper for auth service
-├── acme-auth-service/              # Standalone authentication service
-│   └── src/main/java/              # Spring Boot application with REST API
-├── acme-security/                  # Security layer
-│   ├── acme-security-core/         # Core security logic
-│   ├── acme-security-webmvc/       # MVC security configuration
-│   └── acme-security-webflux/      # WebFlux security configuration
-├── acme-persistence-jpa/           # JPA repositories and entities
-├── acme-persistence-r2dbc/         # R2DBC repositories and entities
-├── acme-api-mvc/                   # MVC REST API
-└── acme-api-webflux/               # WebFlux REST API
+├── pom.xml                          # Root aggregator
+├── acme-pom/                        # Dependency management
+│   ├── acme-dependencies/           # BOM for dependency versions
+│   └── acme-starter-parent/         # Parent POM with plugin management
+├── acme-auth-client/                # REST client wrapper for auth service
+├── acme-auth-service/               # Standalone authentication service
+│   └── src/main/java/               # Spring Boot application with REST API
+├── acme-security/                   # Security layer
+│   ├── acme-security-core/          # Core security logic
+│   ├── acme-security-webmvc/        # MVC security configuration
+│   └── acme-security-webflux/       # WebFlux security configuration
+├── acme-persistence-jpa/            # JPA repositories and entities
+├── acme-persistence-r2dbc/          # R2DBC repositories and entities
+├── acme-api-mvc/                    # MVC REST API
+├── acme-api-webflux/                # WebFlux REST API
+├── acme-integration-test/           # Integration test framework (RestTemplate-based)
+└── acme-reactive-integration-test/  # Reactive integration test framework (WebClient-based)
 ```
 
 ## Getting Started
@@ -401,9 +404,11 @@ curl http://localhost:8080/api/books  # Returns 401 Unauthorized
 ```bash
 curl -X POST -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789"}' \
+  -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789","publicationYear":2024}' \
   http://localhost:8080/api/books
 ```
+
+**Note:** The API uses request/response DTOs (`CreateBookRequest`, `UpdateBookRequest`, `BookResponse`) and MapStruct for mapping between DTOs and entities. Duplicate ISBNs return a 400 Bad Request with RFC 9457 ProblemDetail response.
 
 **Get All Books (requires READ_ONLY or READ_WRITE role):**
 
@@ -436,6 +441,25 @@ curl -X DELETE -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=
 ```
 
 **Note:** See `scripts/test-mvc.sh` and `scripts/test-webflux.sh` for comprehensive test scripts. Use the `X_DN` environment variable to set the DN.
+
+### Integration Testing
+
+Both APIs include integration tests using their respective test frameworks:
+
+- **MVC API**: Uses `acme-integration-test` framework with `RestTemplate` and `IntegrationTestSuite` base class
+- **WebFlux API**: Uses `acme-reactive-integration-test` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
+
+Integration tests are tagged with `@Tag("integration")` and are excluded from regular test runs via Maven Surefire plugin configuration. To run integration tests explicitly:
+
+```bash
+# Run integration tests for MVC API
+cd acme-api-mvc && mvn test -Dgroups=integration
+
+# Run integration tests for WebFlux API
+cd acme-api-webflux && mvn test -Dgroups=integration
+```
+
+See `acme-integration-test/README.md` and `acme-reactive-integration-test/README.md` for detailed usage instructions.
 
 ## Development Workflow
 
@@ -557,6 +581,8 @@ make docker-run-webflux
 - **acme-persistence-r2dbc**: R2DBC data access layer
 - **acme-api-mvc**: MVC REST API
 - **acme-api-webflux**: WebFlux REST API
+- **acme-integration-test**: Integration test framework using RestTemplate (for MVC APIs)
+- **acme-reactive-integration-test**: Reactive integration test framework using WebClient (for WebFlux APIs)
 
 ### Dependency Relationships
 
@@ -626,8 +652,17 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 ### API
 
 - `BookController`: REST controller with CRUD endpoints
-- `BookService`: Business logic layer with `@PreAuthorize` role checks
+- `BookService`: Service interface with `@PreAuthorize` role checks
+- `BookServiceImpl`: Service implementation with business logic
+- `BookMapper`: MapStruct mapper for DTO-to-entity conversion
+- **Model Layer (DTOs)**:
+  - `CreateBookRequest`: Request DTO for creating books
+  - `UpdateBookRequest`: Request DTO for updating books
+  - `BookResponse`: Response DTO for book data
+- `GlobalExceptionHandler`: Centralized exception handling with RFC 9457 ProblemDetail responses
+- `BookAlreadyExistsException`: Custom exception for duplicate ISBN validation
 - `SecurityContextUtil` / `ReactiveSecurityContextUtil`: Utility classes for accessing `UserInformation` principal
+- **Integration Tests**: Both APIs include integration tests using their respective test frameworks
 
 ## License
 
