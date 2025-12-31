@@ -45,7 +45,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
     }
 
     @Test
-    void testCreateBook() throws JsonProcessingException, IOException {
+    void testCreateBook() throws IOException {
         CreateBookRequest request = CreateBookRequest.builder()
                 .title("Test Book")
                 .author("Test Author")

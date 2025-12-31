@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * REST client for calling the standalone auth service to lookup users.
+ * REST client for calling the standalone auth service to look up users.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -20,7 +20,7 @@ public class AuthServiceClient {
     /**
      * Looks up a user by DN from the auth service.
      *
-     * @param dn the Distinguished Name to lookup
+     * @param dn the Distinguished Name to look up
      * @return UserInfo with DN, name, and roles
      * @throws BadCredentialsException if user not found or service unavailable
      */

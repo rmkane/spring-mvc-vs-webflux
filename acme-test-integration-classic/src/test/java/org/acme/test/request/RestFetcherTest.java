@@ -8,8 +8,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -59,20 +62,18 @@ class RestFetcherTest {
                 .method(HttpMethod.GET)
                 .build();
 
-        ResponseEntity<java.util.List<String>> expectedResponse = new ResponseEntity<>(
-                java.util.List.of("user1", "user2"), HttpStatus.OK);
+        ResponseEntity<List<String>> expectedResponse = new ResponseEntity<>(
+                List.of("user1", "user2"), HttpStatus.OK);
 
         when(restTemplate.exchange(
                 eq(request.getURI()),
                 eq(HttpMethod.GET),
                 any(HttpEntity.class),
-                any(org.springframework.core.ParameterizedTypeReference.class)))
+                any(ParameterizedTypeReference.class)))
                 .thenReturn(expectedResponse);
 
-        org.springframework.core.ParameterizedTypeReference<java.util.List<String>> typeRef = new org.springframework.core.ParameterizedTypeReference<java.util.List<String>>() {
-        };
-
-        ResponseEntity<java.util.List<String>> response = restFetcher.fetch(request, typeRef);
+        ResponseEntity<List<String>> response = restFetcher.fetch(request, new ParameterizedTypeReference<>() {
+        });
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());

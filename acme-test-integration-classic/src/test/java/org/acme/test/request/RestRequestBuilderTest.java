@@ -189,7 +189,7 @@ class RestRequestBuilderTest {
     }
 
     @Test
-    void testFileWithBytes(@TempDir File tempDir) throws IOException {
+    void testFileWithBytes(@TempDir File tempDir) {
         byte[] content = "file content".getBytes(StandardCharsets.UTF_8);
 
         RestRequest request = RestRequestBuilder.create("http://localhost:8080")
@@ -201,7 +201,7 @@ class RestRequestBuilderTest {
     }
 
     @Test
-    void testFileWithBytesAndContentType(@TempDir File tempDir) throws IOException {
+    void testFileWithBytesAndContentType(@TempDir File tempDir) {
         byte[] content = "file content".getBytes(StandardCharsets.UTF_8);
 
         RestRequest request = RestRequestBuilder.create("http://localhost:8080")
@@ -215,7 +215,7 @@ class RestRequestBuilderTest {
     @Test
     void testFileWithFileObject(@TempDir File tempDir) throws IOException {
         File testFile = new File(tempDir, "test.txt");
-        Files.write(testFile.toPath(), "file content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(testFile.toPath(), "file content");
 
         RestRequest request = RestRequestBuilder.create("http://localhost:8080").file("file", testFile).build();
 
@@ -226,7 +226,7 @@ class RestRequestBuilderTest {
     @Test
     void testFileWithFileObjectAndContentType(@TempDir File tempDir) throws IOException {
         File testFile = new File(tempDir, "test.pdf");
-        Files.write(testFile.toPath(), "file content".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(testFile.toPath(), "file content");
 
         RestRequest request = RestRequestBuilder.create("http://localhost:8080")
                 .file("file", testFile, MediaType.APPLICATION_PDF)

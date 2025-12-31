@@ -178,7 +178,7 @@ The authentication service is a **standalone Spring Boot application** that runs
 The security layer handles authentication mechanics:
 
 - Extracts `x-dn` header from HTTP requests (DN = Distinguished Name)
-- **Calls auth service via REST** using `AuthServiceClient` to lookup user by DN
+- **Calls auth service via REST** using `AuthServiceClient` to look up user by DN
 - Creates `UserInformation` (derivative) from `UserInfo` returned by auth service
 - Missing header returns `401 Unauthorized`
 - Headers are supplied through ingress layer (SSL/TLS termination handled upstream)

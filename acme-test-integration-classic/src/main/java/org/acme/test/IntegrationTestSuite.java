@@ -171,9 +171,8 @@ public abstract class IntegrationTestSuite {
      * @return A Map representation of the JSON body
      * @throws IOException if the JSON cannot be parsed
      */
-    protected Map<String, Object> parseJsonResponse(ResponseEntity<String> response)
-            throws IOException {
-        return objectMapper.readValue(response.getBody(), new TypeReference<Map<String, Object>>() {
+    protected Map<String, Object> parseJsonResponse(ResponseEntity<String> response) throws IOException {
+        return objectMapper.readValue(response.getBody(), new TypeReference<>() {
         });
     }
 

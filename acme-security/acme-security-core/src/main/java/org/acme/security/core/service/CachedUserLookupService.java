@@ -40,7 +40,7 @@ public class CachedUserLookupService {
      * This method only executes on cache misses, so logging here indicates a cache
      * miss.
      *
-     * @param dn the Distinguished Name to lookup
+     * @param dn the Distinguished Name to look up
      * @return UserInfo with DN, name, and roles
      * @throws BadCredentialsException if user not found or service unavailable
      */

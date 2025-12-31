@@ -57,7 +57,7 @@ public class AuthenticationService {
      * Creates an authenticated Authentication object from a DN string. This is the
      * core authentication logic shared between MVC and WebFlux.
      * <p>
-     * The flow is: 1. Lookup the user in the auth service by DN to get UserInfo
+     * The flow is: 1. Look up the user in the auth service by DN to get UserInfo
      * (with roles) - cached to reduce calls to auth service 2. Create
      * UserInformation (derivative) from UserInfo 3. Use UserInformation as the
      * principal with roles from UserInfo
@@ -70,7 +70,7 @@ public class AuthenticationService {
             throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
 
-        // Lookup user from auth service by DN to get UserInfo with roles (cached)
+        // Look up user from auth service by DN to get UserInfo with roles (cached)
         UserInfo userInfo = cachedUserLookupService.lookupUser(dn.trim());
 
         // Create UserInformation (derivative) from UserInfo

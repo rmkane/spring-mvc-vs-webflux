@@ -1,7 +1,6 @@
 package org.acme.test.request;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -205,13 +204,12 @@ public final class RestRequestBuilder {
     /**
      * File from java.io.File with explicit field name; infers filename from File.
      */
-    public RestRequestBuilder file(String field, File file) throws IOException {
+    public RestRequestBuilder file(String field, File file) {
         return file(field, file, null);
     }
 
     /** File from java.io.File with optional per-part content type. */
-    public RestRequestBuilder file(String field, File file, @Nullable MediaType contentType)
-            throws IOException {
+    public RestRequestBuilder file(String field, File file, @Nullable MediaType contentType) {
         if (field == null || file == null)
             return this;
 

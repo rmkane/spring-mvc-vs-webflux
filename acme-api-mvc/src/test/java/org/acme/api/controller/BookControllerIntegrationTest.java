@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ProblemDetail;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
 import org.acme.test.IntegrationTestSuite;
@@ -33,7 +31,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
     }
 
     @Test
-    void testGetBook() throws JsonProcessingException, IOException {
+    void testGetBook() {
         var request = get("/api/books/1")
                 .headers(headers)
                 .build();
@@ -48,7 +46,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
     }
 
     @Test
-    void testCreateBook() throws JsonProcessingException, IOException {
+    void testCreateBook() throws IOException {
         var book = CreateBookRequest.builder()
                 .title("Test Book")
                 .author("Test Author")

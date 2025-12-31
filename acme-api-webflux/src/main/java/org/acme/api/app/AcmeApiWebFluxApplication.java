@@ -15,9 +15,9 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 }, exclude = { SecurityAutoConfiguration.class })
 @EnableR2dbcRepositories(basePackages = "org.acme.persistence.r2dbc")
 @EnableCaching
-public class AcmeApiWebfluxApplication {
+public class AcmeApiWebFluxApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(AcmeApiWebfluxApplication.class, args);
+        SpringApplication.run(AcmeApiWebFluxApplication.class, args);
     }
 }

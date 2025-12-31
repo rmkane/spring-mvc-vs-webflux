@@ -61,9 +61,9 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 
 ## Comparison with `acme-test-integration-classic`
 
-| Feature | `acme-test-integration-classic` | `acme-test-integration-reactive` |
-| - | - | - |
-| HTTP Client | `RestTemplate` (blocking) | `WebClient` (reactive) |
-| Return Types | `ResponseEntity<T>` | `Mono<T>`, `Flux<T>` |
-| Testing | JUnit assertions | `StepVerifier` |
-| Use Case | MVC API tests | WebFlux API tests |
+| Feature      | `acme-test-integration-classic` | `acme-test-integration-reactive` |
+|--------------|---------------------------------|----------------------------------|
+| HTTP Client  | `RestTemplate` (blocking)       | `WebClient` (reactive)           |
+| Return Types | `ResponseEntity<T>`             | `Mono<T>`, `Flux<T>`             |
+| Testing      | JUnit assertions                | `StepVerifier`                   |
+| Use Case     | MVC API tests                   | WebFlux API tests                |
