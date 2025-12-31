@@ -1,8 +1,10 @@
-package org.acme.security.webflux.config;
+package org.acme.security.core.config;
 
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -12,7 +14,6 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuil
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +25,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * SSL configuration for WebFlux security module.
+ * SSL configuration for auth service client communication.
  * <p>
  * Configures SSL/TLS for RestClient to communicate with the auth service over
  * HTTPS. Loads keystore and truststore from configuration properties.
@@ -46,11 +47,16 @@ public class SslConfig {
             @Value("${auth.service.ssl.keystore.password:#{null}}") String keystorePassword,
             @Value("${auth.service.ssl.keystore.type:JKS}") String keystoreType) throws Exception {
 
-        log.info("Configuring SSL for auth service client (WebFlux)");
+        log.info("Configuring SSL for auth service client");
 
         SSLContext sslContext = createSslContext(truststoreResource, truststorePassword, truststoreType,
                 keystoreResource, keystorePassword, keystoreType);
 
+        // Note: SSLConnectionSocketFactory and setSSLSocketFactory are deprecated in
+        // HttpClient 5, but they are the only available APIs for configuring SSL. The
+        // SSLContext creation uses standard Java APIs (non-deprecated), but the
+        // HttpClient integration requires these deprecated methods until HttpClient 5
+        // provides a replacement API.
         @SuppressWarnings("deprecation")
         SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext,
                 new DefaultHostnameVerifier());
@@ -70,37 +76,45 @@ public class SslConfig {
     private SSLContext createSslContext(Resource truststoreResource, String truststorePassword, String truststoreType,
             Resource keystoreResource, String keystorePassword, String keystoreType) throws Exception {
 
-        SSLContextBuilder sslContextBuilder = SSLContextBuilder.create();
+        // Use standard Java SSLContext initialization (non-deprecated)
+        SSLContext sslContext = SSLContext.getInstance("TLS");
 
-        // Load truststore (required for verifying server certificates)
-        if (truststoreResource != null && truststoreResource.exists()) {
-            log.debug("Loading truststore from: {}", truststoreResource);
-            KeyStore truststore = KeyStore.getInstance(truststoreType);
-            try (InputStream is = truststoreResource.getInputStream()) {
-                truststore.load(is, truststorePassword.toCharArray());
-            }
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory
-                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(truststore);
-            sslContextBuilder.loadTrustMaterial(truststore, null);
-            log.debug("Truststore loaded successfully");
-        } else {
-            log.warn("Truststore resource not found or not specified, using default truststore");
-        }
-
-        // Load keystore (optional, for client certificate authentication)
+        // Initialize KeyManagerFactory (for client certificates)
+        KeyManagerFactory keyManagerFactory = null;
         if (keystoreResource != null && keystoreResource.exists() && keystorePassword != null) {
             log.debug("Loading keystore from: {}", keystoreResource);
             KeyStore keystore = KeyStore.getInstance(keystoreType);
             try (InputStream is = keystoreResource.getInputStream()) {
                 keystore.load(is, keystorePassword.toCharArray());
             }
-            sslContextBuilder.loadKeyMaterial(keystore, keystorePassword.toCharArray());
+            keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keystore, keystorePassword.toCharArray());
             log.debug("Keystore loaded successfully");
         } else if (keystoreResource != null) {
             log.debug("Keystore not configured, skipping client certificate authentication");
         }
 
-        return sslContextBuilder.build();
+        // Initialize TrustManagerFactory (for server certificate verification)
+        TrustManagerFactory trustManagerFactory = null;
+        if (truststoreResource != null && truststoreResource.exists()) {
+            log.debug("Loading truststore from: {}", truststoreResource);
+            KeyStore truststore = KeyStore.getInstance(truststoreType);
+            try (InputStream is = truststoreResource.getInputStream()) {
+                truststore.load(is, truststorePassword.toCharArray());
+            }
+            trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(truststore);
+            log.debug("Truststore loaded successfully");
+        } else {
+            log.warn("Truststore resource not found or not specified, using default truststore");
+        }
+
+        // Initialize SSLContext with KeyManagers and TrustManagers
+        sslContext.init(
+                keyManagerFactory != null ? keyManagerFactory.getKeyManagers() : null,
+                trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null,
+                new SecureRandom());
+
+        return sslContext;
     }
 }
