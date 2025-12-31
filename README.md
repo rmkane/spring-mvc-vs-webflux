@@ -328,15 +328,28 @@ The auth service queries its own database (`acme_auth`) for users by DN and thei
 
 User lookups are cached in the security layer to reduce calls to the auth service:
 
-- **Default Cache**: Caffeine (in-memory) with configurable TTL via `cache.users.ttl` in `application.yml`
+- **Cache Provider**: Caffeine (in-memory) configured via Spring Boot auto-configuration in `application.yml`
 - **Cache Key**: DN (Distinguished Name)
 - **Cache Name**: `users`
-- **Flexible**: Each API can override the default cache provider by providing its own `CacheManager` bean
-  - Default: Caffeine (in-memory, works out of the box)
+- **Configuration**: Configured in `application.yml` using Spring Boot's standard Caffeine properties:
+
+  ```yaml
+  spring:
+    cache:
+      type: caffeine
+      cache-names: users
+      caffeine:
+        spec: >
+          expireAfterWrite=5m,
+          maximumSize=1000
+  ```
+
+- **Flexible**: Each API can override the cache provider by providing its own `CacheManager` bean
+  - Default: Caffeine (in-memory, auto-configured)
   - Can use: Hazelcast, Redis, or any Spring Cache-compatible provider
   - Security layer is cache-provider agnostic - just needs a `CacheManager` bean
-- **Configuration**: Cache TTL configurable per API via `cache.users.ttl` property (default: 5 minutes)
 - **Transparent**: Caching is handled by the security layer - APIs don't need to know about it
+- **Logging**: Cache misses are logged at DEBUG level when the lookup method executes
 
 ### Role-Based Access Control
 
@@ -597,7 +610,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 - `CachedUserLookupService`: Caches user lookups to reduce calls to auth service (uses `@Cacheable`)
 - `AuthServiceClient`: REST client for calling auth service to lookup users by DN
 - `AuthenticationService`: Creates authenticated `Authentication` from DN (uses `CachedUserLookupService`)
-- `CacheConfig`: Default Caffeine cache configuration (can be overridden by APIs with their own `CacheManager`)
+- `SslConfig`: SSL/TLS configuration for auth service client communication (mTLS)
 - `WebMvcSecurityConfig`: MVC security configuration (extracts `x-dn` header)
 - `WebFluxSecurityConfig`: WebFlux security configuration (extracts `x-dn` header)
 

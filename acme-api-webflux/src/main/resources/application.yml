@@ -18,6 +18,14 @@ spring:
     user: acme_user
     password: acme_password
 
+  cache:
+    type: caffeine
+    cache-names: users
+    caffeine:
+      spec: >
+        expireAfterWrite=5m,
+        maximumSize=1000
+
 auth:
   service:
     base-url: https://localhost:8082
@@ -31,12 +39,6 @@ auth:
         path: classpath:ssl/api-webflux-keystore.jks
         password: changeit
         type: JKS
-
-cache:
-  users:
-    # Cache TTL for user lookups (ISO-8601 duration format)
-    # Examples: PT5M (5 minutes), PT30M (30 minutes), PT1H (1 hour)
-    ttl: PT5M
 
 logging:
   level:

@@ -15,12 +15,11 @@ import lombok.extern.slf4j.Slf4j;
  * Service for looking up users with caching.
  * <p>
  * Wraps the AuthServiceClient and provides caching to reduce calls to the auth
- * service. Cache TTL is configurable via {@code cache.users.ttl} in
+ * service. Cache is configured via Spring Boot's Caffeine auto-configuration in
  * application.yml.
  * <p>
- * Cache hits and misses are logged by the LoggingCache wrapper configured in
- * CacheConfig. This allows using {@code @Cacheable} while still having
- * visibility into cache performance.
+ * Cache misses are logged when the method executes (cache hits don't execute
+ * the method due to {@code @Cacheable}).
  */
 @Slf4j
 @Service
@@ -33,10 +32,12 @@ public class CachedUserLookupService {
      * Looks up a user by DN from the auth service. Results are cached to reduce
      * calls to the auth service.
      * <p>
-     * User lookups are cached using the "users" cache keyed by DN. Cache TTL is
-     * configurable via {@code cache.users.ttl} in application.yml.
+     * User lookups are cached using the "users" cache keyed by DN. Cache
+     * configuration is defined in application.yml via Spring Boot's Caffeine
+     * auto-configuration.
      * <p>
-     * Cache hits and misses are logged at DEBUG level by the LoggingCache wrapper.
+     * This method only executes on cache misses, so logging here indicates a cache
+     * miss.
      *
      * @param dn the Distinguished Name to lookup
      * @return UserInfo with DN, name, and roles
@@ -44,6 +45,7 @@ public class CachedUserLookupService {
      */
     @Cacheable(value = "users", key = "#p0")
     public UserInfo lookupUser(String dn) {
+        log.debug("Cache MISS: cache=users, key={}", dn);
         if (!StringUtils.hasText(dn)) {
             throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }

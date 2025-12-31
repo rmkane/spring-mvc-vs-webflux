@@ -3,6 +3,7 @@ package org.acme.api.app;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 
 @SpringBootApplication(scanBasePackages = {
@@ -13,6 +14,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
         "org.acme.security.webflux"
 }, exclude = { SecurityAutoConfiguration.class })
 @EnableR2dbcRepositories(basePackages = "org.acme.persistence.r2dbc")
+@EnableCaching
 public class AcmeApiWebfluxApplication {
 
     public static void main(String[] args) {
