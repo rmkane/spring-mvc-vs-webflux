@@ -92,7 +92,7 @@
 				<configuration>
 					<java>
 						<importOrder>
-							<order>java,javax,jakarta,org,com,io,lombok</order>
+							<order>java,javax,jakarta,org,com,io,lombok,reactor,org.acme</order>
 						</importOrder>
 						<removeUnusedImports/>
 						<eclipse>

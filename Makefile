@@ -139,12 +139,17 @@ JAVA_MODULES_LIST = \
 	acme-security/acme-security-webmvc \
 	acme-security/acme-security-webflux \
 	acme-persistence-jpa \
-	acme-persistence-r2dbc
+	acme-persistence-r2dbc \
+	acme-integration-test \
+	acme-reactive-integration-test
 
 # Convert space-separated list to comma-separated
 JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))
 space := $(empty) $(empty)
 comma := ,
+
+DEBUG_PORT = 8787
+DEBUG_JVM_ARGS := -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=$(DEBUG_PORT)
 
 format:
 	mvn spotless:apply -pl $(JAVA_MODULES)
@@ -152,14 +157,25 @@ format:
 lint:
 	mvn spotless:check -pl $(JAVA_MODULES)
 
-run-mvc: build
-	cd acme-api-mvc && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
+run-mvc:
+	mvn install -DskipTests -pl acme-api-mvc -am \
+	&& cd acme-api-mvc \
+	&& mvn clean spring-boot:run \
+	-Dspring-boot.run.jvmArguments="$(DEBUG_JVM_ARGS)" \
+	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
-run-webflux: build
-	cd acme-api-webflux && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
+run-webflux:
+	mvn install -DskipTests -pl acme-api-webflux -am \
+	&& cd acme-api-webflux \
+	&& mvn clean spring-boot:run \
+	-Dspring-boot.run.jvmArguments="$(DEBUG_JVM_ARGS)" \
+	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
-run-auth: build
-	cd acme-auth-service && mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=dev
+run-auth:
+	mvn install -DskipTests -pl acme-auth-service -am \
+	&& cd acme-auth-service \
+	&& mvn clean spring-boot:run \
+	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 stop-mvc:
 	@pkill -f "acme-api-mvc.*spring-boot:run" || pkill -f "AcmeApiMvcApplication" || echo "MVC API is not running"

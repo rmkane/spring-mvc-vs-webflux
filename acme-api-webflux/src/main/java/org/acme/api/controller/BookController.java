@@ -1,7 +1,7 @@
 package org.acme.api.controller;
 
-import org.acme.api.service.BookService;
-import org.acme.persistence.r2dbc.Book;
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +16,11 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.acme.api.model.BookResponse;
+import org.acme.api.model.CreateBookRequest;
+import org.acme.api.model.UpdateBookRequest;
+import org.acme.api.service.BookService;
+
 @RestController
 @RequestMapping("/api/books")
 @RequiredArgsConstructor
@@ -29,10 +34,11 @@ public class BookController {
     @Operation(summary = "Create a new book", description = "Creates a new book in the system (reactive)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Book created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request - invalid input or book already exists"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public Mono<Book> create(@RequestBody Book book) {
-        return bookService.create(book);
+    public Mono<BookResponse> create(@Valid @RequestBody CreateBookRequest request) {
+        return bookService.create(request);
     }
 
     @GetMapping
@@ -41,7 +47,7 @@ public class BookController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of books"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public Flux<Book> findAll() {
+    public Flux<BookResponse> findAll() {
         return bookService.findAll();
     }
 
@@ -52,7 +58,7 @@ public class BookController {
             @ApiResponse(responseCode = "404", description = "Book not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public Mono<Book> findById(
+    public Mono<BookResponse> findById(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
         return bookService.findById(id);
     }
@@ -61,13 +67,14 @@ public class BookController {
     @Operation(summary = "Update a book", description = "Updates an existing book by its ID (reactive)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Book updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request - invalid input or book already exists"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public Mono<Book> update(
+    public Mono<BookResponse> update(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id,
-            @RequestBody Book book) {
-        return bookService.update(id, book);
+            @Valid @RequestBody UpdateBookRequest request) {
+        return bookService.update(id, request);
     }
 
     @DeleteMapping("/{id}")

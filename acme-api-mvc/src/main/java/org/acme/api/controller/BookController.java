@@ -2,8 +2,8 @@ package org.acme.api.controller;
 
 import java.util.List;
 
-import org.acme.api.service.BookService;
-import org.acme.persistence.jpa.Book;
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +15,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
+
+import org.acme.api.model.BookResponse;
+import org.acme.api.model.CreateBookRequest;
+import org.acme.api.model.UpdateBookRequest;
+import org.acme.api.service.BookService;
 
 @RestController
 @RequestMapping("/api/books")
@@ -28,10 +33,11 @@ public class BookController {
     @Operation(summary = "Create a new book", description = "Creates a new book in the system")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Book created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request - book already exists or validation failed"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public ResponseEntity<Book> create(@RequestBody Book book) {
-        Book created = bookService.create(book);
+    public ResponseEntity<BookResponse> create(@Valid @RequestBody CreateBookRequest request) {
+        BookResponse created = bookService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -41,8 +47,8 @@ public class BookController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of books"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public ResponseEntity<List<Book>> findAll() {
-        List<Book> books = bookService.findAll();
+    public ResponseEntity<List<BookResponse>> findAll() {
+        List<BookResponse> books = bookService.findAll();
         return ResponseEntity.ok(books);
     }
 
@@ -53,9 +59,9 @@ public class BookController {
             @ApiResponse(responseCode = "404", description = "Book not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public ResponseEntity<Book> findById(
+    public ResponseEntity<BookResponse> findById(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
-        Book book = bookService.findById(id);
+        BookResponse book = bookService.findById(id);
         return ResponseEntity.ok(book);
     }
 
@@ -63,13 +69,14 @@ public class BookController {
     @Operation(summary = "Update a book", description = "Updates an existing book by its ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Book updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request - book already exists or validation failed"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - missing x-dn header")
     })
-    public ResponseEntity<Book> update(
+    public ResponseEntity<BookResponse> update(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id,
-            @RequestBody Book book) {
-        Book updated = bookService.update(id, book);
+            @Valid @RequestBody UpdateBookRequest request) {
+        BookResponse updated = bookService.update(id, request);
         return ResponseEntity.ok(updated);
     }
 

@@ -2,10 +2,10 @@ package org.acme.security.webmvc;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.acme.security.core.model.SecurityConstants;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+
+import org.acme.security.core.model.SecurityConstants;
 
 /**
  * Utility class for extracting the DN header from MVC requests.

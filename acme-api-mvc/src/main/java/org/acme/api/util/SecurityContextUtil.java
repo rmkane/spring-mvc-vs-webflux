@@ -1,8 +1,9 @@
 package org.acme.api.util;
 
-import org.acme.security.core.model.UserInformation;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.acme.security.core.model.UserInformation;
 
 public class SecurityContextUtil {
 

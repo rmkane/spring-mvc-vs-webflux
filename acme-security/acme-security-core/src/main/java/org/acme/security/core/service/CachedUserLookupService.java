@@ -1,8 +1,5 @@
 package org.acme.security.core.service;
 
-import org.acme.auth.client.AuthServiceClient;
-import org.acme.auth.client.UserInfo;
-import org.acme.security.core.model.SecurityConstants;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -10,6 +7,10 @@ import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.acme.auth.client.AuthServiceClient;
+import org.acme.auth.client.UserInfo;
+import org.acme.security.core.model.SecurityConstants;
 
 /**
  * Service for looking up users with caching.

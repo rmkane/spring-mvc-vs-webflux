@@ -14,12 +14,23 @@
 	<description>Multi-module Spring Boot application comparing MVC and WebFlux implementations</description>
 
 	<modules>
+		<!-- Parent POM -->
 		<module>acme-pom</module>
+
+		<!-- Libraries -->
 		<module>acme-auth-client</module>
+		<module>acme-integration-test</module>
+		<module>acme-reactive-integration-test</module>
+
+		<!-- Services -->
 		<module>acme-auth-service</module>
 		<module>acme-security</module>
+
+		<!-- Persistence -->
 		<module>acme-persistence-jpa</module>
 		<module>acme-persistence-r2dbc</module>
+
+		<!-- APIs -->
 		<module>acme-api-mvc</module>
 		<module>acme-api-webflux</module>
 	</modules>

@@ -49,7 +49,7 @@ public class Book {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        // updatedAt and updatedBy are null on creation, set only on update
     }
 
     @PreUpdate

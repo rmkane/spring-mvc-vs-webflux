@@ -2,10 +2,6 @@ package org.acme.security.core.service;
 
 import java.util.stream.Collectors;
 
-import org.acme.auth.client.UserInfo;
-import org.acme.security.core.model.SecurityConstants;
-import org.acme.security.core.model.UserInformation;
-import org.acme.security.core.util.UserInformationUtil;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,6 +11,11 @@ import org.springframework.util.StringUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.acme.auth.client.UserInfo;
+import org.acme.security.core.model.SecurityConstants;
+import org.acme.security.core.model.UserInformation;
+import org.acme.security.core.util.UserInformationUtil;
 
 @Slf4j
 @Service

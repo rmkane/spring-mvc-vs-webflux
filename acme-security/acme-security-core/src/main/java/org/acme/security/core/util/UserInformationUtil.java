@@ -1,12 +1,13 @@
 package org.acme.security.core.util;
 
-import org.acme.auth.client.UserInfo;
-import org.acme.security.core.model.SecurityConstants;
-import org.acme.security.core.model.UserInformation;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+
+import org.acme.auth.client.UserInfo;
+import org.acme.security.core.model.SecurityConstants;
+import org.acme.security.core.model.UserInformation;
 
 /**
  * Utility class for creating UserInformation objects from raw DN strings or

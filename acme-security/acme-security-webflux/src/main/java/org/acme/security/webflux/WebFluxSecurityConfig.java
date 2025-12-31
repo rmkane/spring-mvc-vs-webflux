@@ -1,7 +1,5 @@
 package org.acme.security.webflux;
 
-import org.acme.security.core.model.UserInformation;
-import org.acme.security.core.service.AuthenticationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -21,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import org.acme.security.core.model.UserInformation;
+import org.acme.security.core.service.AuthenticationService;
 
 @Configuration
 @EnableWebFluxSecurity

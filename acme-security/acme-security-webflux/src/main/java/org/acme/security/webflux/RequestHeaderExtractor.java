@@ -1,10 +1,11 @@
 package org.acme.security.webflux;
 
-import org.acme.security.core.model.SecurityConstants;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+
+import org.acme.security.core.model.SecurityConstants;
 
 /**
  * Utility class for extracting the DN header from WebFlux requests.
