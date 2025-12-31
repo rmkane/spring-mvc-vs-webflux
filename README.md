@@ -99,8 +99,8 @@ spring-mvc-vs-webflux/
 ├── acme-persistence-r2dbc/          # R2DBC repositories and entities
 ├── acme-api-mvc/                    # MVC REST API
 ├── acme-api-webflux/                # WebFlux REST API
-├── acme-integration-test/           # Integration test framework (RestTemplate-based)
-└── acme-reactive-integration-test/  # Reactive integration test framework (WebClient-based)
+├── acme-test-integration-classic/   # Integration test framework (RestTemplate-based)
+└── acme-test-integration-reactive/  # Reactive integration test framework (WebClient-based)
 ```
 
 ## Getting Started
@@ -446,8 +446,8 @@ curl -X DELETE -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=
 
 Both APIs include integration tests using their respective test frameworks:
 
-- **MVC API**: Uses `acme-integration-test` framework with `RestTemplate` and `IntegrationTestSuite` base class
-- **WebFlux API**: Uses `acme-reactive-integration-test` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
+- **MVC API**: Uses `acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
+- **WebFlux API**: Uses `acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
 
 Integration tests are tagged with `@Tag("integration")` and are excluded from regular test runs via Maven Surefire plugin configuration. To run integration tests explicitly:
 
@@ -459,7 +459,7 @@ cd acme-api-mvc && mvn test -Dgroups=integration
 cd acme-api-webflux && mvn test -Dgroups=integration
 ```
 
-See `acme-integration-test/README.md` and `acme-reactive-integration-test/README.md` for detailed usage instructions.
+See `acme-test-integration-classic/README.md` and `acme-test-integration-reactive/README.md` for detailed usage instructions.
 
 ## Development Workflow
 
@@ -581,8 +581,8 @@ make docker-run-webflux
 - **acme-persistence-r2dbc**: R2DBC data access layer
 - **acme-api-mvc**: MVC REST API
 - **acme-api-webflux**: WebFlux REST API
-- **acme-integration-test**: Integration test framework using RestTemplate (for MVC APIs)
-- **acme-reactive-integration-test**: Reactive integration test framework using WebClient (for WebFlux APIs)
+- **acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
+- **acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
 
 ### Dependency Relationships
 

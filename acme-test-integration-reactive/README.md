@@ -4,7 +4,7 @@ This module provides a reusable test framework for reactive integration testing 
 
 ## Overview
 
-The `ReactiveIntegrationTestSuite` base class provides utilities for making HTTP requests to WebFlux endpoints using the native reactive HTTP client (`WebClient`). This is the reactive equivalent of the `IntegrationTestSuite` in `acme-integration-test`.
+The `ReactiveIntegrationTestSuite` base class provides utilities for making HTTP requests to WebFlux endpoints using the native reactive HTTP client (`WebClient`). This is the reactive equivalent of the `IntegrationTestSuite` in `acme-test-integration-classic`.
 
 ## Key Features
 
@@ -59,9 +59,9 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 - `jackson-databind` - For JSON processing
 - `spring-boot-starter-test` - For JUnit 5
 
-## Comparison with `acme-integration-test`
+## Comparison with `acme-test-integration-classic`
 
-| Feature | `acme-integration-test` | `acme-reactive-integration-test` |
+| Feature | `acme-test-integration-classic` | `acme-test-integration-reactive` |
 | - | - | - |
 | HTTP Client | `RestTemplate` (blocking) | `WebClient` (reactive) |
 | Return Types | `ResponseEntity<T>` | `Mono<T>`, `Flux<T>` |

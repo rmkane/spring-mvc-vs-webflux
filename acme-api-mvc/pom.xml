@@ -68,7 +68,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.acme.test</groupId>
-			<artifactId>acme-integration-test</artifactId>
+			<artifactId>acme-test-integration-classic</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>

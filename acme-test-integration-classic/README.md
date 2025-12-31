@@ -1,6 +1,8 @@
-# Integration Test Framework
+# Acme Classic Integration Test
 
-A Java framework for writing integration tests for REST APIs. Provides a fluent builder API for constructing HTTP requests with support for authentication, multipart uploads, query parameters, and path variables. Includes utilities for JSON parsing, response validation, resource loading, and response persistence.
+A Java framework for writing integration tests for REST APIs using Spring MVC's `RestTemplate`. Provides a fluent builder API for constructing HTTP requests with support for authentication, multipart uploads, query parameters, and path variables. Includes utilities for JSON parsing, response validation, resource loading, and response persistence.
+
+This is the classic (blocking) integration test framework for MVC APIs. For reactive WebFlux APIs, use `acme-test-integration-reactive`.
 
 ## Installation
 
@@ -9,7 +11,7 @@ Add this dependency to your project's `pom.xml` with `test` scope:
 ```xml
 <dependency>
     <groupId>org.acme.test</groupId>
-    <artifactId>acme-integration-test</artifactId>
+    <artifactId>acme-test-integration-classic</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <scope>test</scope>
 </dependency>

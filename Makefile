@@ -140,8 +140,8 @@ JAVA_MODULES_LIST = \
 	acme-security/acme-security-webflux \
 	acme-persistence-jpa \
 	acme-persistence-r2dbc \
-	acme-integration-test \
-	acme-reactive-integration-test
+	acme-test-integration-classic \
+	acme-test-integration-reactive
 
 # Convert space-separated list to comma-separated
 JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))

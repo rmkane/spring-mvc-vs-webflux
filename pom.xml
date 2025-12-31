@@ -19,8 +19,8 @@
 
 		<!-- Libraries -->
 		<module>acme-auth-client</module>
-		<module>acme-integration-test</module>
-		<module>acme-reactive-integration-test</module>
+		<module>acme-test-integration-classic</module>
+		<module>acme-test-integration-reactive</module>
 
 		<!-- Services -->
 		<module>acme-auth-service</module>
