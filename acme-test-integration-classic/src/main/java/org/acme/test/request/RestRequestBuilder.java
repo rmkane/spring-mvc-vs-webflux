@@ -77,6 +77,36 @@ public final class RestRequestBuilder {
         return this;
     }
 
+    public RestRequestBuilder contentType(MediaType mediaType) {
+        if (mediaType != null) {
+            this.headers.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
+        }
+        return this;
+    }
+
+    public RestRequestBuilder contentTypeJson() {
+        return contentType(MediaType.APPLICATION_JSON);
+    }
+
+    public RestRequestBuilder contentTypeXml() {
+        return contentType(MediaType.APPLICATION_XML);
+    }
+
+    public RestRequestBuilder accept(MediaType mediaType) {
+        if (mediaType != null) {
+            this.headers.set(HttpHeaders.ACCEPT, mediaType.toString());
+        }
+        return this;
+    }
+
+    public RestRequestBuilder acceptJson() {
+        return accept(MediaType.APPLICATION_JSON);
+    }
+
+    public RestRequestBuilder acceptXml() {
+        return accept(MediaType.APPLICATION_XML);
+    }
+
     public RestRequestBuilder endpoint(String endpoint) {
         this.endpoint = Objects.requireNonNull(endpoint, "endpoint");
         return this;

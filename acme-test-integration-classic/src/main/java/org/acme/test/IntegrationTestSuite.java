@@ -290,9 +290,17 @@ public abstract class IntegrationTestSuite {
         return current;
     }
 
+    /**
+     * Returns the default Distinguished Name (DN) for requests. Can be overridden
+     * by subclasses to provide custom authentication.
+     */
+    protected String getDefaultDn() {
+        return DEFAULT_DN;
+    }
+
     protected HttpHeaders getDefaultHeaders() {
         return RequestHeadersBuilder.create()
-                .addHeader("x-dn", DEFAULT_DN)
+                .addHeader("x-dn", getDefaultDn())
                 .build();
     }
 

@@ -1,6 +1,7 @@
 package org.acme.api.config;
 
-import org.acme.security.core.model.SecurityConstants;
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -9,7 +10,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
 
-import java.util.Arrays;
+import org.acme.security.core.model.SecurityConstants;
 
 @Configuration
 @Profile("dev")

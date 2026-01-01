@@ -181,23 +181,32 @@ lint:
 	mvn spotless:check -pl $(JAVA_MODULES)
 
 run-mvc:
-	mvn install -DskipTests -pl acme-api-mvc -am \
+	mvn compile -DskipTests -pl acme-api-mvc -am \
 	&& cd acme-api-mvc \
-	&& SERVER_PORT=8080 mvn clean spring-boot:run \
+	&& SERVER_PORT=8080 mvn spring-boot:run \
+	-Dspring-boot.run.fork=false \
+	-Dspring-boot.run.addResources=false \
+	-Dspring-boot.run.useTestClasspath=false \
 	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-webflux:
-	mvn install -DskipTests -pl acme-api-webflux -am \
+	mvn compile -DskipTests -pl acme-api-webflux -am \
 	&& cd acme-api-webflux \
-	&& SERVER_PORT=8081 mvn clean spring-boot:run \
+	&& SERVER_PORT=8081 mvn spring-boot:run \
+	-Dspring-boot.run.fork=false \
+	-Dspring-boot.run.addResources=false \
+	-Dspring-boot.run.useTestClasspath=false \
 	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8788" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth:
-	mvn install -DskipTests -pl acme-auth-service -am \
+	mvn compile -DskipTests -pl acme-auth-service -am \
 	&& cd acme-auth-service \
-	&& SERVER_PORT=8082 ENABLE_SSL=true mvn clean spring-boot:run \
+	&& SERVER_PORT=8082 ENABLE_SSL=true mvn spring-boot:run \
+	-Dspring-boot.run.fork=false \
+	-Dspring-boot.run.addResources=false \
+	-Dspring-boot.run.useTestClasspath=false \
 	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8789" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 

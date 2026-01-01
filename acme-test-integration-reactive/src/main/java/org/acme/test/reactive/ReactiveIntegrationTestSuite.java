@@ -4,6 +4,7 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -17,6 +18,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import org.acme.test.reactive.request.ReactiveRequestBuilder;
 
 /**
  * Base class for reactive integration tests using WebClient. Provides common
@@ -106,11 +109,57 @@ public abstract class ReactiveIntegrationTestSuite {
                 .build();
     }
 
+    /**
+     * Returns the default Distinguished Name (DN) for requests. Can be overridden
+     * by subclasses to provide custom authentication.
+     */
+    protected String getDefaultDn() {
+        return DEFAULT_DN;
+    }
+
     protected HttpHeaders getDefaultHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-dn", DEFAULT_DN);
+        headers.set("x-dn", getDefaultDn());
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
+    }
+
+    /* --------------------- Fluent builder methods --------------------- */
+
+    /**
+     * Creates a fluent request builder for the given endpoint.
+     *
+     * @param endpoint The API endpoint (e.g., "/api/books")
+     * @return A ReactiveRequestBuilder configured with the base URL and endpoint
+     */
+    protected ReactiveRequestBuilder request(String endpoint) {
+        return ReactiveRequestBuilder.create(getBaseUrl(), endpoint, getWebClient(), objectMapper)
+                .headers(getDefaultHeaders());
+    }
+
+    /** Convenience method for creating GET request builders. */
+    protected ReactiveRequestBuilder getRequest(String endpoint) {
+        return request(endpoint).method(HttpMethod.GET);
+    }
+
+    /** Convenience method for creating POST request builders. */
+    protected ReactiveRequestBuilder postRequest(String endpoint) {
+        return request(endpoint).method(HttpMethod.POST);
+    }
+
+    /** Convenience method for creating PUT request builders. */
+    protected ReactiveRequestBuilder putRequest(String endpoint) {
+        return request(endpoint).method(HttpMethod.PUT);
+    }
+
+    /** Convenience method for creating PATCH request builders. */
+    protected ReactiveRequestBuilder patchRequest(String endpoint) {
+        return request(endpoint).method(HttpMethod.PATCH);
+    }
+
+    /** Convenience method for creating DELETE request builders. */
+    protected ReactiveRequestBuilder deleteRequest(String endpoint) {
+        return request(endpoint).method(HttpMethod.DELETE);
     }
 
     /**

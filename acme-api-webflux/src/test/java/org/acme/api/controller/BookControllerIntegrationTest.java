@@ -7,7 +7,6 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ProblemDetail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -22,15 +21,14 @@ import org.acme.test.reactive.ReactiveIntegrationTestSuite;
 @Tag("integration")
 public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite {
 
-    private final HttpHeaders headers = getDefaultHeaders();
-
     public BookControllerIntegrationTest() {
         super(8081);
     }
 
     @Test
     void testGetBook() {
-        Mono<BookResponse> responseMono = get("/api/books/1", BookResponse.class, headers);
+        Mono<BookResponse> responseMono = getRequest("/api/books/1")
+                .retrieve(BookResponse.class);
 
         StepVerifier.create(responseMono)
                 .assertNext(book -> {
@@ -55,7 +53,9 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 
         // First attempt: may succeed (201) if book doesn't exist, or fail (400) if it
         // already exists
-        Mono<String> firstResponseMono = postString("/api/books", request, headers);
+        Mono<String> firstResponseMono = postRequest("/api/books")
+                .body(request)
+                .retrieveString();
 
         StepVerifier.create(firstResponseMono)
                 .assertNext(responseBody -> {
@@ -90,7 +90,9 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .verify();
 
         // Second attempt: should always fail with 400 BAD_REQUEST (duplicate ISBN)
-        Mono<String> secondResponseMono = postString("/api/books", request, headers);
+        Mono<String> secondResponseMono = postRequest("/api/books")
+                .body(request)
+                .retrieveString();
 
         StepVerifier.create(secondResponseMono)
                 .assertNext(responseBody -> {
@@ -116,7 +118,9 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .publicationYear(2024)
                 .build();
 
-        Mono<String> responseMono = postString("/api/books", request, headers);
+        Mono<String> responseMono = postRequest("/api/books")
+                .body(request)
+                .retrieveString();
 
         StepVerifier.create(responseMono)
                 .assertNext(responseBody -> {
