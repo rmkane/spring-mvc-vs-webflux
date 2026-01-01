@@ -7,7 +7,7 @@ import org.mapstruct.MappingConstants;
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
 import org.acme.api.model.UpdateBookRequest;
-import org.acme.persistence.r2dbc.Book;
+import org.acme.persistence.r2dbc.entity.Book;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface BookMapper {

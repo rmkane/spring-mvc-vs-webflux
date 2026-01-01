@@ -160,21 +160,21 @@ lint:
 run-mvc:
 	mvn install -DskipTests -pl acme-api-mvc -am \
 	&& cd acme-api-mvc \
-	&& mvn clean spring-boot:run \
+	&& SERVER_PORT=8080 mvn clean spring-boot:run \
 	-Dspring-boot.run.jvmArguments="$(DEBUG_JVM_ARGS)" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-webflux:
 	mvn install -DskipTests -pl acme-api-webflux -am \
 	&& cd acme-api-webflux \
-	&& mvn clean spring-boot:run \
+	&& SERVER_PORT=8081 mvn clean spring-boot:run \
 	-Dspring-boot.run.jvmArguments="$(DEBUG_JVM_ARGS)" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth:
 	mvn install -DskipTests -pl acme-auth-service -am \
 	&& cd acme-auth-service \
-	&& mvn clean spring-boot:run \
+	&& SERVER_PORT=8082 ENABLE_SSL=true mvn clean spring-boot:run \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 stop-mvc:

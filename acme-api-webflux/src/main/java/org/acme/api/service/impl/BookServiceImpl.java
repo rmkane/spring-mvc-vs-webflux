@@ -18,8 +18,8 @@ import org.acme.api.model.CreateBookRequest;
 import org.acme.api.model.UpdateBookRequest;
 import org.acme.api.service.BookService;
 import org.acme.api.util.ReactiveSecurityContextUtil;
-import org.acme.persistence.r2dbc.Book;
-import org.acme.persistence.r2dbc.BookRepository;
+import org.acme.persistence.r2dbc.entity.Book;
+import org.acme.persistence.r2dbc.repository.BookRepository;
 
 @Slf4j
 @Service

@@ -3,6 +3,7 @@ package org.acme.api.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
@@ -12,6 +13,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        log.warn("Authorization denied: {}", ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN, ex.getMessage());
+        problemDetail.setTitle("Authorization Denied");
+        problemDetail.setProperty("error", "Forbidden");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problemDetail);
+    }
 
     @ExceptionHandler(BookAlreadyExistsException.class)
     public ResponseEntity<ProblemDetail> handleBookAlreadyExists(BookAlreadyExistsException ex) {

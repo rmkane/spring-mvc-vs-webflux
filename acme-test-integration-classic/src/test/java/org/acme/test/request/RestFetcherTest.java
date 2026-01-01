@@ -55,6 +55,7 @@ class RestFetcherTest {
                         eq(request.getURI()), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void testFetchWithParameterizedTypeReference() {
         RestRequest request = RestRequestBuilder.create("http://localhost:8080")

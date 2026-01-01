@@ -16,8 +16,8 @@ import org.acme.api.model.CreateBookRequest;
 import org.acme.api.model.UpdateBookRequest;
 import org.acme.api.service.BookService;
 import org.acme.api.util.SecurityContextUtil;
-import org.acme.persistence.jpa.Book;
-import org.acme.persistence.jpa.BookRepository;
+import org.acme.persistence.jpa.entity.Book;
+import org.acme.persistence.jpa.repository.BookRepository;
 import org.acme.security.core.model.UserInformation;
 
 @Slf4j

@@ -1,4 +1,4 @@
-package org.acme.persistence.r2dbc;
+package org.acme.persistence.r2dbc.entity;
 
 import java.time.LocalDateTime;
 

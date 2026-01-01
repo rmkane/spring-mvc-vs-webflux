@@ -6,7 +6,7 @@ import org.mapstruct.Mapping;
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
 import org.acme.api.model.UpdateBookRequest;
-import org.acme.persistence.jpa.Book;
+import org.acme.persistence.jpa.entity.Book;
 
 @Mapper(componentModel = "spring")
 public interface BookMapper {

@@ -1,4 +1,4 @@
-package org.acme.persistence.jpa;
+package org.acme.persistence.jpa.entity;
 
 import java.time.LocalDateTime;
 
