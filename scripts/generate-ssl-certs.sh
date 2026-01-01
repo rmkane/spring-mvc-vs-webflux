@@ -9,7 +9,9 @@
 
 set -e
 
-CERT_DIR="$(cd "$(dirname "$0")/.." && pwd)/certs"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+CERT_DIR="$PROJECT_DIR/monitoring/certs"
 KEYSTORE_PASSWORD="changeit"
 TRUSTSTORE_PASSWORD="changeit"
 VALIDITY_DAYS=365

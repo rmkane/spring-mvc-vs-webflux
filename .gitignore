@@ -71,3 +71,8 @@ application-local.properties
 /certs/
 *.cer
 
+# Monitoring certificates (generated, not committed)
+monitoring/certs/*.pem
+monitoring/certs/*.key
+monitoring/certs/*.crt
+

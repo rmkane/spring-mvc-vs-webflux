@@ -174,9 +174,6 @@ JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))
 space := $(empty) $(empty)
 comma := ,
 
-DEBUG_PORT = 8787
-DEBUG_JVM_ARGS := -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=$(DEBUG_PORT)
-
 format:
 	mvn spotless:apply -pl $(JAVA_MODULES)
 
@@ -187,20 +184,21 @@ run-mvc:
 	mvn install -DskipTests -pl acme-api-mvc -am \
 	&& cd acme-api-mvc \
 	&& SERVER_PORT=8080 mvn clean spring-boot:run \
-	-Dspring-boot.run.jvmArguments="$(DEBUG_JVM_ARGS)" \
+	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-webflux:
 	mvn install -DskipTests -pl acme-api-webflux -am \
 	&& cd acme-api-webflux \
 	&& SERVER_PORT=8081 mvn clean spring-boot:run \
-	-Dspring-boot.run.jvmArguments="$(DEBUG_JVM_ARGS)" \
+	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8788" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth:
 	mvn install -DskipTests -pl acme-auth-service -am \
 	&& cd acme-auth-service \
 	&& SERVER_PORT=8082 ENABLE_SSL=true mvn clean spring-boot:run \
+	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8789" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 stop-mvc:
