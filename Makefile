@@ -5,6 +5,7 @@
 		dbs-down db-jpa-down db-r2dbc-down db-auth-down \
 		dbs-reset db-jpa-reset db-r2dbc-reset db-auth-reset \
 		dbs-logs db-jpa-logs db-r2dbc-logs db-auth-logs \
+		monitoring-up monitoring-down monitoring-logs prometheus-ui grafana-ui \
 		build clean test format lint \
 		run-mvc run-webflux run-auth stop-mvc stop-webflux stop-auth stop-all \
 		docker-build-mvc docker-build-webflux docker-build-auth \
@@ -30,6 +31,13 @@ help:
 	@echo "  db-jpa-logs    - View logs for JPA database"
 	@echo "  db-r2dbc-logs  - View logs for R2DBC database"
 	@echo "  db-auth-logs   - View logs for Auth database"
+	@echo ""
+	@echo "Monitoring Operations:"
+	@echo "  monitoring-up   - Start Prometheus and Grafana"
+	@echo "  monitoring-down - Stop Prometheus and Grafana"
+	@echo "  monitoring-logs - View logs for monitoring stack"
+	@echo "  prometheus-ui   - Open Prometheus UI in browser"
+	@echo "  grafana-ui      - Open Grafana UI in browser"
 	@echo ""
 	@echo "Build Operations:"
 	@echo "  build          - Build all Maven modules"
@@ -119,6 +127,24 @@ db-r2dbc-logs:
 
 db-auth-logs:
 	docker compose logs -f postgres-auth
+
+monitoring-up:
+	docker compose up -d prometheus grafana
+
+monitoring-down:
+	docker compose stop prometheus grafana
+
+monitoring-logs:
+	docker compose logs -f prometheus grafana
+
+prometheus-ui:
+	@echo "Opening Prometheus UI at http://localhost:9090"
+	@open http://localhost:9090 || xdg-open http://localhost:9090 || echo "Please open http://localhost:9090 in your browser"
+
+grafana-ui:
+	@echo "Opening Grafana UI at http://localhost:3000"
+	@echo "Default credentials: admin/admin"
+	@open http://localhost:3000 || xdg-open http://localhost:3000 || echo "Please open http://localhost:3000 in your browser"
 
 build:
 	mvn clean install -DskipTests

@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'acme-api-mvc'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'acme-api-mvc'
+          type: 'spring-mvc'
+
+  - job_name: 'acme-api-webflux'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          application: 'acme-api-webflux'
+          type: 'spring-webflux'
+
+  - job_name: 'acme-auth-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+        labels:
+          application: 'acme-auth-service'
+          type: 'spring-mvc'
