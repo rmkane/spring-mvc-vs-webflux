@@ -33,7 +33,8 @@ spring:
     caffeine:
       spec: >
         expireAfterWrite=5m,
-        maximumSize=1000
+        maximumSize=1000,
+        recordStats
 
 auth:
   service:
@@ -48,6 +49,15 @@ auth:
         path: classpath:ssl/api-mvc-keystore.jks
         password: changeit
         type: JKS
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 logging:
   level:
