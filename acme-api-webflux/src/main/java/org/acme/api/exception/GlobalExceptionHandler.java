@@ -24,6 +24,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problemDetail);
     }
 
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleBookNotFound(BookNotFoundException ex) {
+        log.warn("Book not found: {}", ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("Book Not Found");
+        problemDetail.setProperty("error", "Not Found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
+    }
+
     @ExceptionHandler(BookAlreadyExistsException.class)
     public ResponseEntity<ProblemDetail> handleBookAlreadyExists(BookAlreadyExistsException ex) {
         log.warn("Book already exists: {}", ex.getMessage());

@@ -12,6 +12,7 @@ import org.springframework.http.ProblemDetail;
 
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
+import org.acme.api.model.UpdateBookRequest;
 import org.acme.test.IntegrationTestSuite;
 import org.acme.test.request.RequestHeadersBuilder;
 
@@ -78,5 +79,78 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
         default:
             throw new AssertionError("Unexpected response status: " + response.getStatusCode());
         }
+    }
+
+    @Test
+    void testFullCrudLifecycle() throws IOException {
+        // Use a unique ISBN to avoid conflicts with other test runs
+        String uniqueIsbn = "978-0-TEST-" + System.currentTimeMillis();
+
+        // 1. CREATE - Create a new book
+        var createRequest = CreateBookRequest.builder()
+                .title("Full CRUD Test Book")
+                .author("Test Author")
+                .isbn(uniqueIsbn)
+                .publicationYear(2024)
+                .build();
+
+        var createHttpRequest = post("/api/books")
+                .headers(headers)
+                .body(toJson(createRequest))
+                .build();
+
+        var createResponse = fetch(createHttpRequest, BookResponse.class);
+        assertEquals(CREATED, createResponse.getStatusCode().value());
+        assertNotNull(createResponse.getBody());
+        assertEquals("Full CRUD Test Book", createResponse.getBody().getTitle());
+        assertEquals("Test Author", createResponse.getBody().getAuthor());
+        assertEquals(uniqueIsbn, createResponse.getBody().getIsbn());
+        assertEquals(2024, createResponse.getBody().getPublicationYear());
+
+        // Extract the ID from the created book
+        Long bookId = createResponse.getBody().getId();
+        assertNotNull(bookId);
+
+        // 2. UPDATE - Update the book with new data
+        var updateRequest = UpdateBookRequest.builder()
+                .title("Updated CRUD Test Book")
+                .author("Updated Test Author")
+                .isbn(uniqueIsbn) // Keep same ISBN
+                .publicationYear(2025)
+                .build();
+
+        var updateHttpRequest = put("/api/books/" + bookId)
+                .headers(headers)
+                .body(toJson(updateRequest))
+                .build();
+
+        var updateResponse = fetch(updateHttpRequest, BookResponse.class);
+        assertEquals(200, updateResponse.getStatusCode().value()); // OK
+        assertNotNull(updateResponse.getBody());
+        assertEquals(bookId, updateResponse.getBody().getId());
+        assertEquals("Updated CRUD Test Book", updateResponse.getBody().getTitle());
+        assertEquals("Updated Test Author", updateResponse.getBody().getAuthor());
+        assertEquals(uniqueIsbn, updateResponse.getBody().getIsbn());
+        assertEquals(2025, updateResponse.getBody().getPublicationYear());
+
+        // 3. DELETE - Delete the book
+        var deleteHttpRequest = delete("/api/books/" + bookId)
+                .headers(headers)
+                .build();
+
+        var deleteResponse = fetch(deleteHttpRequest, Void.class);
+        assertEquals(204, deleteResponse.getStatusCode().value()); // NO_CONTENT
+
+        // 4. VERIFY DELETION - Try to get the deleted book, should get 404
+        var getHttpRequest = get("/api/books/" + bookId)
+                .headers(headers)
+                .build();
+
+        var getResponse = fetch(getHttpRequest, String.class);
+        assertEquals(404, getResponse.getStatusCode().value()); // NOT_FOUND
+
+        ProblemDetail problemDetail = fromJson(getResponse.getBody(), ProblemDetail.class);
+        assertNotNull(problemDetail);
+        assertEquals("Book Not Found", problemDetail.getTitle());
     }
 }

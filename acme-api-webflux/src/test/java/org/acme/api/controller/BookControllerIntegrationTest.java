@@ -16,6 +16,7 @@ import reactor.test.StepVerifier;
 
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
+import org.acme.api.model.UpdateBookRequest;
 import org.acme.test.reactive.ReactiveIntegrationTestSuite;
 
 @Tag("integration")
@@ -129,6 +130,91 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                         assertNotNull(problemDetail);
                         assertEquals("Book Already Exists", problemDetail.getTitle());
                         assertNotNull(problemDetail.getDetail());
+                    } catch (JsonProcessingException e) {
+                        throw new AssertionError("Failed to parse ProblemDetail: " + responseBody, e);
+                    }
+                })
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    void testFullCrudLifecycle() throws JsonProcessingException {
+        // Use a unique ISBN to avoid conflicts with other test runs
+        String uniqueIsbn = "978-0-TEST-" + System.currentTimeMillis();
+
+        // 1. CREATE - Create a new book and capture the ID
+        final Long[] bookIdHolder = new Long[1];
+
+        CreateBookRequest createRequest = CreateBookRequest.builder()
+                .title("Full CRUD Test Book")
+                .author("Test Author")
+                .isbn(uniqueIsbn)
+                .publicationYear(2024)
+                .build();
+
+        Mono<BookResponse> createMono = postRequest("/api/books")
+                .body(createRequest)
+                .retrieve(BookResponse.class)
+                .doOnNext(book -> bookIdHolder[0] = book.getId());
+
+        StepVerifier.create(createMono)
+                .assertNext(book -> {
+                    assertNotNull(book);
+                    assertNotNull(book.getId());
+                    assertEquals("Full CRUD Test Book", book.getTitle());
+                    assertEquals("Test Author", book.getAuthor());
+                    assertEquals(uniqueIsbn, book.getIsbn());
+                    assertEquals(2024, book.getPublicationYear());
+                })
+                .expectComplete()
+                .verify();
+
+        Long bookId = bookIdHolder[0];
+        assertNotNull(bookId);
+
+        // 2. UPDATE - Update the book with new data
+        UpdateBookRequest updateRequest = UpdateBookRequest.builder()
+                .title("Updated CRUD Test Book")
+                .author("Updated Test Author")
+                .isbn(uniqueIsbn) // Keep same ISBN
+                .publicationYear(2025)
+                .build();
+
+        Mono<BookResponse> updateMono = putRequest("/api/books/" + bookId)
+                .body(updateRequest)
+                .retrieve(BookResponse.class);
+
+        StepVerifier.create(updateMono)
+                .assertNext(book -> {
+                    assertNotNull(book);
+                    assertEquals(bookId, book.getId());
+                    assertEquals("Updated CRUD Test Book", book.getTitle());
+                    assertEquals("Updated Test Author", book.getAuthor());
+                    assertEquals(uniqueIsbn, book.getIsbn());
+                    assertEquals(2025, book.getPublicationYear());
+                })
+                .expectComplete()
+                .verify();
+
+        // 3. DELETE - Delete the book
+        Mono<Void> deleteMono = deleteRequest("/api/books/" + bookId)
+                .retrieve(Void.class);
+
+        StepVerifier.create(deleteMono)
+                .expectComplete()
+                .verify();
+
+        // 4. VERIFY DELETION - Try to get the deleted book, should get 404
+        Mono<String> getMono = getRequest("/api/books/" + bookId)
+                .retrieveString();
+
+        StepVerifier.create(getMono)
+                .assertNext(responseBody -> {
+                    try {
+                        ProblemDetail problemDetail = fromJson(responseBody, ProblemDetail.class);
+                        assertNotNull(problemDetail);
+                        assertEquals("Book Not Found", problemDetail.getTitle());
                     } catch (JsonProcessingException e) {
                         throw new AssertionError("Failed to parse ProblemDetail: " + responseBody, e);
                     }
