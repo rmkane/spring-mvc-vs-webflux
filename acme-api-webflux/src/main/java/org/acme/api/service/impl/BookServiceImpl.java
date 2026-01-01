@@ -1,7 +1,5 @@
 package org.acme.api.service.impl;
 
-import java.time.LocalDateTime;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -43,9 +41,8 @@ public class BookServiceImpl implements BookService {
                                     "Book with ISBN '" + request.getIsbn() + "' already exists")))
                             .switchIfEmpty(Mono.defer(() -> {
                                 Book book = bookMapper.toEntity(request);
-                                LocalDateTime now = LocalDateTime.now();
-                                book.setCreatedAt(now);
                                 book.setCreatedBy(user.getDn());
+                                // createdAt set automatically by AuditingConfig callback
                                 // updatedAt and updatedBy are null on creation, set only on update
                                 return bookRepository.save(book);
                             }))
@@ -91,16 +88,16 @@ public class BookServiceImpl implements BookService {
                                             existingBook.setAuthor(request.getAuthor());
                                             existingBook.setIsbn(request.getIsbn());
                                             existingBook.setPublicationYear(request.getPublicationYear());
-                                            existingBook.setUpdatedAt(LocalDateTime.now());
                                             existingBook.setUpdatedBy(user.getDn());
+                                            // updatedAt set automatically by AuditingConfig callback
                                             return bookRepository.save(existingBook);
                                         }));
                             } else {
                                 existingBook.setTitle(request.getTitle());
                                 existingBook.setAuthor(request.getAuthor());
                                 existingBook.setPublicationYear(request.getPublicationYear());
-                                existingBook.setUpdatedAt(LocalDateTime.now());
                                 existingBook.setUpdatedBy(user.getDn());
+                                // updatedAt set automatically by AuditingConfig callback
                                 return bookRepository.save(existingBook);
                             }
                         })

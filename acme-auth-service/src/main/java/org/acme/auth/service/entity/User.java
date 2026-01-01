@@ -44,7 +44,7 @@ public class User {
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<UserRole> roles = new ArrayList<>();
 

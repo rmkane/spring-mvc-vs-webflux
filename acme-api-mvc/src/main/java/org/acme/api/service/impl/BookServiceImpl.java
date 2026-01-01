@@ -24,13 +24,13 @@ import org.acme.security.core.model.UserInformation;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
 
     @PreAuthorize("hasRole('READ_WRITE')")
+    @Transactional
     @Override
     public BookResponse create(CreateBookRequest request) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
@@ -74,6 +74,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @PreAuthorize("hasRole('READ_WRITE')")
+    @Transactional
     @Override
     public BookResponse update(Long id, UpdateBookRequest request) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
@@ -101,6 +102,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @PreAuthorize("hasRole('READ_WRITE')")
+    @Transactional
     @Override
     public void delete(Long id) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
