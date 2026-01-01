@@ -12,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.acme.api.exception.BookAlreadyExistsException;
+import org.acme.api.exception.BookNotFoundException;
 import org.acme.api.mapper.BookMapper;
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
@@ -67,7 +68,7 @@ public class BookServiceImpl implements BookService {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
                 .doOnNext(user -> log.debug("User {} performing READ action for book id={}", user.getDn(), id))
                 .flatMap(user -> bookRepository.findById(id)
-                        .switchIfEmpty(Mono.error(new RuntimeException("Book not found with id: " + id)))
+                        .switchIfEmpty(Mono.error(new BookNotFoundException(id)))
                         .map(bookMapper::toResponse));
     }
 
@@ -78,7 +79,7 @@ public class BookServiceImpl implements BookService {
                 .doOnNext(user -> log.debug("User {} performing UPDATE action for book id={}, title={}",
                         user.getDn(), id, request.getTitle()))
                 .flatMap(user -> bookRepository.findById(id)
-                        .switchIfEmpty(Mono.error(new RuntimeException("Book not found with id: " + id)))
+                        .switchIfEmpty(Mono.error(new BookNotFoundException(id)))
                         .flatMap(existingBook -> {
                             // Check if ISBN is being changed and if new ISBN already exists
                             if (!existingBook.getIsbn().equals(request.getIsbn())) {
@@ -111,6 +112,12 @@ public class BookServiceImpl implements BookService {
     public Mono<Void> delete(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
                 .doOnNext(user -> log.debug("User {} performing DELETE action for book id={}", user.getDn(), id))
-                .flatMap(user -> bookRepository.deleteById(id));
+                .flatMap(user -> bookRepository.existsById(id)
+                        .flatMap(exists -> {
+                            if (!exists) {
+                                return Mono.error(new BookNotFoundException(id));
+                            }
+                            return bookRepository.deleteById(id);
+                        }));
     }
 }

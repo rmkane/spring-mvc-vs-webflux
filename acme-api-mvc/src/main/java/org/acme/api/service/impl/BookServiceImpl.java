@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.acme.api.exception.BookAlreadyExistsException;
+import org.acme.api.exception.BookNotFoundException;
 import org.acme.api.mapper.BookMapper;
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
@@ -68,7 +69,7 @@ public class BookServiceImpl implements BookService {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
         log.debug("User {} performing READ action for book id={}", user.getDn(), id);
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
+                .orElseThrow(() -> new BookNotFoundException(id));
         return bookMapper.toResponse(book);
     }
 
@@ -79,7 +80,7 @@ public class BookServiceImpl implements BookService {
         log.debug("User {} performing UPDATE action for book id={}, title={}",
                 user.getDn(), id, request.getTitle());
         Book existingBook = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
+                .orElseThrow(() -> new BookNotFoundException(id));
 
         // Check if ISBN is being changed and if new ISBN already exists
         if (!existingBook.getIsbn().equals(request.getIsbn())) {
@@ -104,6 +105,12 @@ public class BookServiceImpl implements BookService {
     public void delete(Long id) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
         log.debug("User {} performing DELETE action for book id={}", user.getDn(), id);
+
+        // Verify book exists before deleting
+        if (!bookRepository.existsById(id)) {
+            throw new BookNotFoundException(id);
+        }
+
         bookRepository.deleteById(id);
     }
 }
