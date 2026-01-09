@@ -123,6 +123,12 @@
 					<excludedGroups>integration</excludedGroups>
 				</configuration>
 			</plugin>
+
+			<!-- Build Helper -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
 </project>

@@ -39,6 +39,8 @@
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
 		<maven-war-plugin.version>3.4.0</maven-war-plugin.version>
+		<!-- Not managed by Spring Boot BOM -->
+		<maven-build-helper-plugin.version>3.6.1</maven-build-helper-plugin.version>
 	</properties>
 
 	<build>
@@ -81,6 +83,27 @@
 					<groupId>com.diffplug.spotless</groupId>
 					<artifactId>spotless-maven-plugin</artifactId>
 					<version>${spotless.version}</version>
+				</plugin>
+
+				<!-- Build Helper -->
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>build-helper-maven-plugin</artifactId>
+					<version>${maven-build-helper-plugin.version}</version>
+					<executions>
+						<execution>
+							<id>add-integration-test-source</id>
+							<phase>generate-test-sources</phase>
+							<goals>
+								<goal>add-test-source</goal>
+							</goals>
+							<configuration>
+								<sources>
+									<source>src/integration/test/java</source>
+								</sources>
+							</configuration>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
