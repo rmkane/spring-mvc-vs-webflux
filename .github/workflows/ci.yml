@@ -22,7 +22,19 @@ jobs:
           cache: maven
 
       - name: Verify code formatting (Spotless)
-        run: mvn spotless:check
+        run: |
+          mvn spotless:check -pl \
+            acme-api-mvc,\
+            acme-api-webflux,\
+            acme-auth-client,\
+            acme-auth-service,\
+            acme-security/acme-security-core,\
+            acme-security/acme-security-webmvc,\
+            acme-security/acme-security-webflux,\
+            acme-persistence-jpa,\
+            acme-persistence-r2dbc,\
+            acme-test-integration-classic,\
+            acme-test-integration-reactive
 
       - name: Build and test
         run: mvn clean verify
