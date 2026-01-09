@@ -15,18 +15,43 @@ import org.springframework.web.client.RestTemplate;
 public final class RestFetcher {
     private final RestTemplate restTemplate;
 
+    /**
+     * Creates a RestFetcher with a default RestTemplate.
+     */
     public RestFetcher() {
         this(new RestTemplate());
     }
 
+    /**
+     * Creates a RestFetcher with the specified RestTemplate.
+     *
+     * @param restTemplate The RestTemplate to use for HTTP requests
+     */
     public RestFetcher(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
+    /**
+     * Executes a REST request and returns the response.
+     *
+     * @param <T>          The response type
+     * @param request      The REST request to execute
+     * @param responseType The expected response type class
+     * @return The response entity
+     */
     public <T> ResponseEntity<T> fetch(RestRequest request, @NonNull Class<T> responseType) {
         return executeRequest(request, responseType);
     }
 
+    /**
+     * Executes a REST request with a parameterized type reference and returns the
+     * response.
+     *
+     * @param <T>          The response type
+     * @param request      The REST request to execute
+     * @param responseType The parameterized type reference
+     * @return The response entity
+     */
     public <T> ResponseEntity<T> fetch(
             RestRequest request, @NonNull ParameterizedTypeReference<T> responseType) {
         return executeRequest(request, responseType);

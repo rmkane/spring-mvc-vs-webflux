@@ -65,6 +65,11 @@ public final class RestRequest implements HttpRequest {
         return method;
     }
 
+    /**
+     * Returns the HTTP method as a string value.
+     *
+     * @return The method name (e.g., "GET", "POST")
+     */
     public String getMethodValue() {
         return method.name();
     }
@@ -87,23 +92,41 @@ public final class RestRequest implements HttpRequest {
         return attributes;
     }
 
-    /** Raw body bytes, or {@code null} if no body. */
+    /**
+     * Raw body bytes, or {@code null} if no body.
+     *
+     * @return The request body as bytes, or null if no body
+     */
     @Nullable
     public byte[] getBody() {
         return body;
     }
 
+    /**
+     * Returns the request body as a string using the specified charset.
+     *
+     * @param charset The charset to use for decoding
+     * @return An Optional containing the body as a string, or empty if no body
+     */
     public Optional<String> getBodyAsString(@NonNull Charset charset) {
         return Optional.ofNullable(body).map(b -> new String(b, charset));
     }
 
-    /** Multipart form data body, or {@code null} if not a multipart request. */
+    /**
+     * Multipart form data body, or {@code null} if not a multipart request.
+     *
+     * @return The multipart body, or null if not a multipart request
+     */
     @Nullable
     public MultiValueMap<String, Object> getMultipartBody() {
         return multipartBody;
     }
 
-    /** Returns {@code true} if this is a multipart form data request. */
+    /**
+     * Returns {@code true} if this is a multipart form data request.
+     *
+     * @return true if this is a multipart request, false otherwise
+     */
     public boolean isMultipart() {
         return multipartBody != null && !multipartBody.isEmpty();
     }

@@ -35,7 +35,9 @@ public abstract class ReactiveIntegrationTestSuite {
     private static final String PORT_PROPERTY = "test.server.port";
     private static final String PORT_ENV_VAR = "TEST_SERVER_PORT";
 
+    /** WebClient for making reactive HTTP requests. */
     protected static WebClient webClient;
+    /** JSON object mapper for serialization/deserialization. */
     protected static ObjectMapper objectMapper;
 
     private final int port;
@@ -90,18 +92,38 @@ public abstract class ReactiveIntegrationTestSuite {
         return DEFAULT_PORT;
     }
 
+    /**
+     * Returns the base URL for the test server. Can be overridden by subclasses.
+     *
+     * @return The base URL as a string
+     */
     protected String getBaseUrl() {
         return String.format("%s://localhost:%d", getProtocol(), getPort());
     }
 
+    /**
+     * Returns the protocol (http or https). Can be overridden by subclasses.
+     *
+     * @return The protocol string (http or https)
+     */
     protected String getProtocol() {
         return PROTOCOL_HTTP;
     }
 
+    /**
+     * Returns the configured port. Can be overridden by subclasses.
+     *
+     * @return The port number
+     */
     protected int getPort() {
         return port;
     }
 
+    /**
+     * Returns a WebClient configured with the base URL and default headers.
+     *
+     * @return A configured WebClient instance
+     */
     protected WebClient getWebClient() {
         return WebClient.builder()
                 .baseUrl(getBaseUrl())
@@ -112,11 +134,18 @@ public abstract class ReactiveIntegrationTestSuite {
     /**
      * Returns the default Distinguished Name (DN) for requests. Can be overridden
      * by subclasses to provide custom authentication.
+     *
+     * @return The default DN string
      */
     protected String getDefaultDn() {
         return DEFAULT_DN;
     }
 
+    /**
+     * Returns the default HTTP headers for requests, including the x-dn header.
+     *
+     * @return The default HTTP headers
+     */
     protected HttpHeaders getDefaultHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("x-dn", getDefaultDn());
@@ -137,27 +166,52 @@ public abstract class ReactiveIntegrationTestSuite {
                 .headers(getDefaultHeaders());
     }
 
-    /** Convenience method for creating GET request builders. */
+    /**
+     * Convenience method for creating GET request builders.
+     *
+     * @param endpoint The API endpoint
+     * @return A ReactiveRequestBuilder configured for GET requests
+     */
     protected ReactiveRequestBuilder getRequest(String endpoint) {
         return request(endpoint).method(HttpMethod.GET);
     }
 
-    /** Convenience method for creating POST request builders. */
+    /**
+     * Convenience method for creating POST request builders.
+     *
+     * @param endpoint The API endpoint
+     * @return A ReactiveRequestBuilder configured for POST requests
+     */
     protected ReactiveRequestBuilder postRequest(String endpoint) {
         return request(endpoint).method(HttpMethod.POST);
     }
 
-    /** Convenience method for creating PUT request builders. */
+    /**
+     * Convenience method for creating PUT request builders.
+     *
+     * @param endpoint The API endpoint
+     * @return A ReactiveRequestBuilder configured for PUT requests
+     */
     protected ReactiveRequestBuilder putRequest(String endpoint) {
         return request(endpoint).method(HttpMethod.PUT);
     }
 
-    /** Convenience method for creating PATCH request builders. */
+    /**
+     * Convenience method for creating PATCH request builders.
+     *
+     * @param endpoint The API endpoint
+     * @return A ReactiveRequestBuilder configured for PATCH requests
+     */
     protected ReactiveRequestBuilder patchRequest(String endpoint) {
         return request(endpoint).method(HttpMethod.PATCH);
     }
 
-    /** Convenience method for creating DELETE request builders. */
+    /**
+     * Convenience method for creating DELETE request builders.
+     *
+     * @param endpoint The API endpoint
+     * @return A ReactiveRequestBuilder configured for DELETE requests
+     */
     protected ReactiveRequestBuilder deleteRequest(String endpoint) {
         return request(endpoint).method(HttpMethod.DELETE);
     }
@@ -212,6 +266,11 @@ public abstract class ReactiveIntegrationTestSuite {
 
     /**
      * Performs a GET request with default headers.
+     *
+     * @param <T>          The response type
+     * @param endpoint     The endpoint path
+     * @param responseType The class of the response type
+     * @return A Mono containing the response body
      */
     protected <T> Mono<T> get(String endpoint, Class<T> responseType) {
         return get(endpoint, responseType, null);
@@ -226,6 +285,8 @@ public abstract class ReactiveIntegrationTestSuite {
      * @param responseType The class of the response type
      * @param headers      Optional headers (if null, default headers are used)
      * @return A Mono containing the response body
+     * @throws JsonProcessingException if the request body cannot be serialized to
+     *                                 JSON
      */
     protected <T> Mono<T> post(String endpoint, Object requestBody, Class<T> responseType, HttpHeaders headers)
             throws JsonProcessingException {
@@ -247,6 +308,14 @@ public abstract class ReactiveIntegrationTestSuite {
 
     /**
      * Performs a POST request with default headers.
+     *
+     * @param <T>          The response type
+     * @param endpoint     The endpoint path
+     * @param requestBody  The request body object
+     * @param responseType The class of the response type
+     * @return A Mono containing the response body
+     * @throws JsonProcessingException if the request body cannot be serialized to
+     *                                 JSON
      */
     protected <T> Mono<T> post(String endpoint, Object requestBody, Class<T> responseType)
             throws JsonProcessingException {
@@ -261,6 +330,8 @@ public abstract class ReactiveIntegrationTestSuite {
      * @param requestBody The request body object
      * @param headers     Optional headers (if null, default headers are used)
      * @return A Mono containing the response body as String
+     * @throws JsonProcessingException if the request body cannot be serialized to
+     *                                 JSON
      */
     protected Mono<String> postString(String endpoint, Object requestBody, HttpHeaders headers)
             throws JsonProcessingException {
@@ -290,6 +361,12 @@ public abstract class ReactiveIntegrationTestSuite {
 
     /**
      * Performs a POST request with default headers and returns String.
+     *
+     * @param endpoint    The endpoint path
+     * @param requestBody The request body object
+     * @return A Mono containing the response body as String
+     * @throws JsonProcessingException if the request body cannot be serialized to
+     *                                 JSON
      */
     protected Mono<String> postString(String endpoint, Object requestBody) throws JsonProcessingException {
         return postString(endpoint, requestBody, null);

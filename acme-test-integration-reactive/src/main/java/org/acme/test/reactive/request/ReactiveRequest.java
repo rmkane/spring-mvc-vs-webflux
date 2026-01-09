@@ -58,31 +58,61 @@ public final class ReactiveRequest {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Returns the HTTP method for this request.
+     *
+     * @return The HTTP method
+     */
     @NonNull
     public HttpMethod getMethod() {
         return method;
     }
 
+    /**
+     * Returns the URI for this request.
+     *
+     * @return The request URI
+     */
     @NonNull
     public String getUri() {
         return uri;
     }
 
+    /**
+     * Returns the headers for this request.
+     *
+     * @return The request headers
+     */
     @NonNull
     public HttpHeaders getHeaders() {
         return headers;
     }
 
+    /**
+     * Returns the request body, or null if no body.
+     *
+     * @return The request body, or null
+     */
     @Nullable
     public Object getBody() {
         return body;
     }
 
+    /**
+     * Returns the query parameters for this request.
+     *
+     * @return A map of query parameters
+     */
     @NonNull
     public Map<String, String> getQueryParams() {
         return queryParams;
     }
 
+    /**
+     * Returns the path variables for this request.
+     *
+     * @return A map of path variables
+     */
     @NonNull
     public Map<String, Object> getPathVariables() {
         return pathVariables;

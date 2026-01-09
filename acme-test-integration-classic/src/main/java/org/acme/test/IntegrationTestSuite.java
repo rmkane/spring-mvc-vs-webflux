@@ -38,6 +38,11 @@ import org.acme.test.util.JsonFormatter;
 import org.acme.test.util.ResourceLoader;
 import org.acme.test.util.ResponseWriter;
 
+/**
+ * Base class for integration tests providing utilities for making HTTP requests
+ * and assertions. Subclasses should extend this class to write integration
+ * tests.
+ */
 public abstract class IntegrationTestSuite {
 
     // TODO: Should be a system property or environment variable
@@ -48,9 +53,13 @@ public abstract class IntegrationTestSuite {
     private static final String PORT_PROPERTY = "test.server.port";
     private static final String PORT_ENV_VAR = "TEST_SERVER_PORT";
 
+    /** REST client for making HTTP requests. */
     protected static RestFetcher restFetcher;
+    /** JSON object mapper for serialization/deserialization. */
     protected static ObjectMapper objectMapper;
+    /** XML mapper for XML processing. */
     protected static XmlMapper xmlMapper;
+    /** XSLT transformer for XML transformations. */
     protected static Transformer transformer;
 
     private final int port;
@@ -109,17 +118,27 @@ public abstract class IntegrationTestSuite {
 
     /**
      * Returns the base URL for the test server. Can be overridden by subclasses.
+     *
+     * @return The base URL as a string
      */
     protected String getBaseUrl() {
         return String.format("%s://localhost:%d", getProtocol(), getPort());
     }
 
-    /** Returns the protocol (http or https). Can be overridden by subclasses. */
+    /**
+     * Returns the protocol (http or https). Can be overridden by subclasses.
+     *
+     * @return The protocol string (http or https)
+     */
     protected String getProtocol() {
         return PROTOCOL_HTTP;
     }
 
-    /** Returns the configured port. Can be overridden by subclasses. */
+    /**
+     * Returns the configured port. Can be overridden by subclasses.
+     *
+     * @return The port number
+     */
     protected int getPort() {
         return port;
     }
@@ -135,30 +154,66 @@ public abstract class IntegrationTestSuite {
         return RestRequestBuilder.create(getBaseUrl(), endpoint);
     }
 
-    /** Convenience method for GET requests. */
+    /**
+     * Convenience method for GET requests.
+     *
+     * @param endpoint The API endpoint
+     * @return A RestRequestBuilder configured for GET requests
+     */
     protected RestRequestBuilder get(String endpoint) {
         return request(endpoint).method(HttpMethod.GET);
     }
 
-    /** Convenience method for POST requests. */
+    /**
+     * Convenience method for POST requests.
+     *
+     * @param endpoint The API endpoint
+     * @return A RestRequestBuilder configured for POST requests
+     */
     protected RestRequestBuilder post(String endpoint) {
         return request(endpoint).method(HttpMethod.POST);
     }
 
-    /** Convenience method for PUT requests. */
+    /**
+     * Convenience method for PUT requests.
+     *
+     * @param endpoint The API endpoint
+     * @return A RestRequestBuilder configured for PUT requests
+     */
     protected RestRequestBuilder put(String endpoint) {
         return request(endpoint).method(HttpMethod.PUT);
     }
 
-    /** Convenience method for DELETE requests. */
+    /**
+     * Convenience method for DELETE requests.
+     *
+     * @param endpoint The API endpoint
+     * @return A RestRequestBuilder configured for DELETE requests
+     */
     protected RestRequestBuilder delete(String endpoint) {
         return request(endpoint).method(HttpMethod.DELETE);
     }
 
+    /**
+     * Fetches a response from the REST API.
+     *
+     * @param <T>          The response type
+     * @param request      The REST request
+     * @param responseType The response type class
+     * @return The response entity
+     */
     protected <T> ResponseEntity<T> fetch(RestRequest request, @NonNull Class<T> responseType) {
         return restFetcher.fetch(request, responseType);
     }
 
+    /**
+     * Fetches a response from the REST API with a parameterized type reference.
+     *
+     * @param <T>          The response type
+     * @param request      The REST request
+     * @param responseType The parameterized type reference
+     * @return The response entity
+     */
     protected <T> ResponseEntity<T> fetch(
             RestRequest request, @NonNull ParameterizedTypeReference<T> responseType) {
         return restFetcher.fetch(request, responseType);
@@ -293,33 +348,75 @@ public abstract class IntegrationTestSuite {
     /**
      * Returns the default Distinguished Name (DN) for requests. Can be overridden
      * by subclasses to provide custom authentication.
+     *
+     * @return The default DN string
      */
     protected String getDefaultDn() {
         return DEFAULT_DN;
     }
 
+    /**
+     * Returns the default HTTP headers for requests, including the x-dn header.
+     *
+     * @return The default HTTP headers
+     */
     protected HttpHeaders getDefaultHeaders() {
         return RequestHeadersBuilder.create()
                 .addHeader("x-dn", getDefaultDn())
                 .build();
     }
 
+    /**
+     * Loads a resource file as a byte array.
+     *
+     * @param fileName The name of the resource file
+     * @return The resource content as bytes
+     * @throws IOException if the resource cannot be loaded
+     */
     protected byte[] loadResource(String fileName) throws IOException {
         return ResourceLoader.loadBytes(getClass(), fileName);
     }
 
+    /**
+     * Loads a resource file as a string.
+     *
+     * @param fileName The name of the resource file
+     * @return The resource content as a string
+     * @throws IOException if the resource cannot be loaded
+     */
     protected String loadResourceAsString(String fileName) throws IOException {
         return ResourceLoader.loadString(getClass(), fileName);
     }
 
+    /**
+     * Writes a JSON response string to a file.
+     *
+     * @param response The JSON response string
+     * @param fileName The output file name
+     * @throws IOException if the file cannot be written
+     */
     protected void writeJsonResponse(String response, String fileName) throws IOException {
         ResponseWriter.writeJson(objectMapper, response, fileName);
     }
 
+    /**
+     * Writes a JSON response object to a file.
+     *
+     * @param response The response object to serialize as JSON
+     * @param fileName The output file name
+     * @throws IOException if the file cannot be written
+     */
     protected void writeJsonResponse(Object response, String fileName) throws IOException {
         ResponseWriter.writeJson(objectMapper, response, fileName);
     }
 
+    /**
+     * Writes a response string to a file.
+     *
+     * @param response The response string
+     * @param fileName The output file name
+     * @throws IOException if the file cannot be written
+     */
     protected void writeResponse(String response, String fileName) throws IOException {
         ResponseWriter.write(response, fileName);
     }

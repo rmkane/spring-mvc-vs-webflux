@@ -49,6 +49,15 @@ public final class ReactiveRequestBuilder {
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
 
+    /**
+     * Creates a new ReactiveRequestBuilder with the specified base URL, WebClient,
+     * and ObjectMapper.
+     *
+     * @param baseUrl      The base URL for the request
+     * @param webClient    The WebClient to use
+     * @param objectMapper The ObjectMapper for JSON serialization
+     * @return A new ReactiveRequestBuilder
+     */
     public static ReactiveRequestBuilder create(
             String baseUrl, WebClient webClient, ObjectMapper objectMapper) {
         ReactiveRequestBuilder builder = new ReactiveRequestBuilder(webClient, objectMapper);
@@ -56,21 +65,49 @@ public final class ReactiveRequestBuilder {
         return builder;
     }
 
+    /**
+     * Creates a new ReactiveRequestBuilder with the specified base URL, endpoint,
+     * WebClient, and ObjectMapper.
+     *
+     * @param baseUrl      The base URL for the request
+     * @param endpoint     The API endpoint
+     * @param webClient    The WebClient to use
+     * @param objectMapper The ObjectMapper for JSON serialization
+     * @return A new ReactiveRequestBuilder
+     */
     public static ReactiveRequestBuilder create(
             String baseUrl, String endpoint, WebClient webClient, ObjectMapper objectMapper) {
         return create(baseUrl, webClient, objectMapper).endpoint(endpoint);
     }
 
+    /**
+     * Sets the HTTP method for the request.
+     *
+     * @param method The HTTP method
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder method(HttpMethod method) {
         this.method = Objects.requireNonNull(method, "method");
         return this;
     }
 
+    /**
+     * Sets the endpoint path for the request.
+     *
+     * @param endpoint The API endpoint
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder endpoint(String endpoint) {
         this.endpoint = Objects.requireNonNull(endpoint, "endpoint");
         return this;
     }
 
+    /**
+     * Sets the headers for the request.
+     *
+     * @param headers The headers to set
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder headers(HttpHeaders headers) {
         if (headers != null) {
             this.headers.addAll(headers);
@@ -78,6 +115,12 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Sets the headers for the request.
+     *
+     * @param headers The headers to set
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder headers(MultiValueMap<String, String> headers) {
         if (headers != null) {
             this.headers.addAll(headers);
@@ -85,6 +128,13 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Adds a header to the request.
+     *
+     * @param name  The header name
+     * @param value The header value
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder header(String name, String value) {
         if (name != null && value != null) {
             this.headers.add(name, value);
@@ -92,6 +142,12 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Sets the Content-Type header.
+     *
+     * @param mediaType The media type
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder contentType(MediaType mediaType) {
         if (mediaType != null) {
             this.headers.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
@@ -99,14 +155,30 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Sets the Content-Type header to application/json.
+     *
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder contentTypeJson() {
         return contentType(MediaType.APPLICATION_JSON);
     }
 
+    /**
+     * Sets the Content-Type header to application/xml.
+     *
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder contentTypeXml() {
         return contentType(MediaType.APPLICATION_XML);
     }
 
+    /**
+     * Sets the Accept header.
+     *
+     * @param mediaType The media type
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder accept(MediaType mediaType) {
         if (mediaType != null) {
             this.headers.set(HttpHeaders.ACCEPT, mediaType.toString());
@@ -114,14 +186,31 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Sets the Accept header to application/json.
+     *
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder acceptJson() {
         return accept(MediaType.APPLICATION_JSON);
     }
 
+    /**
+     * Sets the Accept header to application/xml.
+     *
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder acceptXml() {
         return accept(MediaType.APPLICATION_XML);
     }
 
+    /**
+     * Adds a query parameter to the request.
+     *
+     * @param name  The query parameter name
+     * @param value The query parameter value
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder queryParam(String name, String value) {
         if (name != null && value != null) {
             this.queryParams.put(name, value);
@@ -129,6 +218,12 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Adds multiple query parameters to the request.
+     *
+     * @param params The query parameters map
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder queryParams(Map<String, String> params) {
         if (params != null) {
             this.queryParams.putAll(params);
@@ -136,6 +231,13 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Adds a path variable for URI template expansion.
+     *
+     * @param name  The path variable name
+     * @param value The path variable value
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder pathVar(String name, Object value) {
         if (name != null && value != null) {
             this.pathVariables.put(name, value);
@@ -143,6 +245,12 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Adds multiple path variables for URI template expansion.
+     *
+     * @param variables The path variables map
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder pathVars(Map<String, ?> variables) {
         if (variables != null) {
             @SuppressWarnings("unchecked")
@@ -152,11 +260,23 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
+    /**
+     * Sets the request body.
+     *
+     * @param body The request body object
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder body(Object body) {
         this.body = body;
         return this;
     }
 
+    /**
+     * Sets the request body as a JSON string.
+     *
+     * @param json The JSON string
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder bodyJson(String json) {
         this.body = json;
         return this;
@@ -164,7 +284,12 @@ public final class ReactiveRequestBuilder {
 
     /* --------------------- Authentication helpers --------------------- */
 
-    /** Adds a Bearer token to the Authorization header. */
+    /**
+     * Adds a Bearer token to the Authorization header.
+     *
+     * @param token The bearer token
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder bearerToken(String token) {
         if (token != null) {
             this.headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
@@ -172,7 +297,13 @@ public final class ReactiveRequestBuilder {
         return this;
     }
 
-    /** Adds Basic authentication to the Authorization header. */
+    /**
+     * Adds Basic authentication to the Authorization header.
+     *
+     * @param username The username
+     * @param password The password
+     * @return This builder for method chaining
+     */
     public ReactiveRequestBuilder basicAuth(String username, String password) {
         if (username != null && password != null) {
             String credentials = username + ":" + password;
