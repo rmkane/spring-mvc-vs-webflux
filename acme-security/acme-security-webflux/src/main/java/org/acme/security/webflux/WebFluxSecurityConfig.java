@@ -35,20 +35,12 @@ public class WebFluxSecurityConfig {
     private final AuthenticationService authenticationService;
 
     @Bean
-    public RequestResponseLoggingWebFilter requestResponseLoggingWebFilter() {
-        return new RequestResponseLoggingWebFilter();
-    }
-
-    @Bean
-    public SecurityWebFilterChain securityWebFilterChain(
-            ServerHttpSecurity http,
-            RequestResponseLoggingWebFilter requestResponseLoggingWebFilter) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         AuthenticationWebFilter authenticationWebFilter = new AuthenticationWebFilter(reactiveAuthenticationManager());
         authenticationWebFilter.setServerAuthenticationConverter(serverAuthenticationConverter());
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .addFilterBefore(requestResponseLoggingWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .authorizeExchange(auth -> auth
                         .pathMatchers(SecurityConstants.PUBLIC_ENDPOINTS).permitAll()
                         .anyExchange().authenticated())

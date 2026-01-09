@@ -1,8 +1,10 @@
 package org.acme.security.webflux;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -22,6 +24,8 @@ import org.acme.security.webflux.util.HttpUtils;
  * reactive, non-blocking manner.
  */
 @Slf4j
+@Component
+@Order(1)
 public class RequestResponseLoggingWebFilter implements WebFilter {
 
     private static final String ALREADY_LOGGED_ATTRIBUTE = String.format("%s.ALREADY_LOGGED",
