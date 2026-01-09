@@ -39,57 +39,55 @@ Both implementations share common security and authentication infrastructure whi
 ## High-Level Architecture
 
 ```none
-┌─────────────────────────────────────────────────────────────┐
-│                      Load Balancer / Gateway                 │
-│                   (mTLS with client certs)                   │
-└────────────────┬────────────────────────┬────────────────────┘
-                 │                        │
-        ┌────────▼────────┐      ┌───────▼─────────┐
-        │   MVC API       │      │  WebFlux API    │
-        │   (Port 8080)   │      │  (Port 8081)    │
-        │                 │      │                 │
-        │ Spring MVC      │      │ Spring WebFlux  │
-        │ Servlet Stack   │      │ Netty Stack     │
-        │ Blocking I/O    │      │ Non-blocking IO │
-        └────────┬────────┘      └────────┬────────┘
-                 │                        │
-         ┌───────▼────────────────────────▼───────┐
-         │     Shared Security Infrastructure      │
-         │  - Header-based Authentication          │
-         │  - DN Validation                        │
-         │  - RBAC                                 │
-         └───────┬────────────────────────┬────────┘
-                 │                        │
-         ┌───────▼────────┐       ┌──────▼────────┐
-         │   JPA Layer    │       │  R2DBC Layer  │
-         │  (Hibernate)   │       │  (Reactive)   │
-         │   Blocking     │       │  Async        │
-         └───────┬────────┘       └──────┬────────┘
-                 │                        │
-         ┌───────▼────────┐       ┌──────▼────────┐
-         │  PostgreSQL    │       │  PostgreSQL   │
-         │  (JPA DB)      │       │  (R2DBC DB)   │
-         └────────────────┘       └───────────────┘
-
-         ┌──────────────────────────────────────────┐
-         │      Authentication Service              │
-         │         (Port 8082)                      │
-         │  - User Management                       │
-         │  - DN Lookup                             │
-         │  - Role Assignment                       │
-         └──────────────┬───────────────────────────┘
-                        │
-                ┌───────▼────────┐
-                │  PostgreSQL    │
-                │  (Auth DB)     │
-                └────────────────┘
-
-         ┌──────────────────────────────────────────┐
-         │      Monitoring Stack                    │
-         │  - Prometheus (scrapes metrics)          │
-         │  - Grafana (visualization)               │
-         │  - mTLS secured endpoints                │
-         └──────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│         Load Balancer / Gateway          │
+│         (mTLS with client certs)         │
+└───────┬─────────────────────────┬────────┘
+        │                         │
+┌───────▼─────────┐      ┌────────▼────────┐
+│     MVC API     │      │  WebFlux API    │
+│   (Port 8080)   │      │  (Port 8081)    │
+│                 │      │                 │
+│ Spring MVC      │      │ Spring WebFlux  │
+│ Servlet Stack   │      │ Netty Stack     │
+│ Blocking I/O    │      │ Non-blocking IO │
+└───────┬─────────┘      └────────┬────────┘
+        │                         │
+┌───────▼─────────────────────────▼────────┐
+│      Shared Security Infrastructure      │
+│  - Header-based Authentication           │
+│  - DN Validation                         │
+│  - RBAC                                  │
+└───────┬─────────────────────────┬────────┘
+        │                         │
+┌───────▼─────────┐      ┌────────▼────────┐
+│   JPA Layer     │      │   R2DBC Layer   │
+│  (Hibernate)    │      │    (Reactive)   │
+│   Blocking      │      │      Async      │
+└───────┬─────────┘      └────────┬────────┘
+        │                         │
+┌───────▼─────────┐      ┌────────▼────────┐
+│   PostgreSQL    │      │   PostgreSQL    │
+│    (JPA DB)     │      │   (R2DBC DB)    │
+└─────────────────┘      └─────────────────┘
+┌──────────────────────────────────────────┐
+│           Authentication Service         │
+│                (Port 8082)               │
+│  - User Management                       │
+│  - DN Lookup                             │
+│  - Role Assignment                       │
+└────────────────────┬─────────────────────┘
+                     │
+             ┌───────▼────────┐
+             │   PostgreSQL   │
+             │   (Auth DB)    │
+             └────────────────┘
+┌──────────────────────────────────────────┐
+│            Monitoring Stack              │
+│  - Prometheus (scrapes metrics)          │
+│  - Grafana (visualization)               │
+│  - mTLS secured endpoints                │
+└──────────────────────────────────────────┘
 ```
 
 ## Module Organization
@@ -114,15 +112,12 @@ acme (root)
 │   └── acme-security-webflux/         # WebFlux-specific security configuration
 │
 ├── acme-persistence-jpa/              # JPA entities and repositories (blocking)
-│
 ├── acme-persistence-r2dbc/            # R2DBC entities and repositories (reactive)
 │
 ├── acme-api-mvc/                      # Spring MVC REST API
-│
 ├── acme-api-webflux/                  # Spring WebFlux REST API
 │
 ├── acme-test-integration-classic/     # Integration test framework (RestTemplate)
-│
 └── acme-test-integration-reactive/    # Integration test framework (WebClient)
 ```
 
@@ -276,7 +271,7 @@ HTTP Request
 ┌─────────────────────────────────────┐
 │  Servlet Container (Tomcat)         │
 │  - One thread per request           │
-│  - Thread blocks on I/O              │
+│  - Thread blocks on I/O             │
 └─────────────┬───────────────────────┘
               │
               ▼
@@ -479,6 +474,22 @@ Both MVC and WebFlux use the same conceptual authentication flow:
 - Allows self-signed certificates
 - **Must not be used in production**
 
+**RequestResponseLoggingFilter** (MVC)
+
+- Logs request and response headers for debugging and monitoring
+- Executes once per request via `OncePerRequestFilter`
+- Skips logging for Prometheus endpoint to reduce noise
+- Logs at DEBUG level when enabled
+- Formats headers with consistent structure
+
+**RequestResponseLoggingWebFilter** (WebFlux)
+
+- Reactive equivalent of `RequestResponseLoggingFilter`
+- Logs request and response headers using `WebFilter`
+- Uses exchange attributes to prevent duplicate logging
+- Skips logging for Prometheus endpoint
+- Logs at DEBUG level when enabled
+
 ### Role-Based Access Control
 
 Currently the system has basic role support:
@@ -595,7 +606,7 @@ Both APIs have comprehensive integration test suites with fluent APIs:
 ```java
 @Test
 void testGetBook() {
-    ResponseEntity<BookResponse> response = getRequest("/api/books/1")
+    ResponseEntity<BookResponse> response = getRequest("/api/v1/books/1")
         .retrieve(BookResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -608,7 +619,7 @@ void testGetBook() {
 ```java
 @Test
 void testGetBook() {
-    Mono<BookResponse> responseMono = getRequest("/api/books/1")
+    Mono<BookResponse> responseMono = getRequest("/api/v1/books/1")
         .retrieve(BookResponse.class);
 
     StepVerifier.create(responseMono)

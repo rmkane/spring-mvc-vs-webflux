@@ -639,6 +639,8 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 - `SslConfig`: SSL/TLS configuration for auth service client communication (mTLS)
 - `WebMvcSecurityConfig`: MVC security configuration (extracts `x-dn` header)
 - `WebFluxSecurityConfig`: WebFlux security configuration (extracts `x-dn` header)
+- `RequestResponseLoggingFilter`: MVC filter that logs request and response headers (DEBUG level)
+- `RequestResponseLoggingWebFilter`: WebFlux filter that logs request and response headers (DEBUG level)
 
 ### Persistence Components
 
