@@ -6,20 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-import org.acme.api.app.AcmeApiWebFluxApplication;
 import org.acme.api.model.BookResponse;
 import org.acme.api.model.CreateBookRequest;
 import org.acme.api.model.UpdateBookRequest;
 import org.acme.persistence.r2dbc.entity.Book;
 
-@SpringBootTest(classes = AcmeApiWebFluxApplication.class)
 class BookMapperTest {
 
-    @Autowired
-    private BookMapper bookMapper;
+    private final BookMapper bookMapper = new BookMapperImpl();
 
     @Test
     void toEntity_fromCreateBookRequest_shouldMapCorrectly() {
