@@ -1,5 +1,9 @@
 package org.acme.api.exception;
 
+import java.net.URI;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -15,37 +19,44 @@ import lombok.extern.slf4j.Slf4j;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthorizationDeniedException.class)
-    public ResponseEntity<ProblemDetail> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+    public ResponseEntity<ProblemDetail> handleAuthorizationDenied(
+            AuthorizationDeniedException ex, HttpServletRequest request) {
         log.warn("Authorization denied: {}", ex.getMessage());
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.FORBIDDEN, ex.getMessage());
         problemDetail.setTitle("Authorization Denied");
         problemDetail.setProperty("error", "Forbidden");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problemDetail);
     }
 
     @ExceptionHandler(BookNotFoundException.class)
-    public ResponseEntity<ProblemDetail> handleBookNotFound(BookNotFoundException ex) {
+    public ResponseEntity<ProblemDetail> handleBookNotFound(
+            BookNotFoundException ex, HttpServletRequest request) {
         log.warn("Book not found: {}", ex.getMessage());
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Book Not Found");
         problemDetail.setProperty("error", "Not Found");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
     }
 
     @ExceptionHandler(BookAlreadyExistsException.class)
-    public ResponseEntity<ProblemDetail> handleBookAlreadyExists(BookAlreadyExistsException ex) {
+    public ResponseEntity<ProblemDetail> handleBookAlreadyExists(
+            BookAlreadyExistsException ex, HttpServletRequest request) {
         log.warn("Book already exists: {}", ex.getMessage());
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Book Already Exists");
         problemDetail.setProperty("error", "Bad Request");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ProblemDetail> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ProblemDetail> handleValidationException(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .reduce((msg1, msg2) -> msg1 + ", " + msg2)
@@ -55,16 +66,19 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST, message);
         problemDetail.setTitle("Validation Failed");
         problemDetail.setProperty("error", "Bad Request");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ProblemDetail> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<ProblemDetail> handleRuntimeException(
+            RuntimeException ex, HttpServletRequest request) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
         problemDetail.setTitle("Internal Server Error");
         problemDetail.setProperty("error", "Internal Server Error");
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
     }
 }
