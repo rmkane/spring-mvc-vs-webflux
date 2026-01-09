@@ -28,8 +28,7 @@ import org.acme.security.webflux.util.HttpUtils;
 @Order(1)
 public class RequestResponseLoggingWebFilter implements WebFilter {
 
-    private static final String ALREADY_LOGGED_ATTRIBUTE = String.format("%s.ALREADY_LOGGED",
-            RequestResponseLoggingWebFilter.class.getName());
+    private static final String ALREADY_LOGGED_KEY = RequestResponseLoggingWebFilter.class.getName();
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -48,13 +47,13 @@ public class RequestResponseLoggingWebFilter implements WebFilter {
 
         // Ensure we only log once per request, even if this filter is called multiple
         // times (e.g., if multiple SecurityWebFilterChains are evaluated)
-        Boolean alreadyLogged = exchange.getAttribute(ALREADY_LOGGED_ATTRIBUTE);
+        Boolean alreadyLogged = exchange.getAttribute(ALREADY_LOGGED_KEY);
         if (Boolean.TRUE.equals(alreadyLogged)) {
             return chain.filter(exchange);
         }
 
         // Mark as logged for this exchange
-        exchange.getAttributes().put(ALREADY_LOGGED_ATTRIBUTE, Boolean.TRUE);
+        exchange.getAttributes().put(ALREADY_LOGGED_KEY, Boolean.TRUE);
 
         // Log request headers
         log.debug(formatRequestHeaders(request));
