@@ -203,7 +203,7 @@ run-webflux:
 run-auth:
 	mvn compile -DskipTests -pl acme-auth-service -am \
 	&& cd acme-auth-service \
-	&& SERVER_PORT=8082 ENABLE_SSL=true mvn spring-boot:run \
+	&& SERVER_PORT=8082 SERVER_SSL_ENABLED=true mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \
 	-Dspring-boot.run.addResources=false \
 	-Dspring-boot.run.useTestClasspath=false \

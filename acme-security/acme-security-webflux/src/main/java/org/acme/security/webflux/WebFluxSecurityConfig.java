@@ -2,6 +2,7 @@ package org.acme.security.webflux;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
@@ -28,17 +29,26 @@ import org.acme.security.core.service.AuthenticationService;
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 @RequiredArgsConstructor
+@Order(2)
 public class WebFluxSecurityConfig {
 
     private final AuthenticationService authenticationService;
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    public RequestResponseLoggingWebFilter requestResponseLoggingWebFilter() {
+        return new RequestResponseLoggingWebFilter();
+    }
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(
+            ServerHttpSecurity http,
+            RequestResponseLoggingWebFilter requestResponseLoggingWebFilter) {
         AuthenticationWebFilter authenticationWebFilter = new AuthenticationWebFilter(reactiveAuthenticationManager());
         authenticationWebFilter.setServerAuthenticationConverter(serverAuthenticationConverter());
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .addFilterBefore(requestResponseLoggingWebFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .authorizeExchange(auth -> auth
                         .pathMatchers(SecurityConstants.PUBLIC_ENDPOINTS).permitAll()
                         .anyExchange().authenticated())

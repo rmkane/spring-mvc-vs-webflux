@@ -14,6 +14,8 @@ public final class SecurityConstants {
     public static final String UNAUTHORIZED_MESSAGE = "Missing or invalid x-dn header";
     public static final String MISSING_DN_MESSAGE = "Missing or empty x-dn header";
 
+    public static final String PROMETHEUS_ENDPOINT = "/actuator/prometheus";
+
     public static final String[] PUBLIC_ENDPOINTS = {
             "/swagger-ui/**",
             "/v3/api-docs/**",
