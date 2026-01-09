@@ -4,7 +4,7 @@
 # Usage: ./test-mvc.sh <operation> [args...]
 # Operations: get-all, get <id>, create <title> <author> <isbn>, update <id> <title> <author> <isbn>, delete <id>
 
-BASE_URL="http://localhost:8080/api/books"
+BASE_URL="http://localhost:8080/api/v1/books"
 DN="${X_DN:-cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org}"
 
 # Colors for output

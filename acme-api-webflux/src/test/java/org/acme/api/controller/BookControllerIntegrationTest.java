@@ -28,7 +28,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 
     @Test
     void testGetBook() {
-        Mono<BookResponse> responseMono = getRequest("/api/books/1")
+        Mono<BookResponse> responseMono = getRequest("/api/v1/books/1")
                 .retrieve(BookResponse.class);
 
         StepVerifier.create(responseMono)
@@ -54,7 +54,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 
         // First attempt: may succeed (201) if book doesn't exist, or fail (400) if it
         // already exists
-        Mono<String> firstResponseMono = postRequest("/api/books")
+        Mono<String> firstResponseMono = postRequest("/api/v1/books")
                 .body(request)
                 .retrieveString();
 
@@ -91,7 +91,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .verify();
 
         // Second attempt: should always fail with 400 BAD_REQUEST (duplicate ISBN)
-        Mono<String> secondResponseMono = postRequest("/api/books")
+        Mono<String> secondResponseMono = postRequest("/api/v1/books")
                 .body(request)
                 .retrieveString();
 
@@ -119,7 +119,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .publicationYear(2024)
                 .build();
 
-        Mono<String> responseMono = postRequest("/api/books")
+        Mono<String> responseMono = postRequest("/api/v1/books")
                 .body(request)
                 .retrieveString();
 
@@ -153,7 +153,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .publicationYear(2024)
                 .build();
 
-        Mono<BookResponse> createMono = postRequest("/api/books")
+        Mono<BookResponse> createMono = postRequest("/api/v1/books")
                 .body(createRequest)
                 .retrieve(BookResponse.class)
                 .doOnNext(book -> bookIdHolder[0] = book.getId());
@@ -181,7 +181,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .publicationYear(2025)
                 .build();
 
-        Mono<BookResponse> updateMono = putRequest("/api/books/" + bookId)
+        Mono<BookResponse> updateMono = putRequest("/api/v1/books/" + bookId)
                 .body(updateRequest)
                 .retrieve(BookResponse.class);
 
@@ -198,7 +198,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .verify();
 
         // 3. DELETE - Delete the book
-        Mono<Void> deleteMono = deleteRequest("/api/books/" + bookId)
+        Mono<Void> deleteMono = deleteRequest("/api/v1/books/" + bookId)
                 .retrieve(Void.class);
 
         StepVerifier.create(deleteMono)
@@ -206,7 +206,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
                 .verify();
 
         // 4. VERIFY DELETION - Try to get the deleted book, should get 404
-        Mono<String> getMono = getRequest("/api/books/" + bookId)
+        Mono<String> getMono = getRequest("/api/v1/books/" + bookId)
                 .retrieveString();
 
         StepVerifier.create(getMono)

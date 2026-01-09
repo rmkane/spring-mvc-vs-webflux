@@ -33,7 +33,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
 
     @Test
     void testGetBook() {
-        var request = get("/api/books/1")
+        var request = get("/api/v1/books/1")
                 .headers(headers)
                 .build();
 
@@ -55,7 +55,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
                 .publicationYear(2024)
                 .build();
 
-        var request = post("/api/books")
+        var request = post("/api/v1/books")
                 .headers(headers)
                 .body(toJson(book))
                 .build();
@@ -94,7 +94,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
                 .publicationYear(2024)
                 .build();
 
-        var createHttpRequest = post("/api/books")
+        var createHttpRequest = post("/api/v1/books")
                 .headers(headers)
                 .body(toJson(createRequest))
                 .build();
@@ -119,7 +119,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
                 .publicationYear(2025)
                 .build();
 
-        var updateHttpRequest = put("/api/books/" + bookId)
+        var updateHttpRequest = put("/api/v1/books/" + bookId)
                 .headers(headers)
                 .body(toJson(updateRequest))
                 .build();
@@ -134,7 +134,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
         assertEquals(2025, updateResponse.getBody().getPublicationYear());
 
         // 3. DELETE - Delete the book
-        var deleteHttpRequest = delete("/api/books/" + bookId)
+        var deleteHttpRequest = delete("/api/v1/books/" + bookId)
                 .headers(headers)
                 .build();
 
@@ -142,7 +142,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
         assertEquals(204, deleteResponse.getStatusCode().value()); // NO_CONTENT
 
         // 4. VERIFY DELETION - Try to get the deleted book, should get 404
-        var getHttpRequest = get("/api/books/" + bookId)
+        var getHttpRequest = get("/api/v1/books/" + bookId)
                 .headers(headers)
                 .build();
 

@@ -252,7 +252,7 @@ The security layer handles authentication mechanics:
 - **Same Authentication Flow**: Both call auth service via REST to lookup users by DN
 - **Same User Principal**: Both create `UserInformation` (derivative) from `UserInfo` with roles from auth service
 - **Same Role-Based Access Control**: Both use `@PreAuthorize` annotations with database-backed roles
-- **Same API Endpoints**: Both expose `/api/books` with same CRUD operations
+- **Same API Endpoints**: Both expose `/api/v1/books` with same CRUD operations
 - **Same Business Logic**: Same service layer functionality
 - **Same Database Schema**: Both use identical `books` table structure (users are in auth service database)
 - **Same Error Handling**: Missing header returns `401 Unauthorized` in both
@@ -372,13 +372,13 @@ Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ing
 ### Example Request (MVC)
 
 ```bash
-curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8080/api/books
+curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8080/api/v1/books
 ```
 
 ### Example Request (WebFlux)
 
 ```bash
-curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8081/api/books
+curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8081/api/v1/books
 ```
 
 **Available test users:**
@@ -394,7 +394,7 @@ Users are seeded in the auth service database with LDAP-like DNs:
 ### Missing Header (Returns 401)
 
 ```bash
-curl http://localhost:8080/api/books  # Returns 401 Unauthorized
+curl http://localhost:8080/api/v1/books  # Returns 401 Unauthorized
 ```
 
 ### CRUD Operations
@@ -405,7 +405,7 @@ curl http://localhost:8080/api/books  # Returns 401 Unauthorized
 curl -X POST -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
   -H "Content-Type: application/json" \
   -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789","publicationYear":2024}' \
-  http://localhost:8080/api/books
+  http://localhost:8080/api/v1/books
 ```
 
 **Note:** The API uses request/response DTOs (`CreateBookRequest`, `UpdateBookRequest`, `BookResponse`) and MapStruct for mapping between DTOs and entities. Duplicate ISBNs return a 400 Bad Request with RFC 9457 ProblemDetail response.
@@ -414,14 +414,14 @@ curl -X POST -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=or
 
 ```bash
 curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  http://localhost:8080/api/books
+  http://localhost:8080/api/v1/books
 ```
 
 **Get Book by ID (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
 curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  http://localhost:8080/api/books/1
+  http://localhost:8080/api/v1/books/1
 ```
 
 **Update Book (requires READ_WRITE role):**
@@ -430,14 +430,14 @@ curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
 curl -X PUT -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
   -H "Content-Type: application/json" \
   -d '{"title":"Updated Title","author":"Updated Author"}' \
-  http://localhost:8080/api/books/1
+  http://localhost:8080/api/v1/books/1
 ```
 
 **Delete Book (requires READ_WRITE role):**
 
 ```bash
 curl -X DELETE -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  http://localhost:8080/api/books/1
+  http://localhost:8080/api/v1/books/1
 ```
 
 **Note:** See `scripts/test-mvc.sh` and `scripts/test-webflux.sh` for comprehensive test scripts. Use the `X_DN` environment variable to set the DN.

@@ -29,9 +29,9 @@ import org.acme.api.model.UpdateBookRequest;
 import org.acme.api.service.BookService;
 
 @RestController
-@RequestMapping("/api/books")
+@RequestMapping("/api/v1/books")
 @RequiredArgsConstructor
-@Tag(name = "Books", description = "Book management API")
+@Tag(name = "Books", description = "Book management API v1")
 public class BookController {
 
     private final BookService bookService;
