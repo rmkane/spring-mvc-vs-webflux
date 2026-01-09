@@ -13,6 +13,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HttpHeaderFormatter {
 
+    private static final String REQUEST_HEADER_PREFIX = "> ";
+    private static final String RESPONSE_HEADER_PREFIX = "< ";
+
+    public static String formatRequestHeaders(MultiValueMap<String, String> headers) {
+        return formatHeaders(headers, REQUEST_HEADER_PREFIX);
+    }
+
+    public static String formatResponseHeaders(MultiValueMap<String, String> headers) {
+        return formatHeaders(headers, RESPONSE_HEADER_PREFIX);
+    }
+
     /**
      * Formats a MultiValueMap of headers into a string where each header is on its
      * own line in the format "- name: value1, value2".
@@ -21,9 +32,10 @@ public final class HttpHeaderFormatter {
      * @return formatted header string with each header on a new line, prefixed with
      *         "- "
      */
-    public static String formatHeaders(MultiValueMap<String, String> headers) {
+    private static String formatHeaders(MultiValueMap<String, String> headers, String prefix) {
         return headers.entrySet().stream()
-                .map(entry -> "- %s: %s".formatted(
+                .map(entry -> "%s%s: %s".formatted(
+                        prefix,
                         entry.getKey(),
                         String.join(", ", entry.getValue())))
                 .collect(Collectors.joining("\n"));

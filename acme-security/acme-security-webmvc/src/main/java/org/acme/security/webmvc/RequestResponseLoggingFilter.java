@@ -8,14 +8,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.util.HttpHeaderFormatter;
+import org.acme.security.core.util.PathMatcherUtil;
 import org.acme.security.webmvc.util.HttpUtils;
 
 /**
@@ -40,8 +41,9 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Skip logging for Prometheus endpoint
-        if (request.getRequestURI().equals(SecurityConstants.PROMETHEUS_ENDPOINT)) {
+        // Skip logging for public endpoints (e.g., actuator endpoints, swagger, etc.)
+        String path = request.getRequestURI();
+        if (PathMatcherUtil.isPublicEndpoint(path)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -64,22 +66,24 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
 
     private String formatRequestHeaders(HttpServletRequest request) {
         return """
-                Request Headers:
+                Dumping request info:
                 Method: %s %s
+                Query: %s
                 Headers:
                 %s""".formatted(
                 request.getMethod(),
                 request.getRequestURI(),
-                HttpHeaderFormatter.formatHeaders(HttpUtils.getHeaders(request)));
+                request.getQueryString(),
+                HttpHeaderFormatter.formatRequestHeaders(HttpUtils.getHeaders(request)));
     }
 
     private String formatResponseHeaders(HttpServletResponse response) {
         return """
-                Response Headers:
-                Status: %d
+                Dumping response info:
+                Status: %s
                 Headers:
                 %s""".formatted(
-                response.getStatus(),
-                HttpHeaderFormatter.formatHeaders(HttpUtils.getHeaders(response)));
+                HttpStatus.valueOf(response.getStatus()),
+                HttpHeaderFormatter.formatResponseHeaders(HttpUtils.getHeaders(response)));
     }
 }

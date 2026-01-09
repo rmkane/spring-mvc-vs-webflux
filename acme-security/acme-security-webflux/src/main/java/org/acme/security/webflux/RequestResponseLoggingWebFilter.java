@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import reactor.core.publisher.Mono;
 
-import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.util.HttpHeaderFormatter;
+import org.acme.security.core.util.PathMatcherUtil;
 import org.acme.security.webflux.util.HttpUtils;
 
 /**
@@ -36,8 +36,9 @@ public class RequestResponseLoggingWebFilter implements WebFilter {
             return chain.filter(exchange);
         }
 
-        // Skip logging for Prometheus endpoint
-        if (request.getURI().getPath().equals(SecurityConstants.PROMETHEUS_ENDPOINT)) {
+        // Skip logging for public endpoints (e.g., actuator endpoints, swagger, etc.)
+        String path = request.getURI().getPath();
+        if (PathMatcherUtil.isPublicEndpoint(path)) {
             return chain.filter(exchange);
         }
 
@@ -66,22 +67,24 @@ public class RequestResponseLoggingWebFilter implements WebFilter {
 
     private String formatRequestHeaders(ServerHttpRequest request) {
         return """
-                Request Headers:
+                Dumping request info:
                 Method: %s %s
+                Query: %s
                 Headers:
                 %s""".formatted(
                 request.getMethod(),
                 request.getURI().getPath(),
-                HttpHeaderFormatter.formatHeaders(HttpUtils.getHeaders(request)));
+                request.getURI().getRawQuery(),
+                HttpHeaderFormatter.formatRequestHeaders(HttpUtils.getHeaders(request)));
     }
 
     private String formatResponseHeaders(ServerHttpResponse response) {
         return """
-                Response Headers:
+                Dumping response info:
                 Status: %s
                 Headers:
                 %s""".formatted(
                 response.getStatusCode(),
-                HttpHeaderFormatter.formatHeaders(HttpUtils.getHeaders(response)));
+                HttpHeaderFormatter.formatResponseHeaders(HttpUtils.getHeaders(response)));
     }
 }
