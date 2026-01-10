@@ -1,79 +1,84 @@
 <!-- omit in toc -->
+
 # Acme Multi-Module Spring Boot Application
 
 A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (reactive) implementations with LDAP-like DN-based authentication and role-based access control.
 
 <!-- omit in toc -->
+
 ## Table of Contents
 
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Building the Project](#building-the-project)
-  - [Starting Databases and LDAP](#starting-databases-and-ldap)
-  - [Running Applications](#running-applications)
-- [Architecture Overview](#architecture-overview)
-  - [Authentication Service](#authentication-service)
-    - [`acme-auth-service-ldap` (LDAP-based)](#acme-auth-service-ldap-ldap-based)
-    - [`acme-auth-service-db` (PostgreSQL-based)](#acme-auth-service-db-postgresql-based)
-  - [Security Layer (`acme-security`)](#security-layer-acme-security)
-  - [Persistence Layer](#persistence-layer)
-- [MVC Route (Traditional/Blocking)](#mvc-route-traditionalblocking)
-  - [MVC Framework](#mvc-framework)
-  - [MVC Security](#mvc-security)
-  - [MVC Persistence](#mvc-persistence)
-  - [MVC Return Types](#mvc-return-types)
-  - [MVC Port](#mvc-port)
-- [WebFlux Route (Reactive/Non-blocking)](#webflux-route-reactivenon-blocking)
-  - [WebFlux Framework](#webflux-framework)
-  - [WebFlux Security](#webflux-security)
-  - [WebFlux Persistence](#webflux-persistence)
-  - [WebFlux Return Types](#webflux-return-types)
-  - [WebFlux Port](#webflux-port)
-- [How They Are The Same](#how-they-are-the-same)
-- [How They Are Different](#how-they-are-different)
-  - [Execution Model](#execution-model)
-  - [Return Types Comparison](#return-types-comparison)
-  - [Database Access](#database-access)
-  - [Security Context Access](#security-context-access)
-  - [Performance Characteristics](#performance-characteristics)
-  - [Ports](#ports)
-- [Security Implementation](#security-implementation)
-  - [Header-Based Authentication](#header-based-authentication)
-  - [Missing Header](#missing-header)
-  - [User Lookup](#user-lookup)
-  - [User Lookup Caching](#user-lookup-caching)
-  - [Role-Based Access Control](#role-based-access-control)
-  - [Deployment Context](#deployment-context)
-- [Testing the APIs](#testing-the-apis)
-  - [Example Request (MVC)](#example-request-mvc)
-  - [Example Request (WebFlux)](#example-request-webflux)
-  - [Missing Header (Returns 401)](#missing-header-returns-401)
-  - [CRUD Operations](#crud-operations)
-  - [Integration Testing](#integration-testing)
-- [Development Workflow](#development-workflow)
-- [Docker](#docker)
-  - [Build Docker Images](#build-docker-images)
-  - [Run in Docker](#run-in-docker)
-- [Makefile Commands](#makefile-commands)
-  - [Infrastructure Operations](#infrastructure-operations)
-  - [Database Operations](#database-operations)
-  - [LDAP Operations](#ldap-operations)
-  - [Build Operations](#build-operations)
-  - [Run Applications](#run-applications)
-  - [Docker Operations](#docker-operations)
-- [Project Structure Details](#project-structure-details)
-  - [Module Organization](#module-organization)
-  - [Dependency Relationships](#dependency-relationships)
-  - [Architecture Flow](#architecture-flow)
-- [Key Components](#key-components)
-  - [Authentication Service Components](#authentication-service-components)
-  - [Authentication Client (`acme-auth-client`)](#authentication-client-acme-auth-client)
-  - [Security (`acme-security`)](#security-acme-security)
-  - [Persistence Components](#persistence-components)
-  - [API](#api)
-- [License](#license)
+- [Acme Multi-Module Spring Boot Application](#acme-multi-module-spring-boot-application)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Project Structure](#project-structure)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Building the Project](#building-the-project)
+    - [Starting Databases and LDAP](#starting-databases-and-ldap)
+    - [Running Applications](#running-applications)
+  - [Architecture Overview](#architecture-overview)
+    - [Authentication Service](#authentication-service)
+      - [`acme-auth-service-ldap` (LDAP-based)](#acme-auth-service-ldap-ldap-based)
+      - [`acme-auth-service-db` (PostgreSQL-based)](#acme-auth-service-db-postgresql-based)
+    - [Security Layer (`acme-security`)](#security-layer-acme-security)
+    - [Persistence Layer](#persistence-layer)
+  - [MVC Route (Traditional/Blocking)](#mvc-route-traditionalblocking)
+    - [MVC Framework](#mvc-framework)
+    - [MVC Security](#mvc-security)
+    - [MVC Persistence](#mvc-persistence)
+    - [MVC Return Types](#mvc-return-types)
+    - [MVC Port](#mvc-port)
+  - [WebFlux Route (Reactive/Non-blocking)](#webflux-route-reactivenon-blocking)
+    - [WebFlux Framework](#webflux-framework)
+    - [WebFlux Security](#webflux-security)
+    - [WebFlux Persistence](#webflux-persistence)
+    - [WebFlux Return Types](#webflux-return-types)
+    - [WebFlux Port](#webflux-port)
+  - [How They Are The Same](#how-they-are-the-same)
+  - [How They Are Different](#how-they-are-different)
+    - [Execution Model](#execution-model)
+    - [Return Types Comparison](#return-types-comparison)
+    - [Database Access](#database-access)
+    - [Security Context Access](#security-context-access)
+    - [Performance Characteristics](#performance-characteristics)
+    - [Ports](#ports)
+  - [Security Implementation](#security-implementation)
+    - [Header-Based Authentication](#header-based-authentication)
+    - [Missing Header](#missing-header)
+    - [User Lookup](#user-lookup)
+    - [User Lookup Caching](#user-lookup-caching)
+    - [Role-Based Access Control](#role-based-access-control)
+    - [Deployment Context](#deployment-context)
+  - [Testing the APIs](#testing-the-apis)
+    - [Example Request (MVC)](#example-request-mvc)
+    - [Example Request (WebFlux)](#example-request-webflux)
+    - [Missing Header (Returns 401)](#missing-header-returns-401)
+    - [CRUD Operations](#crud-operations)
+    - [Integration Testing](#integration-testing)
+  - [Development Workflow](#development-workflow)
+  - [Docker](#docker)
+    - [Build Docker Images](#build-docker-images)
+    - [Run in Docker](#run-in-docker)
+  - [Makefile Commands](#makefile-commands)
+    - [Infrastructure Operations](#infrastructure-operations)
+    - [Database Operations](#database-operations)
+    - [LDAP Operations](#ldap-operations)
+    - [Build Operations](#build-operations)
+    - [Run Applications](#run-applications)
+    - [Docker Operations](#docker-operations)
+  - [Project Structure Details](#project-structure-details)
+    - [Module Organization](#module-organization)
+    - [Dependency Relationships](#dependency-relationships)
+    - [Architecture Flow](#architecture-flow)
+  - [Key Components](#key-components)
+    - [Authentication Service Components](#authentication-service-components)
+    - [Authentication Client (`acme-auth-client`)](#authentication-client-acme-auth-client)
+    - [Security (`acme-security`)](#security-acme-security)
+    - [Persistence Components](#persistence-components)
+    - [API](#api)
+    - [UI (`acme-ui`)](#ui-acme-ui)
+  - [License](#license)
 
 ## Overview
 
@@ -103,6 +108,7 @@ spring-mvc-vs-webflux/
 ├── acme-persistence-r2dbc/          # R2DBC repositories and entities
 ├── acme-api-mvc/                    # MVC REST API
 ├── acme-api-webflux/                # WebFlux REST API
+├── acme-ui/                         # Next.js web UI for book management
 ├── acme-test-integration-classic/   # Integration test framework (RestTemplate-based)
 └── acme-test-integration-reactive/  # Reactive integration test framework (WebClient-based)
 ```
@@ -113,6 +119,7 @@ spring-mvc-vs-webflux/
 
 - Java 17+
 - Maven 3.9+
+- Node.js 20+ and pnpm 8+
 - Docker and Docker Compose
 
 ### Building the Project
@@ -178,6 +185,16 @@ make run-webflux
 ```
 
 Runs on port 8081
+
+**UI Application:**
+
+```bash
+make run-ui
+```
+
+Runs on port 3001
+
+The UI provides a web interface for managing books. It communicates with the backend APIs (MVC or WebFlux) and automatically includes the `x-dn` header for authentication. For local development, configure the DN in `acme-ui/.env.local` (see `acme-ui/README.md` for details).
 
 ## Architecture Overview
 
@@ -325,6 +342,7 @@ The security layer handles authentication mechanics:
 - **MVC**: 8080
 - **WebFlux**: 8081
 - **Auth Service**: 8082
+- **UI**: 3001
 
 ## Security Implementation
 
@@ -543,7 +561,15 @@ See `acme-test-integration-classic/README.md` and `acme-test-integration-reactiv
    make run-webflux
    ```
 
-6. **Run tests:**
+6. **Run UI (optional):**
+
+   ```bash
+   make run-ui
+   ```
+
+   The UI runs on port 3001. Configure `acme-ui/.env.local` with your DN for local development (see `acme-ui/README.md`).
+
+7. **Run tests:**
 
    ```bash
    make test
@@ -608,9 +634,9 @@ make docker-run-webflux
 
 - `make build` - Build all Maven modules
 - `make clean` - Clean all Maven modules
-- `make test` - Run all tests
-- `make format` - Format all Java code with Spotless
-- `make lint` - Check code formatting (does not modify files)
+- `make test` - Run all tests (Java and UI)
+- `make format` - Format all code (Java with Spotless, UI with Prettier and ESLint)
+- `make lint` - Check code formatting (does not modify files, includes UI linting)
 
 ### Run Applications
 
@@ -618,9 +644,11 @@ make docker-run-webflux
 - `make run-auth-db` - Build and run Auth Service (PostgreSQL variant) on port 8082
 - `make run-mvc` - Build and run MVC API
 - `make run-webflux` - Build and run WebFlux API
+- `make run-ui` - Start UI application on port 3001
 - `make stop-auth` - Stop Auth Service (either variant)
 - `make stop-mvc` - Stop MVC API
 - `make stop-webflux` - Stop WebFlux API
+- `make stop-ui` - Stop UI application
 - `make stop-all` - Stop all applications
 
 ### Docker Operations
@@ -647,6 +675,7 @@ make docker-run-webflux
 - **acme-persistence-r2dbc**: R2DBC data access layer
 - **acme-api-mvc**: MVC REST API
 - **acme-api-webflux**: WebFlux REST API
+- **acme-ui**: Next.js web UI for book management
 - **acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
 - **acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
 
@@ -744,6 +773,15 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 - `BookAlreadyExistsException`: Custom exception for duplicate ISBN validation
 - `SecurityContextUtil` / `ReactiveSecurityContextUtil`: Utility classes for accessing `UserInformation` principal
 - **Integration Tests**: Both APIs include integration tests using their respective test frameworks
+
+### UI (`acme-ui`)
+
+- **Next.js Application**: Web UI for book management built with Next.js 16.1 and React 19.2
+- **Features**: Book listing, create, edit, and delete operations with alphabetical sorting (ignoring leading articles)
+- **Authentication**: Automatically includes `x-dn` header from `LOCAL_DN` environment variable for backend API requests
+- **Port**: Runs on port 3001 (development server)
+- **Technology Stack**: Next.js, React, TypeScript, Tailwind CSS, pnpm
+- **See `acme-ui/README.md` for detailed documentation**
 
 ## License
 
