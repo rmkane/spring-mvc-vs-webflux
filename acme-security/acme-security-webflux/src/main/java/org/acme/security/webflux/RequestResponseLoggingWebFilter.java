@@ -69,25 +69,18 @@ public class RequestResponseLoggingWebFilter implements WebFilter {
     }
 
     private String formatRequestHeaders(ServerHttpRequest request) {
-        return """
-                Dumping request info:
-                Method: %s %s
-                Query: %s
-                Headers:
-                %s""".formatted(
-                request.getMethod(),
+        return HttpHeaderFormatter.formatRequest(
+                "Dumping request info:",
+                request.getMethod().name(),
                 request.getURI().getPath(),
                 request.getURI().getRawQuery(),
-                HttpHeaderFormatter.formatRequestHeaders(HttpUtils.getHeaders(request)));
+                HttpUtils.getHeaders(request));
     }
 
     private String formatResponseHeaders(ServerHttpResponse response) {
-        return """
-                Dumping response info:
-                Status: %s
-                Headers:
-                %s""".formatted(
-                response.getStatusCode(),
-                HttpHeaderFormatter.formatResponseHeaders(HttpUtils.getHeaders(response)));
+        return HttpHeaderFormatter.formatResponse(
+                "Dumping response info:",
+                response.getStatusCode().toString(),
+                HttpUtils.getHeaders(response));
     }
 }

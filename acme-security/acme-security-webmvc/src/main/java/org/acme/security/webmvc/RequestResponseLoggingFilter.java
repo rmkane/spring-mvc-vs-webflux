@@ -65,25 +65,18 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
     }
 
     private String formatRequestHeaders(HttpServletRequest request) {
-        return """
-                Dumping request info:
-                Method: %s %s
-                Query: %s
-                Headers:
-                %s""".formatted(
+        return HttpHeaderFormatter.formatRequest(
+                "Dumping request info:",
                 request.getMethod(),
                 request.getRequestURI(),
                 request.getQueryString(),
-                HttpHeaderFormatter.formatRequestHeaders(HttpUtils.getHeaders(request)));
+                HttpUtils.getHeaders(request));
     }
 
     private String formatResponseHeaders(HttpServletResponse response) {
-        return """
-                Dumping response info:
-                Status: %s
-                Headers:
-                %s""".formatted(
-                HttpStatus.valueOf(response.getStatus()),
-                HttpHeaderFormatter.formatResponseHeaders(HttpUtils.getHeaders(response)));
+        return HttpHeaderFormatter.formatResponse(
+                "Dumping response info:",
+                HttpStatus.valueOf(response.getStatus()).toString(),
+                HttpUtils.getHeaders(response));
     }
 }
