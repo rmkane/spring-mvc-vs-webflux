@@ -66,7 +66,7 @@ jvm_memory_used_bytes{application="acme-api-webflux"}
 rate(jvm_gc_pause_seconds_sum[1m])
 
 # Thread count
-jvm_threads_live_threads
+jvm_threads_live_threads{application=~"acme-api-.*"}
 ```
 
 #### HTTP Metrics
@@ -131,7 +131,7 @@ r2dbc_pool_idle_connections{application="acme-api-webflux"}
 rate(http_server_requests_seconds_count{uri="/api/books"}[1m])
 
 # Compare memory usage
-jvm_memory_used_bytes{area="heap"}
+jvm_memory_used_bytes{area="heap",application=~"acme-api-.*"}
 
 # Compare response times
 histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[1m]))
@@ -145,11 +145,24 @@ histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[1m]))
 
 #### Recommended Dashboards
 
+##### Acme Spring Boot Metrics (Auto-provisioned)
+
+- **Automatically available** after restarting Grafana
+- Pre-configured with correct `application` label filters
+- HTTP request rate and response times
+- JVM memory and threads
+- Cache hit rate
+- Database connection pools (HikariCP and R2DBC)
+- HTTP error rates
+- **This is the recommended dashboard** - it's configured specifically for this project
+
 ##### JVM (Micrometer) - ID: 4701
 
 - JVM memory, CPU, threads
 - Garbage collection metrics
 - System metrics
+- **Note:** May require updating queries to include `application` label filter for Spring Boot 3.x
+- **Fix for N/A values:** Edit each panel and add `{application=~"acme-api-.*"}` or `{application=~".*"}` to the query
 
 ##### Spring Boot 2.1 Statistics - ID: 11378
 
@@ -157,12 +170,14 @@ histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[1m]))
 - Tomcat/Netty metrics
 - Cache statistics
 - Database connection pools
+- May require query updates for Spring Boot 3.x
 
 ##### Spring Boot Statistics - ID: 6756
 
 - Alternative Spring Boot dashboard
 - Application health
 - Custom application metrics
+- May require query updates for Spring Boot 3.x
 
 #### Importing a Dashboard
 
@@ -170,6 +185,18 @@ histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[1m]))
 2. Click **Load**
 3. Select **Prometheus** as the data source
 4. Click **Import**
+
+#### Fixing Dashboard Queries for Spring Boot 3.x
+
+If you see "N/A" values in imported dashboards, the queries may need to include the `application` label:
+
+1. Click on a panel showing "N/A"
+2. Click **Edit**
+3. In the query editor, add the application label filter:
+   - Change: `jvm_memory_used_bytes`
+   - To: `jvm_memory_used_bytes{application=~"acme-api-.*"}`
+4. Or use a wildcard to match all: `{application=~".*"}`
+5. Click **Apply** or **Save dashboard**
 
 ### Creating Custom Dashboards
 
@@ -222,6 +249,11 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
 ```
 
 Cache statistics are enabled with:
@@ -273,13 +305,19 @@ If these endpoints return metrics, restart Prometheus:
 docker restart acme-prometheus
 ```
 
-### Grafana shows "No data"
+### Grafana shows "No data" or "N/A"
 
 1. Verify Prometheus is receiving metrics:
    - Go to <http://localhost:9090/targets>
    - All targets should show "UP" status
 2. Check that you selected the correct data source in Grafana
 3. Adjust the time range in Grafana (top-right corner)
+4. **For Micrometer dashboard (ID 4701) showing N/A:**
+   - This dashboard may be outdated for Spring Boot 3.x
+   - The dashboard queries may need to include the `application` label filter
+   - Try updating panel queries to include `{application=~"acme-api-.*"}` or `{application="acme-api-mvc"}`
+   - Example: Change `jvm_memory_used_bytes` to `jvm_memory_used_bytes{application=~"acme-api-.*"}`
+   - Alternatively, use the Spring Boot 2.1 Statistics dashboard (ID 11378) which is more compatible
 
 ### Cache metrics not showing
 
