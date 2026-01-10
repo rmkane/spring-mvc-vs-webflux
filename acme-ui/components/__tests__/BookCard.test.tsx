@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
+import { BookCard } from '@/components/BookCard';
 import type { Book } from '@/lib/types';
-
-import { BookCard } from '../BookCard';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({

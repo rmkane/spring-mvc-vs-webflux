@@ -2,8 +2,8 @@
  * Book API functions using the API utility
  */
 
-import { apiRequest, apiRequestJson } from './api';
-import type { Book, CreateBookRequest, UpdateBookRequest } from './types';
+import { apiRequest, apiRequestJson } from '@/lib/api';
+import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types';
 
 const BOOKS_API_PATH = '/api/v1/books';
 

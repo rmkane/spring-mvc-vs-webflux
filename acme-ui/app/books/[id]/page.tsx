@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { BookForm } from '@/components/BookForm';
+import { PageHeaderWithBack } from '@/components/PageHeaderWithBack';
 import { getBookById } from '@/lib/books';
 import type { Book } from '@/lib/types';
 
@@ -33,7 +34,7 @@ export default async function BookEditPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black py-8 px-4">
         <div className="max-w-2xl mx-auto">
-          <div className="mb-4">
+          <div className="mb-4 flex justify-between items-center">
             <Link href="/books" className="text-blue-600 dark:text-blue-400 hover:underline">
               ← Back to Books
             </Link>
@@ -53,12 +54,7 @@ export default async function BookEditPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
-          <Link href="/books" className="text-blue-600 dark:text-blue-400 hover:underline">
-            ← Back to Books
-          </Link>
-        </div>
-        <h1 className="text-3xl font-bold text-black dark:text-zinc-50 mb-8">Edit Book</h1>
+        <PageHeaderWithBack title="Edit Book" backHref="/books" />
         <BookForm book={book} />
       </div>
     </div>

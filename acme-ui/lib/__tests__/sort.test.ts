@@ -1,4 +1,4 @@
-import { compareBookTitles } from '../sort';
+import { compareBookTitles } from '@/lib/sort';
 
 describe('compareBookTitles', () => {
   it('should sort books alphabetically ignoring leading articles', () => {
