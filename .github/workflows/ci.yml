@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   build:
@@ -30,6 +30,10 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 8
+
+      - name: Install UI dependencies
+        working-directory: acme-ui
+        run: pnpm install
 
       - name: Verify code formatting (Spotless)
         run: |
