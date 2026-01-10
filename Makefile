@@ -56,8 +56,8 @@ help:
 	@echo "Build Operations:"
 	@echo "  build          - Build all Maven modules"
 	@echo "  clean          - Clean all Maven modules"
-	@echo "  test           - Run all tests"
-	@echo "  format         - Format all Java code with Spotless"
+	@echo "  test           - Run all tests (Java and UI)"
+	@echo "  format         - Format all code (Java with Spotless, UI with Prettier)"
 	@echo "  lint           - Check code formatting (does not modify files)"
 	@echo "  clean-logs     - Remove all log files from submodules"
 	@echo ""
@@ -208,6 +208,8 @@ clean:
 
 test:
 	mvn test
+	@echo "Running UI tests..."
+	@cd acme-ui && pnpm run test
 
 # Java modules with source code (exclude POM-only modules)
 JAVA_MODULES_LIST = \
@@ -231,9 +233,13 @@ comma := ,
 
 format:
 	mvn spotless:apply -pl $(JAVA_MODULES)
+	@echo "Formatting UI code..."
+	@cd acme-ui && pnpm run format
 
 lint:
 	mvn spotless:check -pl $(JAVA_MODULES)
+	@echo "Linting UI code..."
+	@cd acme-ui && pnpm run lint
 
 clean-logs:
 	@echo "Cleaning log files..."

@@ -13,9 +13,7 @@ const DN_HEADER = 'x-dn';
 function getDn(): string {
   const dn = process.env.LOCAL_DN;
   if (!dn) {
-    throw new Error(
-      'LOCAL_DN environment variable is not set. Please set it in .env.local'
-    );
+    throw new Error('LOCAL_DN environment variable is not set. Please set it in .env.local');
   }
   return dn;
 }
@@ -27,9 +25,7 @@ function getDn(): string {
  * @param options - Additional fetch options to merge
  * @returns Fetch options with x-dn header included
  */
-export function createApiRequestOptions(
-  options: RequestInit = {}
-): RequestInit {
+export function createApiRequestOptions(options: RequestInit = {}): RequestInit {
   const dn = getDn();
   return {
     ...options,
@@ -48,10 +44,7 @@ export function createApiRequestOptions(
  * @param options - Additional fetch options
  * @returns Promise resolving to the response
  */
-export async function apiRequest(
-  path: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function apiRequest(path: string, options: RequestInit = {}): Promise<Response> {
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
   return fetch(url, createApiRequestOptions(options));
 }

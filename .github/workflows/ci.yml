@@ -21,6 +21,16 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
       - name: Verify code formatting (Spotless)
         run: |
           MODULES="acme-api-mvc,\
@@ -36,6 +46,18 @@ jobs:
           acme-test-integration-classic,\
           acme-test-integration-reactive"
           mvn spotless:check -pl "$MODULES"
+
+      - name: Verify UI code formatting
+        working-directory: acme-ui
+        run: pnpm run format:check
+
+      - name: Lint UI code
+        working-directory: acme-ui
+        run: pnpm run lint
+
+      - name: Test UI
+        working-directory: acme-ui
+        run: pnpm run test
 
       - name: Build and test
         run: mvn clean verify

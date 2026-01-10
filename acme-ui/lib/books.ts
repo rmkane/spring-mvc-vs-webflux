@@ -2,7 +2,7 @@
  * Book API functions using the API utility
  */
 
-import { apiRequestJson, apiRequest } from './api';
+import { apiRequest, apiRequestJson } from './api';
 import type { Book, CreateBookRequest, UpdateBookRequest } from './types';
 
 const BOOKS_API_PATH = '/api/v1/books';
@@ -37,10 +37,7 @@ export async function createBook(book: CreateBookRequest): Promise<Book> {
 /**
  * Update a book
  */
-export async function updateBook(
-  id: number,
-  book: UpdateBookRequest
-): Promise<Book> {
+export async function updateBook(id: number, book: UpdateBookRequest): Promise<Book> {
   return apiRequestJson<Book>(`${BOOKS_API_PATH}/${id}`, {
     method: 'PUT',
     headers: {

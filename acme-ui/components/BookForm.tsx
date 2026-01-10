@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types';
 
 interface BookFormProps {
   book?: Book;
 }
 
-export default function BookForm({ book }: BookFormProps) {
+export function BookForm({ book }: BookFormProps) {
   const router = useRouter();
   const isEditing = !!book;
   const [loading, setLoading] = useState(false);
@@ -26,9 +27,7 @@ export default function BookForm({ book }: BookFormProps) {
     setError(null);
 
     try {
-      const url = isEditing
-        ? `/api/books/${book.id}`
-        : '/api/books';
+      const url = isEditing ? `/api/books/${book.id}` : '/api/books';
       const method = isEditing ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

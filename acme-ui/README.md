@@ -65,6 +65,40 @@ pnpm run dev
 
 Open [http://localhost:3001](http://localhost:3001) in your browser.
 
+## Development Scripts
+
+### Linting
+
+```bash
+# Check for linting errors
+pnpm run lint
+
+# Fix auto-fixable linting errors
+pnpm run lint:fix
+```
+
+### Formatting
+
+```bash
+# Format all code
+pnpm run format
+
+# Check if code is formatted (CI-friendly)
+pnpm run format:check
+```
+
+### Testing
+
+```bash
+# Run tests once
+pnpm run test
+
+# Run tests in watch mode
+pnpm run test:watch
+```
+
+Tests use Jest and React Testing Library. Test files should be placed in `__tests__` directories or have `.test.ts`/`.test.tsx` extensions.
+
 ## Project Structure
 
 ```text

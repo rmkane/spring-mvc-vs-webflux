@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
 import type { Book } from '@/lib/types';
 
 interface BookCardProps {
   book: Book;
 }
 
-export default function BookCard({ book }: BookCardProps) {
+export function BookCard({ book }: BookCardProps) {
   const router = useRouter();
 
   async function handleDelete() {
@@ -26,7 +27,7 @@ export default function BookCard({ book }: BookCardProps) {
       }
 
       router.refresh();
-    } catch (error) {
+    } catch {
       alert('Failed to delete book');
     }
   }

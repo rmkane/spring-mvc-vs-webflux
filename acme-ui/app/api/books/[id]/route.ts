@@ -3,26 +3,21 @@
  */
 
 import { NextResponse } from 'next/server';
-import { updateBook, deleteBook, getBookById } from '@/lib/books';
+
+import { deleteBook, getBookById, updateBook } from '@/lib/books';
 import type { UpdateBookRequest } from '@/lib/types';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(
-  request: Request,
-  { params }: RouteParams
-) {
+export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const bookId = parseInt(id, 10);
 
     if (isNaN(bookId)) {
-      return NextResponse.json(
-        { error: 'Invalid book ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid book ID' }, { status: 400 });
     }
 
     const book = await getBookById(bookId);
@@ -30,10 +25,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching book:', error);
     if (error instanceof Error && error.message.includes('404')) {
-      return NextResponse.json(
-        { error: 'Book not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Book not found' }, { status: 404 });
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch book' },
@@ -42,19 +34,13 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: RouteParams
-) {
+export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const bookId = parseInt(id, 10);
 
     if (isNaN(bookId)) {
-      return NextResponse.json(
-        { error: 'Invalid book ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid book ID' }, { status: 400 });
     }
 
     const body: UpdateBookRequest = await request.json();
@@ -69,19 +55,13 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: RouteParams
-) {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const bookId = parseInt(id, 10);
 
     if (isNaN(bookId)) {
-      return NextResponse.json(
-        { error: 'Invalid book ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid book ID' }, { status: 400 });
     }
 
     await deleteBook(bookId);
@@ -89,10 +69,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting book:', error);
     if (error instanceof Error && error.message.includes('404')) {
-      return NextResponse.json(
-        { error: 'Book not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Book not found' }, { status: 404 });
     }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to delete book' },
