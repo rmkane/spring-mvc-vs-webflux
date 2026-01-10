@@ -1,34 +1,34 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
-import type { Book } from '@/lib/types';
+import type { Book } from '@/lib/types'
 
 interface BookCardProps {
-  book: Book;
+  book: Book
 }
 
 export function BookCard({ book }: BookCardProps) {
-  const router = useRouter();
+  const router = useRouter()
 
   async function handleDelete() {
     if (!confirm('Are you sure you want to delete this book?')) {
-      return;
+      return
     }
 
     try {
       const response = await fetch(`/api/books/${book.id}`, {
         method: 'DELETE',
-      });
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to delete book');
+        throw new Error('Failed to delete book')
       }
 
-      router.refresh();
+      router.refresh()
     } catch {
-      alert('Failed to delete book');
+      alert('Failed to delete book')
     }
   }
 
@@ -63,5 +63,5 @@ export function BookCard({ book }: BookCardProps) {
         </button>
       </div>
     </div>
-  );
+  )
 }

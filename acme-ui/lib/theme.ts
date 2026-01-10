@@ -2,22 +2,22 @@
  * Theme utilities for managing light/dark mode
  */
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark' | 'system'
 
-const THEME_STORAGE_KEY = 'acme-ui-theme';
+const THEME_STORAGE_KEY = 'acme-ui-theme'
 
 /**
  * Get the saved theme preference from localStorage
  */
 export function getSavedTheme(): Theme | null {
   if (typeof window === 'undefined') {
-    return null;
+    return null
   }
-  const saved = localStorage.getItem(THEME_STORAGE_KEY);
+  const saved = localStorage.getItem(THEME_STORAGE_KEY)
   if (saved === 'light' || saved === 'dark' || saved === 'system') {
-    return saved;
+    return saved
   }
-  return null;
+  return null
 }
 
 /**
@@ -25,9 +25,9 @@ export function getSavedTheme(): Theme | null {
  */
 export function saveTheme(theme: Theme): void {
   if (typeof window === 'undefined') {
-    return;
+    return
   }
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  localStorage.setItem(THEME_STORAGE_KEY, theme)
 }
 
 /**
@@ -36,11 +36,11 @@ export function saveTheme(theme: Theme): void {
 export function getEffectiveTheme(theme: Theme): 'light' | 'dark' {
   if (theme === 'system') {
     if (typeof window === 'undefined') {
-      return 'light'; // Default to light during SSR
+      return 'light' // Default to light during SSR
     }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
-  return theme;
+  return theme
 }
 
 /**
@@ -48,14 +48,14 @@ export function getEffectiveTheme(theme: Theme): 'light' | 'dark' {
  */
 export function applyTheme(theme: Theme): void {
   if (typeof document === 'undefined') {
-    return;
+    return
   }
-  const effective = getEffectiveTheme(theme);
-  const root = document.documentElement;
+  const effective = getEffectiveTheme(theme)
+  const root = document.documentElement
   if (effective === 'dark') {
-    root.classList.add('dark');
+    root.classList.add('dark')
   } else {
-    root.classList.remove('dark');
+    root.classList.remove('dark')
   }
 }
 
@@ -64,7 +64,7 @@ export function applyTheme(theme: Theme): void {
  */
 export function getInitialTheme(): Theme {
   if (typeof window === 'undefined') {
-    return 'system';
+    return 'system'
   }
-  return getSavedTheme() || 'system';
+  return getSavedTheme() || 'system'
 }

@@ -1,22 +1,22 @@
-import Link from 'next/link';
+import Link from 'next/link'
 
-import { BookCard } from '@/components/BookCard';
-import { PageHeader } from '@/components/PageHeader';
-import { getAllBooks } from '@/lib/books';
-import { compareBookTitles } from '@/lib/sort';
-import type { Book } from '@/lib/types';
+import { BookCard } from '@/components/BookCard'
+import { PageHeader } from '@/components/PageHeader'
+import { getAllBooks } from '@/lib/books'
+import { compareBookTitles } from '@/lib/sort'
+import type { Book } from '@/lib/types'
 
 export default async function BooksPage() {
-  let books: Book[] = [];
-  let error: string | null = null;
+  let books: Book[] = []
+  let error: string | null = null
 
   try {
-    books = await getAllBooks();
+    books = await getAllBooks()
     // Sort books by title, ignoring leading articles (The, A, An)
     // This follows standard library/bookstore sorting conventions
-    books.sort((a, b) => compareBookTitles(a.title, b.title));
+    books.sort((a, b) => compareBookTitles(a.title, b.title))
   } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load books';
+    error = err instanceof Error ? err.message : 'Failed to load books'
   }
 
   return (
@@ -46,5 +46,5 @@ export default async function BooksPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

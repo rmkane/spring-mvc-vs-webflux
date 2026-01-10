@@ -1,16 +1,16 @@
-'use client';
+'use client'
 
-import { useTheme } from '@/components/ThemeProvider';
-import type { Theme } from '@/lib/theme';
-import { getNextElement } from '@/lib/utils';
+import { useTheme } from '@/components/ThemeProvider'
+import type { Theme } from '@/lib/theme'
+import { getNextElement } from '@/lib/utils'
 
-const THEME_LIST: readonly Theme[] = ['system', 'light', 'dark'] as const;
+const THEME_LIST: readonly Theme[] = ['system', 'light', 'dark'] as const
 
 const THEME_CONFIG: Record<
   Theme,
   {
-    label: (effectiveTheme?: 'light' | 'dark') => string;
-    icon: React.ReactNode;
+    label: (effectiveTheme?: 'light' | 'dark') => string
+    icon: React.ReactNode
   }
 > = {
   system: {
@@ -70,17 +70,17 @@ const THEME_CONFIG: Record<
       </svg>
     ),
   },
-};
+}
 
 export function ThemeToggle() {
-  const { theme, setTheme, effectiveTheme } = useTheme();
+  const { theme, setTheme, effectiveTheme } = useTheme()
 
   const cycleTheme = () => {
-    setTheme(getNextElement(THEME_LIST, theme));
-  };
+    setTheme(getNextElement(THEME_LIST, theme))
+  }
 
-  const config = THEME_CONFIG[theme];
-  const label = config.label(effectiveTheme);
+  const config = THEME_CONFIG[theme]
+  const label = config.label(effectiveTheme)
 
   return (
     <button
@@ -92,5 +92,5 @@ export function ThemeToggle() {
       {config.icon}
       <span className="text-sm font-medium">{label}</span>
     </button>
-  );
+  )
 }

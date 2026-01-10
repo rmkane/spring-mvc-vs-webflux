@@ -1,15 +1,15 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
+import Link from 'next/link'
 
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface PageHeaderProps {
-  title: string;
+  title: string
   action?: {
-    label: string;
-    href: string;
-  };
+    label: string
+    href: string
+  }
 }
 
 export function PageHeader({ title, action }: PageHeaderProps) {
@@ -28,5 +28,5 @@ export function PageHeader({ title, action }: PageHeaderProps) {
         <ThemeToggle />
       </div>
     </div>
-  );
+  )
 }

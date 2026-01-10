@@ -1,5 +1,5 @@
-import { BookForm } from '@/components/BookForm';
-import { PageHeaderWithBack } from '@/components/PageHeaderWithBack';
+import { BookForm } from '@/components/BookForm'
+import { PageHeaderWithBack } from '@/components/PageHeaderWithBack'
 
 export default function NewBookPage() {
   return (
@@ -9,5 +9,5 @@ export default function NewBookPage() {
         <BookForm />
       </div>
     </div>
-  );
+  )
 }

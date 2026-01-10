@@ -10,18 +10,18 @@
  * @returns The title with leading articles removed, trimmed
  */
 function getSortTitle(title: string): string {
-  const trimmed = title.trim();
+  const trimmed = title.trim()
 
   // Common leading articles to ignore (case-insensitive)
-  const articles = ['the ', 'a ', 'an '];
+  const articles = ['the ', 'a ', 'an ']
 
   for (const article of articles) {
     if (trimmed.toLowerCase().startsWith(article)) {
-      return trimmed.slice(article.length).trim();
+      return trimmed.slice(article.length).trim()
     }
   }
 
-  return trimmed;
+  return trimmed
 }
 
 /**
@@ -33,11 +33,11 @@ function getSortTitle(title: string): string {
  * @returns Comparison result for use with Array.sort()
  */
 export function compareBookTitles(titleA: string, titleB: string): number {
-  const sortTitleA = getSortTitle(titleA);
-  const sortTitleB = getSortTitle(titleB);
+  const sortTitleA = getSortTitle(titleA)
+  const sortTitleB = getSortTitle(titleB)
 
   return sortTitleA.localeCompare(sortTitleB, undefined, {
     sensitivity: 'base', // Case-insensitive, ignore accents
     numeric: true, // Handle numbers naturally (e.g., "Book 2" comes before "Book 10")
-  });
+  })
 }

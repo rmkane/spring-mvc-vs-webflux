@@ -9,11 +9,11 @@
  * @returns The next element in the array
  */
 export function getNextElement<T>(array: readonly T[], current: T): T {
-  const currentIndex = array.indexOf(current);
+  const currentIndex = array.indexOf(current)
   if (currentIndex === -1) {
-    return array[0];
+    return array[0]
   }
-  return array[(currentIndex + 1) % array.length];
+  return array[(currentIndex + 1) % array.length]
 }
 
 /**
@@ -23,9 +23,9 @@ export function getNextElement<T>(array: readonly T[], current: T): T {
  * @returns The previous element in the array
  */
 export function getPreviousElement<T>(array: readonly T[], current: T): T {
-  const currentIndex = array.indexOf(current);
+  const currentIndex = array.indexOf(current)
   if (currentIndex === -1) {
-    return array[array.length - 1];
+    return array[array.length - 1]
   }
-  return array[(currentIndex - 1 + array.length) % array.length];
+  return array[(currentIndex - 1 + array.length) % array.length]
 }

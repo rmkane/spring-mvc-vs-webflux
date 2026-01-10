@@ -1,13 +1,13 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
+import Link from 'next/link'
 
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface PageHeaderWithBackProps {
-  title: string;
-  backHref: string;
-  backLabel?: string;
+  title: string
+  backHref: string
+  backLabel?: string
 }
 
 export function PageHeaderWithBack({
@@ -25,5 +25,5 @@ export function PageHeaderWithBack({
       </div>
       <h1 className="text-3xl font-bold text-black dark:text-zinc-50 mb-8">{title}</h1>
     </>
-  );
+  )
 }

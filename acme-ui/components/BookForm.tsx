@@ -1,34 +1,34 @@
-'use client';
+'use client'
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
-import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types';
+import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types'
 
 interface BookFormProps {
-  book?: Book;
+  book?: Book
 }
 
 export function BookForm({ book }: BookFormProps) {
-  const router = useRouter();
-  const isEditing = !!book;
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
+  const isEditing = !!book
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<CreateBookRequest | UpdateBookRequest>({
     title: book?.title || '',
     author: book?.author || '',
     isbn: book?.isbn || '',
     publicationYear: book?.publicationYear || new Date().getFullYear(),
-  });
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
     try {
-      const url = isEditing ? `/api/books/${book.id}` : '/api/books';
-      const method = isEditing ? 'PUT' : 'POST';
+      const url = isEditing ? `/api/books/${book.id}` : '/api/books'
+      const method = isEditing ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
         method,
@@ -36,28 +36,28 @@ export function BookForm({ book }: BookFormProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} book`);
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+        throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} book`)
       }
 
-      router.push('/books');
-      router.refresh();
+      router.push('/books')
+      router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setLoading(false);
+      setError(err instanceof Error ? err.message : 'An error occurred')
+      setLoading(false)
     }
-  };
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: name === 'publicationYear' ? parseInt(value, 10) || 0 : value,
-    }));
-  };
+    }))
+  }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 rounded-lg shadow-md p-6">
@@ -160,5 +160,5 @@ export function BookForm({ book }: BookFormProps) {
         </button>
       </div>
     </form>
-  );
+  )
 }

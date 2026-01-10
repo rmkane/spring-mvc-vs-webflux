@@ -2,23 +2,23 @@
  * Book API functions using the API utility
  */
 
-import { apiRequest, apiRequestJson } from '@/lib/api';
-import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types';
+import { apiRequest, apiRequestJson } from '@/lib/api'
+import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types'
 
-const BOOKS_API_PATH = '/api/v1/books';
+const BOOKS_API_PATH = '/api/v1/books'
 
 /**
  * Get all books
  */
 export async function getAllBooks(): Promise<Book[]> {
-  return apiRequestJson<Book[]>(BOOKS_API_PATH);
+  return apiRequestJson<Book[]>(BOOKS_API_PATH)
 }
 
 /**
  * Get a book by ID
  */
 export async function getBookById(id: number): Promise<Book> {
-  return apiRequestJson<Book>(`${BOOKS_API_PATH}/${id}`);
+  return apiRequestJson<Book>(`${BOOKS_API_PATH}/${id}`)
 }
 
 /**
@@ -31,7 +31,7 @@ export async function createBook(book: CreateBookRequest): Promise<Book> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(book),
-  });
+  })
 }
 
 /**
@@ -44,7 +44,7 @@ export async function updateBook(id: number, book: UpdateBookRequest): Promise<B
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(book),
-  });
+  })
 }
 
 /**
@@ -53,8 +53,8 @@ export async function updateBook(id: number, book: UpdateBookRequest): Promise<B
 export async function deleteBook(id: number): Promise<void> {
   const response = await apiRequest(`${BOOKS_API_PATH}/${id}`, {
     method: 'DELETE',
-  });
+  })
   if (!response.ok) {
-    throw new Error(`Failed to delete book: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to delete book: ${response.status} ${response.statusText}`)
   }
 }

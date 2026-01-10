@@ -1,6 +1,6 @@
-import Link from 'next/link';
+import Link from 'next/link'
 
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 export default function Home() {
   return (
@@ -33,5 +33,5 @@ export default function Home() {
         </div>
       </main>
     </div>
-  );
+  )
 }

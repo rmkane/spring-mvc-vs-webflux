@@ -1,33 +1,33 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
-import { BookForm } from '@/components/BookForm';
-import { PageHeaderWithBack } from '@/components/PageHeaderWithBack';
-import { getBookById } from '@/lib/books';
-import type { Book } from '@/lib/types';
+import { BookForm } from '@/components/BookForm'
+import { PageHeaderWithBack } from '@/components/PageHeaderWithBack'
+import { getBookById } from '@/lib/books'
+import type { Book } from '@/lib/types'
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }
 
 export default async function BookEditPage({ params }: PageProps) {
-  const { id } = await params;
-  const bookId = parseInt(id, 10);
+  const { id } = await params
+  const bookId = parseInt(id, 10)
 
   if (isNaN(bookId)) {
-    notFound();
+    notFound()
   }
 
-  let book: Book | null = null;
-  let error: string | null = null;
+  let book: Book | null = null
+  let error: string | null = null
 
   try {
-    book = await getBookById(bookId);
+    book = await getBookById(bookId)
   } catch (err) {
     if (err instanceof Error && err.message.includes('404')) {
-      notFound();
+      notFound()
     }
-    error = err instanceof Error ? err.message : 'Failed to load book';
+    error = err instanceof Error ? err.message : 'Failed to load book'
   }
 
   if (error) {
@@ -44,11 +44,11 @@ export default async function BookEditPage({ params }: PageProps) {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!book) {
-    notFound();
+    notFound()
   }
 
   return (
@@ -58,5 +58,5 @@ export default async function BookEditPage({ params }: PageProps) {
         <BookForm book={book} />
       </div>
     </div>
-  );
+  )
 }

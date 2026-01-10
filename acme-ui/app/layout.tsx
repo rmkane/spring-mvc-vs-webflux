@@ -1,30 +1,30 @@
-import './globals.css';
+import './globals.css'
 
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import Script from 'next/script';
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import Script from 'next/script'
 
-import { ThemeProvider } from '@/components/ThemeProvider';
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
-});
+})
 
 export const metadata: Metadata = {
   title: 'Acme Book Management',
   description: 'Book management application with Spring Boot backend',
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -48,5 +48,5 @@ export default function RootLayout({
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
-  );
+  )
 }
