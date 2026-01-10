@@ -26,7 +26,8 @@ jobs:
           MODULES="acme-api-mvc,\
           acme-api-webflux,\
           acme-auth-client,\
-          acme-auth-service,\
+          acme-auth-service-db,\
+          acme-auth-service-ldap,\
           acme-security/acme-security-core,\
           acme-security/acme-security-webmvc,\
           acme-security/acme-security-webflux,\
