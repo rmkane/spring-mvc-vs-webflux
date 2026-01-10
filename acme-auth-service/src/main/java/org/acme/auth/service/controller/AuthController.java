@@ -28,7 +28,7 @@ public class AuthController {
     public ResponseEntity<UserInfoResponse> getUserByDn(@PathVariable("dn") String dn) {
         log.debug("Looking up user by DN: {}", dn);
 
-        return userRepository.findByDn(dn)
+        return userRepository.findByDnIgnoreCase(dn)
                 .map(user -> {
                     List<String> roles = user.getRoles().stream()
                             .map(UserRole::getRoleName)

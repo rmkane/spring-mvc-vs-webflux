@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.acme.auth.client.UserInfo;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
+import org.acme.security.core.util.DnUtil;
 import org.acme.security.core.util.UserInformationUtil;
 
 @Slf4j
@@ -70,8 +71,14 @@ public class AuthenticationService {
             throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
 
+        // Normalize DN for consistent lookup and caching
+        String normalizedDn = DnUtil.normalize(dn);
+        if (normalizedDn == null) {
+            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+        }
+
         // Look up user from auth service by DN to get UserInfo with roles (cached)
-        UserInfo userInfo = cachedUserLookupService.lookupUser(dn.trim());
+        UserInfo userInfo = cachedUserLookupService.lookupUser(normalizedDn);
 
         // Create UserInformation (derivative) from UserInfo
         UserInformation userInformation = UserInformationUtil.fromUserInfo(userInfo);

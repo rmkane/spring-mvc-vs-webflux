@@ -17,6 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * queries. Since roles are now LAZY, we need to explicitly fetch them when
      * needed.
      */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.dn = :dn")
-    Optional<User> findByDn(@Param("dn") String dn);
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE LOWER(u.dn) = LOWER(:dn)")
+    Optional<User> findByDnIgnoreCase(@Param("dn") String dn);
 }

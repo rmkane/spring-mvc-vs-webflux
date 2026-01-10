@@ -33,14 +33,18 @@ public class CachedUserLookupService {
      * Looks up a user by DN from the auth service. Results are cached to reduce
      * calls to the auth service.
      * <p>
-     * User lookups are cached using the "users" cache keyed by DN. Cache
+     * User lookups are cached using the "users" cache keyed by normalized DN. Cache
      * configuration is defined in application.yml via Spring Boot's Caffeine
      * auto-configuration.
      * <p>
      * This method only executes on cache misses, so logging here indicates a cache
      * miss.
+     * <p>
+     * <strong>IMPORTANT:</strong> The DN parameter should already be normalized by
+     * the caller (AuthenticationService) before calling this method. This ensures
+     * consistent cache keys regardless of DN formatting variations.
      *
-     * @param dn the Distinguished Name to look up
+     * @param dn the normalized Distinguished Name to look up
      * @return UserInfo with DN, name, and roles
      * @throws BadCredentialsException if user not found or service unavailable
      */
@@ -50,6 +54,7 @@ public class CachedUserLookupService {
         if (!StringUtils.hasText(dn)) {
             throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
         }
-        return authServiceClient.lookupUser(dn.trim());
+        // DN should already be normalized by caller - pass as-is to auth service
+        return authServiceClient.lookupUser(dn);
     }
 }
