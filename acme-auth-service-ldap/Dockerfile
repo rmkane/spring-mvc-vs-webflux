@@ -1,0 +1,31 @@
+# Stage 1: Build
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+
+# Copy parent POMs
+COPY pom.xml .
+COPY acme-pom/pom.xml ./acme-pom/
+COPY acme-pom/acme-dependencies/pom.xml ./acme-pom/acme-dependencies/
+COPY acme-pom/acme-starter-parent/pom.xml ./acme-pom/acme-starter-parent/
+
+# Copy auth service LDAP
+COPY acme-auth-service-ldap/pom.xml ./acme-auth-service-ldap/
+
+# Copy source code
+COPY acme-auth-service-ldap ./acme-auth-service-ldap
+
+# Build
+RUN mvn clean package -DskipTests -pl acme-auth-service-ldap -am
+
+# Stage 2: Runtime
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+COPY --from=build /app/acme-auth-service-ldap/target/*.jar app.jar
+
+EXPOSE 8082
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

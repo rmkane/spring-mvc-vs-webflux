@@ -11,10 +11,12 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Building the Project](#building-the-project)
-  - [Starting Databases](#starting-databases)
+  - [Starting Databases and LDAP](#starting-databases-and-ldap)
   - [Running Applications](#running-applications)
 - [Architecture Overview](#architecture-overview)
-  - [Authentication Service (`acme-auth-service`)](#authentication-service-acme-auth-service)
+  - [Authentication Service](#authentication-service)
+    - [`acme-auth-service-ldap` (LDAP-based)](#acme-auth-service-ldap-ldap-based)
+    - [`acme-auth-service-db` (PostgreSQL-based)](#acme-auth-service-db-postgresql-based)
   - [Security Layer (`acme-security`)](#security-layer-acme-security)
   - [Persistence Layer](#persistence-layer)
 - [MVC Route (Traditional/Blocking)](#mvc-route-traditionalblocking)
@@ -55,7 +57,9 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Build Docker Images](#build-docker-images)
   - [Run in Docker](#run-in-docker)
 - [Makefile Commands](#makefile-commands)
+  - [Infrastructure Operations](#infrastructure-operations)
   - [Database Operations](#database-operations)
+  - [LDAP Operations](#ldap-operations)
   - [Build Operations](#build-operations)
   - [Run Applications](#run-applications)
   - [Docker Operations](#docker-operations)
@@ -64,7 +68,7 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Dependency Relationships](#dependency-relationships)
   - [Architecture Flow](#architecture-flow)
 - [Key Components](#key-components)
-  - [Authentication Service Components (`acme-auth-service`)](#authentication-service-components-acme-auth-service)
+  - [Authentication Service Components](#authentication-service-components)
   - [Authentication Client (`acme-auth-client`)](#authentication-client-acme-auth-client)
   - [Security (`acme-security`)](#security-acme-security)
   - [Persistence Components](#persistence-components)
@@ -89,8 +93,8 @@ spring-mvc-vs-webflux/
 │   ├── acme-dependencies/           # BOM for dependency versions
 │   └── acme-starter-parent/         # Parent POM with plugin management
 ├── acme-auth-client/                # REST client wrapper for auth service
-├── acme-auth-service/               # Standalone authentication service
-│   └── src/main/java/               # Spring Boot application with REST API
+├── acme-auth-service-db/            # Authentication service (PostgreSQL-based)
+├── acme-auth-service-ldap/          # Authentication service (LDAP-based)
 ├── acme-security/                   # Security layer
 │   ├── acme-security-core/          # Core security logic
 │   ├── acme-security-webmvc/        # MVC security configuration
@@ -117,31 +121,47 @@ spring-mvc-vs-webflux/
 make build
 ```
 
-### Starting Databases
+### Starting Databases and LDAP
 
 ```bash
 make db-jpa-up      # Start JPA database (port 5432)
 make db-r2dbc-up    # Start R2DBC database (port 5433)
-make db-auth-up     # Start Auth database (port 5434)
-# Or start all:
-make dbs-up
+make db-auth-up     # Start Auth PostgreSQL database (port 5434)
+make ldap-up        # Start LDAP server (port 389)
+# Or start all infrastructure:
+make infra-up
 ```
 
-This starts three PostgreSQL databases:
+This starts:
 
 - **postgres-jpa**: Port 5432 for MVC/JPA API
 - **postgres-r2dbc**: Port 5433 for WebFlux/R2DBC API
-- **postgres-auth**: Port 5434 for Auth Service
+- **postgres-auth**: Port 5434 for Auth Service (DB variant)
+- **ldap**: Port 389 for Auth Service (LDAP variant)
 
 ### Running Applications
 
 **Auth Service (must be started first):**
 
+Both auth service variants are **interchangeable** and run on port 8082 (only one can run at a time):
+
 ```bash
-make run-auth
+# LDAP-based authentication service
+make run-auth-ldap
+
+# OR PostgreSQL-based authentication service
+make run-auth-db
 ```
 
-Runs on port 8082. This service must be running before starting the API applications.
+Both services:
+
+- Run on port 8082
+- Expose the same REST API: `/api/auth/users/{dn}`
+- Return the same response format
+- Use the same role names: `ACME_READ_WRITE`, `ACME_READ_ONLY`
+- Are drop-in replacements for each other
+
+The auth service must be running before starting the API applications.
 
 **MVC API:**
 
@@ -161,17 +181,33 @@ Runs on port 8081
 
 ## Architecture Overview
 
-### Authentication Service (`acme-auth-service`)
+### Authentication Service
 
-The authentication service is a **standalone Spring Boot application** that runs in its own container:
+The authentication service is available in **two interchangeable variants**, both running on port 8082:
+
+#### `acme-auth-service-ldap` (LDAP-based)
 
 - **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
-- **Database**: Has its own PostgreSQL database (`acme_auth` on port 5434)
-- **Flyway Migrations**: Manages user and role tables with seed data (LDAP-like structure)
-- **Isolation**: Completely isolated from main application databases
-- **Port**: Runs on port 8082
-- Returns `UserInfoResponse` with DN, givenName, surname, and roles (ROLE_READ_ONLY, ROLE_READ_WRITE)
-- **LDAP-like Structure**: Users have DN (Distinguished Name), givenName, and surname instead of username
+- **LDAP Directory**: Uses OpenLDAP server (port 389) for user storage
+- **LDIF Data**: Users and roles are loaded from LDIF file on LDAP server startup
+- **Spring LDAP**: Uses Spring LDAP for LDAP operations
+- **LDAP Groups**: Roles are stored as LDAP groups (`ACME_READ_WRITE`, `ACME_READ_ONLY`) and used directly as Spring Security authorities
+- **LDAP Structure**: Users stored as `inetOrgPerson` entries with DN, givenName, surname, and role attributes
+
+#### `acme-auth-service-db` (PostgreSQL-based)
+
+- **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
+- **PostgreSQL Database**: Uses PostgreSQL (port 5434) for user storage
+- **Flyway Migrations**: Users and roles are loaded via database migrations
+- **Spring Data JPA**: Uses JPA for database operations
+- **Database Tables**: Users and roles stored in `users` and `user_roles` tables
+
+**Both variants:**
+
+- Run on port 8082 (only one can run at a time)
+- Return `UserInfoResponse` with DN, givenName, surname, and roles (ACME_READ_ONLY, ACME_READ_WRITE)
+- Are completely isolated from main application databases
+- Are **drop-in replacements** - APIs work with either variant without code changes
 
 ### Security Layer (`acme-security`)
 
@@ -299,7 +335,7 @@ Both implementations extract the `x-dn` header (Distinguished Name) from HTTP re
 1. Security layer extracts DN from header
 2. Security layer calls `CachedUserLookupService` which checks cache first
 3. On cache miss, `CachedUserLookupService` calls `AuthServiceClient` which makes REST call to auth service (`http://localhost:8082/api/auth/users/{dn}`)
-4. Auth service queries its own database (`acme_auth`) for user by DN and roles
+4. Auth service queries user store (LDAP directory or PostgreSQL database) for user by DN and roles
 5. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
 6. `AuthServiceClient` converts response to `UserInfo`
 7. Result is cached and returned to security layer
@@ -312,19 +348,25 @@ If the `x-dn` header is missing or empty, both implementations return `401 Unaut
 
 ### User Lookup
 
-The auth service queries its own database (`acme_auth`) for users by DN and their roles:
+The auth service queries its user store (LDAP directory or PostgreSQL database) for users by DN and their roles:
 
-- **Standalone Service**: Auth service runs on port 8082 with its own database (port 5434)
+- **Standalone Service**: Auth service runs on port 8082
 - **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
-- **LDAP-like Structure**: Users have DN, givenName, and surname (no username field)
-- **Database-backed users**: Users are seeded in auth service database with LDAP-like DNs:
-  - `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org` - Has `ROLE_READ_WRITE` (full access)
-  - `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org` - Has `ROLE_READ_WRITE` (full access)
-  - `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org` - Has `ROLE_READ_ONLY` (read-only access)
-  - `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=example,dc=com` - Has `ROLE_READ_ONLY` (read-only access)
-  - `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=example,dc=com` - No roles assigned
-  - Users have DN (Distinguished Name), givenName, and surname fields
-- **Roles**: `ROLE_READ_ONLY`, `ROLE_READ_WRITE` (from auth service database, not hardcoded)
+- **Two Variants**:
+  - **LDAP variant**: Uses OpenLDAP server (port 389) for user storage
+    - Users loaded from LDIF file (`01-users.ldif`) on LDAP server startup
+    - Users stored as `inetOrgPerson` entries with DN, givenName, surname, and role attributes
+  - **PostgreSQL variant**: Uses PostgreSQL (port 5434) for user storage
+    - Users loaded via Flyway database migrations
+    - Users stored in `users` and `user_roles` tables
+- **Available users** (same users in both variants):
+  - `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_WRITE` group
+  - `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_WRITE` group
+  - `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_ONLY` group
+  - `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_ONLY` group
+  - `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=acme,dc=org` - No group membership (no roles)
+- **LDAP Groups**: `ACME_READ_ONLY`, `ACME_READ_WRITE` (stored as `groupOfNames` in LDAP)
+- **Spring Security Authorities**: Group names are used directly as authorities (e.g., `ACME_READ_WRITE`, `ACME_READ_ONLY`)
 - **Isolation**: User data is completely isolated from main application databases
 
 ### User Lookup Caching
@@ -359,8 +401,8 @@ User lookups are cached in the security layer to reduce calls to the auth servic
 Service methods are protected with `@PreAuthorize` annotations:
 
 ```java
-@PreAuthorize("hasRole('READ_WRITE')")  // Requires ROLE_READ_WRITE
-@PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")  // Requires either role
+@PreAuthorize("hasAuthority('ACME_READ_WRITE')")  // Requires ACME_READ_WRITE group
+@PreAuthorize("hasAnyAuthority('ACME_READ_ONLY', 'ACME_READ_WRITE')")  // Requires either group
 ```
 
 ### Deployment Context
@@ -383,13 +425,13 @@ curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http:
 
 **Available test users:**
 
-Users are seeded in the auth service database with LDAP-like DNs:
+Users are loaded from LDIF file into the LDAP directory:
 
-- `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`: Has `ROLE_READ_WRITE` (full access)
-- `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org`: Has `ROLE_READ_WRITE` (full access)
-- `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org`: Has `ROLE_READ_ONLY` (read-only access)
-- `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=example,dc=com`: Has `ROLE_READ_ONLY` (read-only access)
-- `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=example,dc=com`: No roles assigned
+- `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_WRITE` group
+- `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_WRITE` group
+- `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_ONLY` group
+- `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_ONLY` group
+- `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=acme,dc=org`: No roles assigned
 
 ### Missing Header (Returns 401)
 
@@ -463,14 +505,15 @@ See `acme-test-integration-classic/README.md` and `acme-test-integration-reactiv
 
 ## Development Workflow
 
-1. **Start databases:**
+1. **Start databases and LDAP:**
 
    ```bash
    make db-jpa-up      # Start JPA database
    make db-r2dbc-up    # Start R2DBC database
-   make db-auth-up     # Start Auth database
-   # Or start all:
-   make dbs-up
+   make db-auth-up     # Start Auth PostgreSQL database (for DB auth variant)
+   make ldap-up        # Start LDAP server (for LDAP auth variant)
+   # Or start all infrastructure:
+   make infra-up
    ```
 
 2. **Build project:**
@@ -482,7 +525,10 @@ See `acme-test-integration-classic/README.md` and `acme-test-integration-reactiv
 3. **Start Auth Service (must be started first):**
 
    ```bash
-   make run-auth
+   # Choose one variant (both run on port 8082):
+   make run-auth-ldap  # LDAP-based authentication
+   # OR
+   make run-auth-db    # PostgreSQL-based authentication
    ```
 
 4. **Run MVC API:**
@@ -508,7 +554,8 @@ See `acme-test-integration-classic/README.md` and `acme-test-integration-reactiv
 ### Build Docker Images
 
 ```bash
-make docker-build-auth
+make docker-build-auth-ldap  # Build Auth Service (LDAP variant)
+make docker-build-auth-db     # Build Auth Service (Database variant)
 make docker-build-mvc
 make docker-build-webflux
 ```
@@ -516,31 +563,46 @@ make docker-build-webflux
 ### Run in Docker
 
 ```bash
-# Start all services with docker-compose
+# Start all services with docker compose
 docker compose up -d
 
 # Or run individually:
-make docker-run-auth
+make docker-run-auth-ldap  # Run Auth Service (LDAP variant)
+make docker-run-auth-db    # Run Auth Service (Database variant)
 make docker-run-mvc
 make docker-run-webflux
 ```
 
 ## Makefile Commands
 
+### Infrastructure Operations
+
+- `make infra-up` - Start all infrastructure (PostgreSQL databases and LDAP)
+- `make infra-down` - Stop all infrastructure (PostgreSQL databases and LDAP)
+- `make infra-reset` - Stop and remove all infrastructure volumes (purges all data, requires confirmation)
+- `make infra-logs` - View logs for all infrastructure (databases and LDAP)
+
 ### Database Operations
 
-- `make dbs-up` - Start all PostgreSQL databases
 - `make db-jpa-up` - Start JPA PostgreSQL database
 - `make db-r2dbc-up` - Start R2DBC PostgreSQL database
 - `make db-auth-up` - Start Auth PostgreSQL database
-- `make dbs-down` - Stop all databases
-- `make db-jpa-down` - Stop JPA database
-- `make db-r2dbc-down` - Stop R2DBC database
-- `make db-auth-down` - Stop Auth database
-- `make dbs-logs` - View all database logs
-- `make db-jpa-logs` - View JPA database logs
-- `make db-r2dbc-logs` - View R2DBC database logs
-- `make db-auth-logs` - View Auth database logs
+- `make db-jpa-down` - Stop JPA PostgreSQL database
+- `make db-r2dbc-down` - Stop R2DBC PostgreSQL database
+- `make db-auth-down` - Stop Auth PostgreSQL database
+- `make db-jpa-reset` - Stop and remove JPA database volume (purges data, requires confirmation)
+- `make db-r2dbc-reset` - Stop and remove R2DBC database volume (purges data, requires confirmation)
+- `make db-auth-reset` - Stop and remove Auth PostgreSQL database volume (purges data, requires confirmation)
+- `make db-jpa-logs` - View logs for JPA database
+- `make db-r2dbc-logs` - View logs for R2DBC database
+- `make db-auth-logs` - View logs for Auth PostgreSQL database
+
+### LDAP Operations
+
+- `make ldap-up` - Start only LDAP server
+- `make ldap-down` - Stop only LDAP server
+- `make ldap-reset` - Stop and remove LDAP volume (purges data, requires confirmation)
+- `make ldap-logs` - View logs for LDAP server
 
 ### Build Operations
 
@@ -552,20 +614,23 @@ make docker-run-webflux
 
 ### Run Applications
 
-- `make run-auth` - Build and run Auth Service (must be started first)
+- `make run-auth-ldap` - Build and run Auth Service (LDAP variant) on port 8082
+- `make run-auth-db` - Build and run Auth Service (PostgreSQL variant) on port 8082
 - `make run-mvc` - Build and run MVC API
 - `make run-webflux` - Build and run WebFlux API
-- `make stop-auth` - Stop Auth Service
+- `make stop-auth` - Stop Auth Service (either variant)
 - `make stop-mvc` - Stop MVC API
 - `make stop-webflux` - Stop WebFlux API
 - `make stop-all` - Stop all applications
 
 ### Docker Operations
 
-- `make docker-build-auth` - Build Docker image for Auth Service
+- `make docker-build-auth-ldap` - Build Docker image for Auth Service (LDAP variant)
+- `make docker-build-auth-db` - Build Docker image for Auth Service (PostgreSQL variant)
 - `make docker-build-mvc` - Build Docker image for MVC API
 - `make docker-build-webflux` - Build Docker image for WebFlux API
-- `make docker-run-auth` - Run Auth Service in Docker container
+- `make docker-run-auth-ldap` - Run Auth Service (LDAP) in Docker container
+- `make docker-run-auth-db` - Run Auth Service (PostgreSQL) in Docker container
 - `make docker-run-mvc` - Run MVC API in Docker container
 - `make docker-run-webflux` - Run WebFlux API in Docker container
 
@@ -574,8 +639,9 @@ make docker-run-webflux
 ### Module Organization
 
 - **acme-pom**: Dependency management (BOM and parent POM)
-- **acme-auth-client**: REST client wrapper for calling acme-auth-service
-- **acme-auth-service**: Standalone authentication service with REST API and its own database
+- **acme-auth-client**: REST client wrapper for calling auth service
+- **acme-auth-service-db**: Authentication service with PostgreSQL backend
+- **acme-auth-service-ldap**: Authentication service with LDAP backend
 - **acme-security**: Security layer with core logic and framework-specific configs
 - **acme-persistence-jpa**: JPA data access layer
 - **acme-persistence-r2dbc**: R2DBC data access layer
@@ -590,7 +656,7 @@ make docker-run-webflux
 - `acme-api-webflux` depends on `acme-security-webflux` and `acme-persistence-r2dbc`
 - `acme-security-core` depends on `acme-auth-client` which provides `AuthServiceClient`
 - `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean
-- `acme-auth-service` is a standalone Spring Boot application (no dependencies on other modules)
+- `acme-auth-service-db` and `acme-auth-service-ldap` are standalone Spring Boot applications (no dependencies on other modules)
 - All modules inherit from `acme-starter-parent` which inherits from `acme-dependencies`
 
 ### Architecture Flow
@@ -606,7 +672,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 3. Cache is checked first - if hit, returns cached `UserInfo`
 4. On cache miss, `CachedUserLookupService` calls `AuthServiceClient.lookupUser(dn)`
 5. `AuthServiceClient` makes REST call to auth service: `GET /api/auth/users/{dn}`
-6. Auth service queries its own database (`acme_auth`) for user by DN and roles
+6. Auth service queries LDAP directory for user by DN and roles
 7. Auth service returns `UserInfoResponse` with DN, givenName, surname, and roles
 8. `AuthServiceClient` converts response to `UserInfo`
 9. Result is cached and returned to security layer
@@ -615,14 +681,27 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 
 ## Key Components
 
-### Authentication Service Components (`acme-auth-service`)
+### Authentication Service Components
+
+**acme-auth-service-ldap:**
 
 - **Standalone Service**: Runs on port 8082 in its own container
 - **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
-- **Database**: Own PostgreSQL database (`acme_auth` on port 5434)
-- **Entities**: `User` (with DN, givenName, surname), `UserRole` for RBAC
-- **Migrations**: Flyway migrations for users and roles tables with seed data (LDAP-like structure)
+- **LDAP Directory**: OpenLDAP server (port 389) for user storage
+- **LDAP Service**: `LdapUserService` queries LDAP by DN using Spring LDAP
+- **LDIF Data**: Users loaded from `01-users.ldif` file on LDAP server startup
 - **Response**: Returns `UserInfoResponse` with DN, givenName, surname, and roles
+
+**acme-auth-service-db:**
+
+- **Standalone Service**: Runs on port 8082 in its own container
+- **REST API**: Exposes `/api/auth/users/{dn}` endpoint (DN = Distinguished Name)
+- **PostgreSQL Database**: PostgreSQL (port 5434) for user storage
+- **JPA Service**: `UserService` queries database by DN using Spring Data JPA
+- **Flyway Migrations**: Users loaded via database migrations
+- **Response**: Returns `UserInfoResponse` with DN, givenName, surname, and roles
+
+**Both services are interchangeable** - they expose the same API contract and can be used as drop-in replacements.
 
 ### Authentication Client (`acme-auth-client`)
 
@@ -646,7 +725,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 
 - `Book`: Entity class (JPA and R2DBC versions) with `createdBy` and `updatedBy` audit fields
 - `BookRepository`: Repository interface (JpaRepository and ReactiveCrudRepository)
-- **Note**: `User` and `UserRole` entities are in `acme-auth-service`, not in main application databases
+- **Note**: User data is stored in LDAP directory, not in main application databases
 - Flyway migrations:
   - V1: Initial schema (books table with audit fields)
   - V2: Seed data (books)

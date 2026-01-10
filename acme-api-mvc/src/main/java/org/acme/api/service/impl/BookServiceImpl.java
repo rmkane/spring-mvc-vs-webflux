@@ -29,7 +29,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
 
-    @PreAuthorize("hasRole('READ_WRITE')")
+    @PreAuthorize("hasAuthority('ACME_READ_WRITE')")
     @Transactional
     @Override
     public BookResponse create(CreateBookRequest request) {
@@ -51,7 +51,7 @@ public class BookServiceImpl implements BookService {
         return bookMapper.toResponse(saved);
     }
 
-    @PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")
+    @PreAuthorize("hasAnyAuthority('ACME_READ_ONLY', 'ACME_READ_WRITE')")
     @Transactional(readOnly = true)
     @Override
     public List<BookResponse> findAll() {
@@ -62,7 +62,7 @@ public class BookServiceImpl implements BookService {
                 .toList();
     }
 
-    @PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")
+    @PreAuthorize("hasAnyAuthority('ACME_READ_ONLY', 'ACME_READ_WRITE')")
     @Transactional(readOnly = true)
     @Override
     public BookResponse findById(Long id) {
@@ -73,7 +73,7 @@ public class BookServiceImpl implements BookService {
         return bookMapper.toResponse(book);
     }
 
-    @PreAuthorize("hasRole('READ_WRITE')")
+    @PreAuthorize("hasAuthority('ACME_READ_WRITE')")
     @Transactional
     @Override
     public BookResponse update(Long id, UpdateBookRequest request) {
@@ -101,7 +101,7 @@ public class BookServiceImpl implements BookService {
         return bookMapper.toResponse(saved);
     }
 
-    @PreAuthorize("hasRole('READ_WRITE')")
+    @PreAuthorize("hasAuthority('ACME_READ_WRITE')")
     @Transactional
     @Override
     public void delete(Long id) {

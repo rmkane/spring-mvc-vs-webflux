@@ -46,9 +46,7 @@ public final class HttpUtils {
     public static MultiValueMap<String, String> getHeaders(HttpServletResponse response) {
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
         Collection<String> headerNames = response.getHeaderNames();
-        headerNames.forEach(headerName -> {
-            headers.put(headerName, new ArrayList<>(response.getHeaders(headerName)));
-        });
+        headerNames.forEach(headerName -> headers.put(headerName, new ArrayList<>(response.getHeaders(headerName))));
         return headers;
     }
 }

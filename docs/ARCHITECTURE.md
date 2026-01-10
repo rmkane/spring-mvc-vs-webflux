@@ -71,17 +71,20 @@ Both implementations share common security and authentication infrastructure whi
 │    (JPA DB)     │      │   (R2DBC DB)    │
 └─────────────────┘      └─────────────────┘
 ┌──────────────────────────────────────────┐
-│           Authentication Service         │
-│                (Port 8082)               │
+│      Authentication Service (Port 8082)  │
 │  - User Management                       │
 │  - DN Lookup                             │
 │  - Role Assignment                       │
-└────────────────────┬─────────────────────┘
-                     │
-             ┌───────▼────────┐
-             │   PostgreSQL   │
-             │   (Auth DB)    │
-             └────────────────┘
+│  - Two interchangeable variants:         │
+│    • LDAP-based (Spring LDAP)            │
+│    • PostgreSQL-based (Spring Data JPA)  │
+└───────┬─────────────────────────┬────────┘
+        │                         │
+┌───────▼────────┐      ┌────────▼────────┐
+│    OpenLDAP    │      │   PostgreSQL    │
+│   (Port 389)   │      │   (Port 5434)   │
+│ LDAP Directory │      │  Auth Database  │
+└────────────────┘      └─────────────────┘
 ┌──────────────────────────────────────────┐
 │            Monitoring Stack              │
 │  - Prometheus (scrapes metrics)          │
@@ -104,7 +107,8 @@ acme (root)
 │
 ├── acme-auth-client/                  # Reusable auth service client library
 │
-├── acme-auth-service/                 # Standalone authentication microservice
+├── acme-auth-service-db/              # Authentication service (PostgreSQL-based)
+├── acme-auth-service-ldap/           # Authentication service (LDAP-based)
 │
 ├── acme-security/                     # Shared security infrastructure
 │   ├── acme-security-core/            # Core security logic (paradigm-agnostic)
@@ -136,7 +140,10 @@ acme-api-webflux depends on:
   │       └── acme-auth-client
   └── acme-persistence-r2dbc
 
-acme-auth-service depends on:
+acme-auth-service-db depends on:
+  └── (standalone - no internal dependencies)
+
+acme-auth-service-ldap depends on:
   └── (standalone - no internal dependencies)
 ```
 
@@ -231,14 +238,27 @@ acme-auth-service depends on:
 
 #### Application Modules
 
-**acme-auth-service**
+**acme-auth-service-ldap**
+
+- Standalone Spring Boot microservice
+- User management and authentication
+- LDAP server (OpenLDAP) for user storage
+- REST API for user lookup by DN
+- Role assignment and management
+- Spring LDAP for LDAP operations
+- Runs on port 8082
+
+**acme-auth-service-db**
 
 - Standalone Spring Boot microservice
 - User management and authentication
 - PostgreSQL database for user storage
 - REST API for user lookup by DN
 - Role assignment and management
+- Spring Data JPA for database operations
 - Runs on port 8082
+
+**Both services are interchangeable** - they expose the same REST API contract (`/api/auth/users/{dn}`) and return the same response format, making them drop-in replacements for demonstration purposes.
 
 **acme-api-mvc**
 
@@ -419,7 +439,9 @@ Both MVC and WebFlux use the same conceptual authentication flow:
    ├─ Check Spring Cache
    │  ├─ Cache Hit: Return cached UserInfo
    │  └─ Cache Miss: Call Auth Service
-   │     ├─ HTTP GET /api/users/lookup?dn={dn}
+   │     ├─ HTTP GET /api/auth/users/{dn}
+   │     ├─ Auth Service queries user store (LDAP or DB) by DN
+   │     ├─ User store returns user attributes and roles
    │     ├─ Deserialize UserInfo response
    │     └─ Store in cache
    └─ Return UserInfo
@@ -664,8 +686,9 @@ Developer Machine
 ├── Auth Service (localhost:8082)
 ├── PostgreSQL (Docker)
 │   ├── Port 5432 (JPA database)
-│   ├── Port 5433 (R2DBC database)
-│   └── Port 5434 (Auth database)
+│   └── Port 5433 (R2DBC database)
+├── OpenLDAP (Docker)
+│   └── Port 389 (LDAP directory)
 ├── Prometheus (localhost:9090)
 └── Grafana (localhost:3000)
 ```
@@ -717,14 +740,14 @@ Services orchestrated with Docker Compose:
 
 ### Core Frameworks
 
-| Component | MVC | WebFlux | Auth Service |
-| --------- | --- | ------- | ------------ |
-| Spring Boot | 3.5.x | 3.5.x | 3.5.x |
-| Web Framework | Spring MVC | Spring WebFlux | Spring MVC |
-| Server | Tomcat | Netty | Tomcat |
-| Persistence | JPA + Hibernate | R2DBC | JPA + Hibernate |
-| Database | PostgreSQL | PostgreSQL | PostgreSQL |
-| HTTP Client | RestTemplate | WebClient | N/A |
+| Component     | MVC             | WebFlux        | Auth Service (LDAP) | Auth Service (DB) |
+|---------------|-----------------|----------------|---------------------|-------------------|
+| Spring Boot   | 3.5.x           | 3.5.x          | 3.5.x               | 3.5.x             |
+| Web Framework | Spring MVC      | Spring WebFlux | Spring MVC          | Spring MVC        |
+| Server        | Tomcat          | Netty          | Tomcat              | Tomcat            |
+| Persistence   | JPA + Hibernate | R2DBC          | Spring LDAP         | Spring Data JPA   |
+| Database      | PostgreSQL      | PostgreSQL     | OpenLDAP            | PostgreSQL        |
+| HTTP Client   | RestTemplate    | WebClient      | N/A                 | N/A               |
 
 ### Supporting Libraries
 

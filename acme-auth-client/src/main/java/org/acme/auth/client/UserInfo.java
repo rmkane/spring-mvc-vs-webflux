@@ -23,7 +23,7 @@ public class UserInfo implements UserDetails {
         this.dn = dn;
         this.givenName = givenName;
         this.surname = surname;
-        this.roles = roles != null ? roles : List.of("ROLE_USER");
+        this.roles = roles != null ? roles : List.of();
     }
 
     @Override

@@ -27,9 +27,9 @@ print_usage() {
     echo "  X_DN                       - Distinguished Name (DN) for authentication"
     echo "                              (default: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org)"
     echo ""
-    echo "Available users (from database):"
+    echo "Available users (from LDAP):"
     echo "  cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org"
-    echo "    - ROLE_READ_WRITE (full access)"
+    echo "    - ACME_READ_WRITE (full access)"
 }
 
 get_all() {

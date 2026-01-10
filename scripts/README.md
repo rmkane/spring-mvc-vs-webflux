@@ -54,7 +54,7 @@ Both scripts use the `x-dn` header for authentication. The Distinguished Name (D
 
 The database is seeded with users from `USERS.md`. The default user is:
 
-- **`cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`** - Has `ROLE_READ_WRITE`
+- **`cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`** - Member of `ACME_READ_WRITE` group
   - ✅ Can perform: All operations (full access)
 
 See `USERS.md` for the complete list of available users and their DNs.

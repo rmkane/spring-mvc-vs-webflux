@@ -1,0 +1,40 @@
+server:
+  port: 8082
+  ssl:
+    enabled: true
+    key-store: classpath:ssl/auth-service-keystore.jks
+    key-store-password: changeit
+    key-store-type: JKS
+    key-alias: auth-service
+    trust-store: classpath:ssl/auth-service-truststore.jks
+    trust-store-password: changeit
+    trust-store-type: JKS
+    client-auth: need
+
+spring:
+  application:
+    name: acme-auth-service-ldap
+
+  ldap:
+    urls: ${SPRING_LDAP_URLS:ldap://localhost:389}
+    base: ${SPRING_LDAP_BASE:dc=corp,dc=acme,dc=org}
+    username: ${SPRING_LDAP_USERNAME:cn=admin,dc=corp,dc=acme,dc=org}
+    password: ${SPRING_LDAP_PASSWORD:admin}
+
+logging:
+  level:
+    org.acme: DEBUG
+    org.springframework.web: DEBUG
+    org.acme.auth.service.controller: DEBUG
+    org.springdoc.core.events.SpringDocAppInitializer: ERROR
+    org.hibernate.orm.deprecation: ERROR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+

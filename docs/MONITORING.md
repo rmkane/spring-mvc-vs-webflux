@@ -23,8 +23,10 @@ This starts both Prometheus and Grafana in Docker containers.
 Make sure your Spring Boot applications are running:
 
 ```bash
-make dbs-up        # Start databases
-make run-auth      # Terminal 1: Start auth service
+make infra-up      # Start infrastructure (databases and LDAP)
+make run-auth-ldap # Terminal 1: Start auth service (LDAP variant)
+# OR
+make run-auth-db   # Terminal 1: Start auth service (Database variant)
 make run-mvc       # Terminal 2: Start MVC API
 make run-webflux   # Terminal 3: Start WebFlux API
 ```

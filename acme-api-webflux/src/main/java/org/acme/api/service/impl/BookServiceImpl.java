@@ -30,7 +30,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
 
-    @PreAuthorize("hasRole('READ_WRITE')")
+    @PreAuthorize("hasAuthority('ACME_READ_WRITE')")
     @Override
     public Mono<BookResponse> create(CreateBookRequest request) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
@@ -52,7 +52,7 @@ public class BookServiceImpl implements BookService {
                 });
     }
 
-    @PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")
+    @PreAuthorize("hasAnyAuthority('ACME_READ_ONLY', 'ACME_READ_WRITE')")
     @Override
     public Flux<BookResponse> findAll() {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
@@ -61,7 +61,7 @@ public class BookServiceImpl implements BookService {
                         .map(bookMapper::toResponse));
     }
 
-    @PreAuthorize("hasAnyRole('READ_ONLY', 'READ_WRITE')")
+    @PreAuthorize("hasAnyAuthority('ACME_READ_ONLY', 'ACME_READ_WRITE')")
     @Override
     public Mono<BookResponse> findById(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
@@ -71,7 +71,7 @@ public class BookServiceImpl implements BookService {
                         .map(bookMapper::toResponse));
     }
 
-    @PreAuthorize("hasRole('READ_WRITE')")
+    @PreAuthorize("hasAuthority('ACME_READ_WRITE')")
     @Override
     public Mono<BookResponse> update(Long id, UpdateBookRequest request) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
@@ -106,7 +106,7 @@ public class BookServiceImpl implements BookService {
                         .map(bookMapper::toResponse));
     }
 
-    @PreAuthorize("hasRole('READ_WRITE')")
+    @PreAuthorize("hasAuthority('ACME_READ_WRITE')")
     @Override
     public Mono<Void> delete(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()

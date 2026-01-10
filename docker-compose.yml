@@ -56,11 +56,65 @@ services:
     networks:
       - acme-network
 
-  auth-service:
+  ldap:
+    image: osixia/openldap:latest
+    container_name: acme-ldap
+    ports:
+      - "389:389"   # LDAP port
+      - "636:636"   # LDAPS port
+    environment:
+      LDAP_ORGANISATION: "Acme Corp"
+      LDAP_DOMAIN: "corp.acme.org"
+      LDAP_BASE_DN: "dc=corp,dc=acme,dc=org"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_CONFIG_PASSWORD: "config"
+      LDAP_READONLY_USER: "false"
+      LDAP_RFC2307BIS_SCHEMA: "false"
+      LDAP_BACKEND: "mdb"
+      LDAP_TLS: "false"
+      LDAP_REPLICATION: "false"
+    volumes:
+      - ldap-data:/var/lib/ldap
+      - ldap-config:/etc/ldap/slapd.d
+      - ./acme-auth-service-ldap/src/main/resources/ldap/ldif:/ldif-import:ro
+    entrypoint: |
+      /bin/bash -c "
+      mkdir -p /container/service/slapd/assets/config/bootstrap/ldif/custom &&
+      cp /ldif-import/*.ldif /container/service/slapd/assets/config/bootstrap/ldif/custom/ 2>/dev/null || true &&
+      /container/tool/run
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://localhost:389 -D 'cn=admin,dc=corp,dc=acme,dc=org' -w admin -b 'dc=corp,dc=acme,dc=org' '(objectClass=*)' | grep -q 'dn: dc=corp,dc=acme,dc=org' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - acme-network
+
+  auth-ldap:
     build:
       context: .
-      dockerfile: acme-auth-service/Dockerfile
-    container_name: acme-auth-service
+      dockerfile: acme-auth-service-ldap/Dockerfile
+    container_name: acme-auth-ldap
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_LDAP_URLS: ldap://ldap:389
+      SPRING_LDAP_BASE: dc=corp,dc=acme,dc=org
+      SPRING_LDAP_USERNAME: cn=admin,dc=corp,dc=acme,dc=org
+      SPRING_LDAP_PASSWORD: admin
+    depends_on:
+      ldap:
+        condition: service_healthy
+    networks:
+      - acme-network
+
+  auth-db:
+    build:
+      context: .
+      dockerfile: acme-auth-service-db/Dockerfile
+    container_name: acme-auth-db
     ports:
       - "8082:8082"
     environment:
@@ -112,6 +166,8 @@ volumes:
   postgres-jpa-data:
   postgres-r2dbc-data:
   postgres-auth-data:
+  ldap-data:
+  ldap-config:
   prometheus-data:
   grafana-data:
 

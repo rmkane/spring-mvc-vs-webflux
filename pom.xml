@@ -23,7 +23,8 @@
 		<module>acme-test-integration-reactive</module>
 
 		<!-- Services -->
-		<module>acme-auth-service</module>
+		<module>acme-auth-service-ldap</module>
+		<module>acme-auth-service-db</module>
 		<module>acme-security</module>
 
 		<!-- Persistence -->

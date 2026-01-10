@@ -1,0 +1,128 @@
+# LDIF file for Acme Corp users and roles
+# This file is automatically imported by OpenLDAP on startup
+# Note: Base DN (dc=corp,dc=acme,dc=org) is created by the osixia/openldap image
+#
+# Roles are modeled using LDAP groups (best practice):
+# - Groups use groupOfNames object class
+# - Users are added as members of groups
+# - memberOf attribute is automatically maintained by memberOf overlay
+
+dn: ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: Users
+
+dn: ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: Engineering
+
+dn: ou=hr,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: HR
+
+dn: ou=finance,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: Finance
+
+dn: ou=it,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: IT
+
+dn: ou=security,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: Security
+
+# Role Groups
+dn: ou=roles,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: Roles
+
+# User 1: John Doe with READ_WRITE role
+dn: cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: John Doe
+givenName: John
+sn: Doe
+uid: jdoe
+userPassword: {SSHA}password
+
+# User 2: Alice Smith with READ_WRITE role
+dn: cn=alice smith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Alice Smith
+givenName: Alice
+sn: Smith
+uid: asmith
+userPassword: {SSHA}password
+
+# User 3: Brian Wilson with READ_ONLY role
+dn: cn=brian wilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Brian Wilson
+givenName: Brian
+sn: Wilson
+uid: bwilson
+userPassword: {SSHA}password
+
+# User 4: Maria Garcia with READ_ONLY role
+dn: cn=maria garcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Maria Garcia
+givenName: Maria
+sn: Garcia
+uid: mgarcia
+userPassword: {SSHA}password
+
+# User 5: Kevin Tran (no role assigned yet)
+dn: cn=kevin tran,ou=security,ou=users,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: Kevin Tran
+givenName: Kevin
+sn: Tran
+uid: ktran
+userPassword: {SSHA}password
+
+# Group for READ_WRITE role
+# Note: groupOfNames requires at least one member
+# Include all members in initial creation to avoid modify operations during bootstrap
+dn: cn=ACME_READ_WRITE,ou=roles,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: groupOfNames
+cn: ACME_READ_WRITE
+description: Users with read and write permissions
+member: cn=admin,dc=corp,dc=acme,dc=org
+member: cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+member: cn=alice smith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
+
+# Group for READ_ONLY role
+# Note: groupOfNames requires at least one member
+# Include all members in initial creation to avoid modify operations during bootstrap
+dn: cn=ACME_READ_ONLY,ou=roles,dc=corp,dc=acme,dc=org
+objectClass: top
+objectClass: groupOfNames
+cn: ACME_READ_ONLY
+description: Users with read-only permissions
+member: cn=admin,dc=corp,dc=acme,dc=org
+member: cn=brian wilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
+member: cn=maria garcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
