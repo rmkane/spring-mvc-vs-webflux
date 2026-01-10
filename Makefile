@@ -5,10 +5,11 @@
 		infra-down db-jpa-down db-r2dbc-down db-auth-down \
 		infra-reset db-jpa-reset db-r2dbc-reset db-auth-reset \
 		infra-logs db-jpa-logs db-r2dbc-logs db-auth-logs \
-		ldap-up ldap-down ldap-reset ldap-logs \
+		db-jpa-exec db-r2dbc-exec db-auth-exec \
+		ldap-up ldap-down ldap-reset ldap-logs ldap-exec \
 		monitoring-up monitoring-down monitoring-logs prometheus-ui grafana-ui \
 		build clean test format lint clean-logs \
-		run-mvc run-webflux run-auth-ldap run-auth-db stop-mvc stop-webflux stop-auth stop-all \
+		run-mvc run-webflux run-auth-ldap run-auth-db run-ui stop-mvc stop-webflux stop-auth stop-ui stop-all \
 		docker-build-mvc docker-build-webflux docker-build-auth-ldap docker-build-auth-db \
 		docker-run-mvc docker-run-webflux docker-run-auth-ldap docker-run-auth-db
 
@@ -34,12 +35,16 @@ help:
 	@echo "  db-jpa-logs    - View logs for JPA database"
 	@echo "  db-r2dbc-logs  - View logs for R2DBC database"
 	@echo "  db-auth-logs   - View logs for Auth PostgreSQL database"
+	@echo "  db-jpa-exec    - Execute into JPA PostgreSQL database (psql)"
+	@echo "  db-r2dbc-exec  - Execute into R2DBC PostgreSQL database (psql)"
+	@echo "  db-auth-exec   - Execute into Auth PostgreSQL database (psql)"
 	@echo ""
 	@echo "LDAP Operations:"
 	@echo "  ldap-up        - Start only LDAP server"
 	@echo "  ldap-down      - Stop only LDAP server"
 	@echo "  ldap-reset     - Stop and remove LDAP volume (purges data, requires confirmation)"
 	@echo "  ldap-logs      - View logs for LDAP server"
+	@echo "  ldap-exec      - Execute into LDAP container (bash shell)"
 	@echo ""
 	@echo "Monitoring Operations:"
 	@echo "  monitoring-up   - Start Prometheus and Grafana"
@@ -61,10 +66,12 @@ help:
 	@echo "  run-webflux    - Build and run WebFlux API"
 	@echo "  run-auth-ldap  - Build and run Auth Service (LDAP variant)"
 	@echo "  run-auth-db    - Build and run Auth Service (Database variant)"
+	@echo "  run-ui         - Run Next.js UI (port 3001)"
 	@echo "  stop-mvc       - Stop MVC API"
 	@echo "  stop-webflux   - Stop WebFlux API"
 	@echo "  stop-auth      - Stop Auth Service (either variant)"
-	@echo "  stop-all       - Stop all APIs"
+	@echo "  stop-ui        - Stop Next.js UI"
+	@echo "  stop-all       - Stop all APIs and UI"
 	@echo ""
 	@echo "Docker Operations:"
 	@echo "  docker-build-mvc        - Build Docker image for MVC API"
@@ -143,6 +150,15 @@ db-auth-reset:
 db-auth-logs:
 	docker compose logs -f postgres-auth
 
+db-jpa-exec:
+	docker exec -it acme-postgres-jpa psql -U acme_user -d acme_jpa
+
+db-r2dbc-exec:
+	docker exec -it acme-postgres-r2dbc psql -U acme_user -d acme_r2dbc
+
+db-auth-exec:
+	docker exec -it acme-postgres-auth psql -U acme_user -d acme_auth
+
 # LDAP Operations
 ldap-up:
 	docker compose up -d ldap
@@ -162,6 +178,9 @@ ldap-reset:
 
 ldap-logs:
 	docker compose logs -f ldap
+
+ldap-exec:
+	docker exec -it acme-ldap bash
 
 monitoring-up:
 	docker compose up -d prometheus grafana
@@ -262,6 +281,13 @@ run-auth-db:
 	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8789" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
+run-ui:
+	@if [ ! -d "acme-ui/node_modules" ]; then \
+		echo "Installing UI dependencies..."; \
+		cd acme-ui && pnpm install; \
+	fi
+	cd acme-ui && pnpm run dev
+
 stop-mvc:
 	@pkill -f "acme-api-mvc.*spring-boot:run" || pkill -f "AcmeApiMvcApplication" || echo "MVC API is not running"
 
@@ -274,7 +300,10 @@ stop-auth:
 	pkill -f "AuthServiceApplication" || \
 	echo "Auth Service is not running"
 
-stop-all: stop-mvc stop-webflux stop-auth
+stop-ui:
+	@pkill -f "next dev" || pkill -f "next-server" || echo "UI is not running"
+
+stop-all: stop-mvc stop-webflux stop-auth stop-ui
 
 docker-build-mvc:
 	docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .

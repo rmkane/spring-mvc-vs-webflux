@@ -40,6 +40,15 @@ Both implementations share common security and authentication infrastructure whi
 
 ```none
 ┌──────────────────────────────────────────┐
+│            Web UI (Port 3001)            │
+│         Next.js (React/TypeScript)       │
+│  - Server-side rendering                 │
+│  - API routes for backend communication  │
+└───────┬──────────────────────────────────┘
+        │
+        │ HTTP (x-dn header)
+        │
+┌───────▼──────────────────────────────────┐
 │         Load Balancer / Gateway          │
 │         (mTLS with client certs)         │
 └───────┬─────────────────────────┬────────┘
@@ -123,6 +132,13 @@ acme (root)
 │
 ├── acme-test-integration-classic/     # Integration test framework (RestTemplate)
 └── acme-test-integration-reactive/    # Integration test framework (WebClient)
+
+acme-ui/                                # Next.js web UI (separate from Maven modules)
+├── app/                                # Next.js App Router
+│   ├── books/                          # Book management pages
+│   └── api/                            # API routes (proxies to backend)
+├── components/                         # React components
+└── lib/                                # Utility functions and API clients
 ```
 
 ### Module Dependencies
@@ -247,6 +263,7 @@ acme-auth-service-ldap depends on:
 - Role assignment and management
 - Spring LDAP for LDAP operations
 - Runs on port 8082
+- See [LDAP.md](LDAP.md) for detailed LDAP directory usage and querying guide
 
 **acme-auth-service-db**
 
@@ -279,6 +296,19 @@ acme-auth-service-ldap depends on:
 - Same API contract as MVC version
 - Returns `Mono<T>` and `Flux<T>`
 - Runs on port 8081
+
+**acme-ui**
+
+- Next.js web application (React/TypeScript)
+- Server-side rendering with App Router
+- Client-side interactivity for forms and actions
+- API routes that proxy requests to backend with `x-dn` header
+- Automatic header injection from environment variables
+- Book management interface (list, create, edit, delete)
+- Runs on port 3001
+- Uses pnpm for package management
+
+**Note:** The UI is a separate Node.js application, not a Maven module. It communicates with the backend APIs via HTTP, automatically including the `x-dn` header from environment configuration for local development.
 
 ## Data Flow
 
@@ -681,12 +711,15 @@ void testGetBook() {
 
 ```none
 Developer Machine
+├── Web UI (localhost:3001)
+│   └── Next.js development server
 ├── MVC API (localhost:8080)
 ├── WebFlux API (localhost:8081)
 ├── Auth Service (localhost:8082)
 ├── PostgreSQL (Docker)
 │   ├── Port 5432 (JPA database)
-│   └── Port 5433 (R2DBC database)
+│   ├── Port 5433 (R2DBC database)
+│   └── Port 5434 (Auth database)
 ├── OpenLDAP (Docker)
 │   └── Port 389 (LDAP directory)
 ├── Prometheus (localhost:9090)
@@ -740,14 +773,15 @@ Services orchestrated with Docker Compose:
 
 ### Core Frameworks
 
-| Component     | MVC             | WebFlux        | Auth Service (LDAP) | Auth Service (DB) |
-|---------------|-----------------|----------------|---------------------|-------------------|
-| Spring Boot   | 3.5.x           | 3.5.x          | 3.5.x               | 3.5.x             |
-| Web Framework | Spring MVC      | Spring WebFlux | Spring MVC          | Spring MVC        |
-| Server        | Tomcat          | Netty          | Tomcat              | Tomcat            |
-| Persistence   | JPA + Hibernate | R2DBC          | Spring LDAP         | Spring Data JPA   |
-| Database      | PostgreSQL      | PostgreSQL     | OpenLDAP            | PostgreSQL        |
-| HTTP Client   | RestTemplate    | WebClient      | N/A                 | N/A               |
+| Component     | MVC             | WebFlux         | Auth (LDAP)     | Auth (DB)        | UI           |
+|---------------|-----------------|-----------------|-----------------|------------------|--------------|
+| Framework     | Spring Boot 3.5 | Spring Boot 3.5 | Spring Boot 3.5 | Spring Boot 3.5  | Next.js 16.1 |
+| Web Framework | Spring MVC      | Spring WebFlux  | Spring MVC      | Spring MVC       | React 19.2   |
+| Server        | Tomcat          | Netty           | Tomcat          | Tomcat           | Next.js Dev  |
+| Persistence   | JPA + Hibernate | R2DBC           | Spring LDAP     | Spring Data JPA  | N/A          |
+| Database      | PostgreSQL      | PostgreSQL      | OpenLDAP        | PostgreSQL       | N/A          |
+| HTTP Client   | RestTemplate    | WebClient       | N/A             | N/A              | Fetch API    |
+| Language      | Java 17         | Java 17         | Java 17         | Java 17          | TypeScript 5 |
 
 ### Supporting Libraries
 
@@ -762,9 +796,10 @@ Services orchestrated with Docker Compose:
 
 ### Build Tools
 
-- **Build System**: Maven 3.9+
+- **Build System**: Maven 3.9+ (Java modules), pnpm (UI)
 - **Java Version**: 17 (LTS)
-- **Code Formatting**: Spotless
+- **Node.js**: 20+ (for UI)
+- **Code Formatting**: Spotless (Java), ESLint (TypeScript)
 - **Containerization**: Docker + Docker Compose
 
 ## Design Patterns
