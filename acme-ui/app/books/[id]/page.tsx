@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { Alert } from '@/components/Alert'
 import { BookForm } from '@/components/BookForm'
 import { PageHeaderWithBack } from '@/components/PageHeaderWithBack'
 import { getBookById } from '@/lib/books'
@@ -32,16 +33,14 @@ export default async function BookEditPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black py-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-4 flex justify-between items-center">
-            <Link href="/books" className="text-blue-600 dark:text-blue-400 hover:underline">
+      <div className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-black">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-4 flex items-center justify-between">
+            <Link href="/books" className="text-blue-600 hover:underline dark:text-blue-400">
               ← Back to Books
             </Link>
           </div>
-          <div className="p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded">
-            Error: {error}
-          </div>
+          <Alert type="error" message={error} />
         </div>
       </div>
     )
@@ -52,8 +51,8 @@ export default async function BookEditPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-black">
+      <div className="mx-auto max-w-2xl">
         <PageHeaderWithBack title="Edit Book" backHref="/books" />
         <BookForm book={book} />
       </div>

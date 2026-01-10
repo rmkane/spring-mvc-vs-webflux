@@ -17,13 +17,13 @@ export function PageHeaderWithBack({
 }: PageHeaderWithBackProps) {
   return (
     <>
-      <div className="mb-6 flex justify-between items-center">
-        <Link href={backHref} className="text-blue-600 dark:text-blue-400 hover:underline">
+      <div className="mb-6 flex items-center justify-between">
+        <Link href={backHref} className="text-blue-600 hover:underline dark:text-blue-400">
           {backLabel}
         </Link>
         <ThemeToggle />
       </div>
-      <h1 className="text-3xl font-bold text-black dark:text-zinc-50 mb-8">{title}</h1>
+      <h1 className="mb-8 text-3xl font-bold text-black dark:text-zinc-50">{title}</h1>
     </>
   )
 }

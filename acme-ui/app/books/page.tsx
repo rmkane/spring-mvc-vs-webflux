@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { Alert } from '@/components/Alert'
 import { BookCard } from '@/components/BookCard'
 import { PageHeader } from '@/components/PageHeader'
 import { getAllBooks } from '@/lib/books'
@@ -20,20 +21,20 @@ export default async function BooksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-black">
+      <div className="mx-auto max-w-6xl">
         <PageHeader title="Books" action={{ label: 'Add New Book', href: '/books/new' }} />
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded">
-            Error: {error}
-          </div>
-        )}
+        {error && <Alert type="error" message={error} className="mb-4" />}
 
         {books.length === 0 && !error ? (
-          <div className="text-center py-12 text-zinc-600 dark:text-zinc-400">
-            <p className="text-lg mb-4">No books found.</p>
-            <Link href="/books/new" className="text-blue-600 dark:text-blue-400 hover:underline">
+          <div className="py-12 text-center text-zinc-600 dark:text-zinc-400">
+            <p className="mb-4 text-lg">No books found.</p>
+            <Link
+              href="/books/new"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+              aria-label="Create your first book"
+            >
               Create your first book
             </Link>
           </div>

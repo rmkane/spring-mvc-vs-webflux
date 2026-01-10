@@ -65,7 +65,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     }
 
     await deleteBook(bookId)
-    return NextResponse.json({}, { status: 204 })
+    return new NextResponse(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting book:', error)
     if (error instanceof Error && error.message.includes('404')) {

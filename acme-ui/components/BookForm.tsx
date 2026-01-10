@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { Alert } from '@/components/Alert'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { useToastContext } from '@/components/ToastProvider'
 import type { Book, CreateBookRequest, UpdateBookRequest } from '@/lib/types'
 
 interface BookFormProps {
@@ -11,6 +14,7 @@ interface BookFormProps {
 
 export function BookForm({ book }: BookFormProps) {
   const router = useRouter()
+  const { showSuccess, showError: showToastError } = useToastContext()
   const isEditing = !!book
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,10 +47,13 @@ export function BookForm({ book }: BookFormProps) {
         throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} book`)
       }
 
+      showSuccess(`Book ${isEditing ? 'updated' : 'created'} successfully`)
       router.push('/books')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setError(errorMessage)
+      showToastError(errorMessage)
       setLoading(false)
     }
   }
@@ -60,18 +67,14 @@ export function BookForm({ book }: BookFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 rounded-lg shadow-md p-6">
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded">
-          {error}
-        </div>
-      )}
+    <form onSubmit={handleSubmit} className="rounded-lg bg-white p-6 shadow-md dark:bg-zinc-900">
+      {error && <Alert type="error" message={error} className="mb-4" />}
 
       <div className="space-y-4">
         <div>
           <label
             htmlFor="title"
-            className="block text-sm font-medium text-black dark:text-zinc-50 mb-1"
+            className="mb-1 block text-sm font-medium text-black dark:text-zinc-50"
           >
             Title *
           </label>
@@ -82,14 +85,14 @@ export function BookForm({ book }: BookFormProps) {
             required
             value={formData.title}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-black focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
           />
         </div>
 
         <div>
           <label
             htmlFor="author"
-            className="block text-sm font-medium text-black dark:text-zinc-50 mb-1"
+            className="mb-1 block text-sm font-medium text-black dark:text-zinc-50"
           >
             Author *
           </label>
@@ -100,14 +103,14 @@ export function BookForm({ book }: BookFormProps) {
             required
             value={formData.author}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-black focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
           />
         </div>
 
         <div>
           <label
             htmlFor="isbn"
-            className="block text-sm font-medium text-black dark:text-zinc-50 mb-1"
+            className="mb-1 block text-sm font-medium text-black dark:text-zinc-50"
           >
             ISBN *
           </label>
@@ -118,14 +121,14 @@ export function BookForm({ book }: BookFormProps) {
             required
             value={formData.isbn}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-black focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
           />
         </div>
 
         <div>
           <label
             htmlFor="publicationYear"
-            className="block text-sm font-medium text-black dark:text-zinc-50 mb-1"
+            className="mb-1 block text-sm font-medium text-black dark:text-zinc-50"
           >
             Publication Year *
           </label>
@@ -138,7 +141,7 @@ export function BookForm({ book }: BookFormProps) {
             max={new Date().getFullYear() + 1}
             value={formData.publicationYear}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-black focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
           />
         </div>
       </div>
@@ -147,14 +150,15 @@ export function BookForm({ book }: BookFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 px-4 py-2 bg-black text-white rounded-lg hover:bg-zinc-800 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black px-4 py-2 text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200"
         >
+          {loading && <LoadingSpinner size="sm" />}
           {loading ? 'Saving...' : isEditing ? 'Update Book' : 'Create Book'}
         </button>
         <button
           type="button"
           onClick={() => router.push('/books')}
-          className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-black dark:text-zinc-50 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-black transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-800"
         >
           Cancel
         </button>

@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import Script from 'next/script'
 
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { ToastProvider } from '@/components/ToastProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -45,7 +46,9 @@ export default function RootLayout({
             })();
           `}
         </Script>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
