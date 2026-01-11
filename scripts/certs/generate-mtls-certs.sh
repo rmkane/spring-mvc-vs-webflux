@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Generate SSL certificates for mutual TLS (mTLS)
+# Generate mTLS certificates for service-to-service communication
 # This script creates:
 # 1. A keystore for the auth service (server certificate)
 # 2. A keystore for the MVC API (client certificate)
@@ -10,7 +10,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CERT_DIR="$PROJECT_DIR/monitoring/certs"
 KEYSTORE_PASSWORD="changeit"
 TRUSTSTORE_PASSWORD="changeit"

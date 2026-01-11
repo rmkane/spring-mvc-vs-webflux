@@ -46,7 +46,7 @@ Both implementations share common security and authentication infrastructure whi
 │  - API routes for backend communication  │
 └───────┬──────────────────────────────────┘
         │
-        │ HTTP (x-dn header)
+        │ HTTP (ssl-client-subject-dn, ssl-client-issuer-dn headers)
         │
 ┌───────▼──────────────────────────────────┐
 │         Load Balancer / Gateway          │
@@ -302,13 +302,13 @@ acme-auth-service-ldap depends on:
 - Next.js web application (React/TypeScript)
 - Server-side rendering with App Router
 - Client-side interactivity for forms and actions
-- API routes that proxy requests to backend with `x-dn` header
+- API routes that proxy requests to backend with `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
 - Automatic header injection from environment variables
 - Book management interface (list, create, edit, delete)
 - Runs on port 3001
 - Uses pnpm for package management
 
-**Note:** The UI is a separate Node.js application, not a Maven module. It communicates with the backend APIs via HTTP, automatically including the `x-dn` header from environment configuration for local development.
+**Note:** The UI is a separate Node.js application, not a Maven module. It communicates with the backend APIs via HTTP, automatically including the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from environment configuration for local development.
 
 ## Data Flow
 
@@ -327,7 +327,9 @@ HTTP Request
               ▼
 ┌─────────────────────────────────────┐
 │  Spring Security Filter Chain       │
-│  - Extract DN from x-dn header      │
+│  - Extract DN headers               │
+│    - ssl-client-subject-dn          │
+│    - ssl-client-issuer-dn           │
 │  - Validate DN format               │
 │  - Check cache for user             │
 │  - Call auth service if not cached  │  ◄── Blocking HTTP call
@@ -457,11 +459,12 @@ Both MVC and WebFlux use the same conceptual authentication flow:
 
 ```none
 1. Client Request
-   ├─ Header: x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
+   ├─ Header: ssl-client-subject-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
+   ├─ Header: ssl-client-issuer-dn: CN=Acme Intermediate CA,O=Acme Corp,C=US
    └─ HTTPS with mTLS (in production)
 
 2. Security Filter/WebFilter
-   ├─ Extract DN from x-dn header
+   ├─ Extract DN from ssl-client-subject-dn header
    ├─ Validate DN format
    └─ Normalize DN (trim whitespace)
 
@@ -495,7 +498,7 @@ Both MVC and WebFlux use the same conceptual authentication flow:
 **SecurityConstants**
 
 - Utility class with security-related constants
-- DN header name (`x-dn`)
+- DN header names (`ssl-client-subject-dn`, `ssl-client-issuer-dn`)
 - Public endpoints (Swagger, Actuator)
 - Error messages
 

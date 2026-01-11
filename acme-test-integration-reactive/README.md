@@ -50,7 +50,7 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 - `postString(endpoint, requestBody, headers)` - POST request returning `Mono<String>` (for error handling)
 - `toJson(object)` - Serialize object to JSON string
 - `fromJson(json, clazz)` - Deserialize JSON string to object
-- `getDefaultHeaders()` - Get default headers with `x-dn` authentication
+- `getDefaultHeaders()` - Get default headers with `ssl-client-subject-dn` and `ssl-client-issuer-dn` authentication
 
 ## Dependencies
 

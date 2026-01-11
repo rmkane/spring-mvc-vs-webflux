@@ -64,6 +64,13 @@ management:
       percentiles:
         http.server.requests: 0.5, 0.95, 0.99
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    persistAuthorization: true
+
 logging:
   level:
     org.acme: DEBUG

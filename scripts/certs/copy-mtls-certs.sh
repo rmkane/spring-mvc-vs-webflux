@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Copy generated SSL certificates from the certs directory to the appropriate
+# Copy generated mTLS certificates from the certs directory to the appropriate
 # service resource directories for mTLS configuration.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CERTS_DIR="$PROJECT_DIR/certs"
 
 # Service resource directories
@@ -21,7 +21,7 @@ echo ""
 # Verify source certificates exist
 if [ ! -f "$CERTS_DIR/auth-service-keystore.jks" ]; then
     echo "Error: Source certificates not found in $CERTS_DIR"
-    echo "Please run ./scripts/generate-ssl-certs.sh first"
+    echo "Please run ./scripts/certs/generate-mtls-certs.sh first"
     exit 1
 fi
 

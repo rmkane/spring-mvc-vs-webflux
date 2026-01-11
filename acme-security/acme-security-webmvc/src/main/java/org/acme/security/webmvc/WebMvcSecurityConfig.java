@@ -38,10 +38,12 @@ public class WebMvcSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            RequestResponseLoggingFilter requestResponseLoggingFilter) throws Exception {
+            RequestResponseLoggingFilter requestResponseLoggingFilter,
+            DnValidationFilter dnValidationFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(dnValidationFilter, RequestHeaderAuthenticationFilter.class)
                 .addFilterBefore(requestResponseLoggingFilter, RequestHeaderAuthenticationFilter.class)
                 .addFilterBefore(requestHeaderAuthenticationFilter(), RequestHeaderAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
@@ -57,7 +59,7 @@ public class WebMvcSecurityConfig {
     @Bean
     public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() {
         RequestHeaderAuthenticationFilter filter = new RequestHeaderAuthenticationFilter();
-        filter.setPrincipalRequestHeader(SecurityConstants.DN_HEADER);
+        filter.setPrincipalRequestHeader(SecurityConstants.SSL_CLIENT_SUBJECT_DN_HEADER);
         filter.setExceptionIfHeaderMissing(false);
         filter.setAuthenticationManager(authenticationManager());
         return filter;
@@ -78,6 +80,8 @@ public class WebMvcSecurityConfig {
                 throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
             }
 
+            // Note: Both Subject and Issuer DN validation is done in the filter before
+            // reaching here
             // Pass DN to auth service, which will:
             // 1. Look up UserInfo from auth service by DN
             // 2. Create UserInformation (derivative) from UserInfo

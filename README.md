@@ -17,6 +17,7 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
     - [Building the Project](#building-the-project)
     - [Starting Databases and LDAP](#starting-databases-and-ldap)
     - [Running Applications](#running-applications)
+    - [Local Development Environment Variables](#local-development-environment-variables)
   - [Architecture Overview](#architecture-overview)
     - [Authentication Service](#authentication-service)
       - [`acme-auth-service-ldap` (LDAP-based)](#acme-auth-service-ldap-ldap-based)
@@ -194,7 +195,24 @@ make run-ui
 
 Runs on port 3001
 
-The UI provides a web interface for managing books. It communicates with the backend APIs (MVC or WebFlux) and automatically includes the `x-dn` header for authentication. For local development, configure the DN in `acme-ui/.env.local` (see `acme-ui/README.md` for details).
+The UI provides a web interface for managing books. It communicates with the backend APIs (MVC or WebFlux) and automatically includes the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication. For local development, configure the DNs in `acme-ui/.env.local` (see `acme-ui/README.md` for details).
+
+### Local Development Environment Variables
+
+For local development and testing, you may need to set the following environment variables to provide authentication headers:
+
+```bash
+export SSL_CLIENT_SUBJECT_DN="CN=jdoe,OU=Engineering,OU=Users,DC=corp,DC=acme,DC=org"
+export SSL_CLIENT_ISSUER_DN="CN=Acme Intermediate CA,O=Acme Corp,C=US"
+```
+
+These environment variables are used by:
+
+- Test scripts (`scripts/test/test-mvc.sh` and `scripts/test/test-webflux.sh`)
+- Integration test suites
+- UI application (via `acme-ui/.env.local`)
+
+**Note:** In production/Kubernetes, these headers are automatically set by the NGINX Ingress controller from the X509 client certificate.
 
 ## Architecture Overview
 
@@ -230,7 +248,7 @@ The authentication service is available in **two interchangeable variants**, bot
 
 The security layer handles authentication mechanics:
 
-- Extracts `x-dn` header from HTTP requests (DN = Distinguished Name)
+- Extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from HTTP requests
 - **Calls auth service via REST** using `AuthServiceClient` to look up user by DN
 - Creates `UserInformation` (derivative) from `UserInfo` returned by auth service
 - Missing header returns `401 Unauthorized`
@@ -252,7 +270,7 @@ The security layer handles authentication mechanics:
 
 ### MVC Security
 
-- `RequestHeaderAuthenticationFilter` extracts `x-dn` header
+- `RequestHeaderAuthenticationFilter` extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
 - Custom `AuthenticationManager` calls `AuthServiceClient` to lookup user by DN
 - Creates `UserInformation` from `UserInfo` returned by auth service
 - `SecurityContextHolder` for accessing principal (thread-local)
@@ -280,7 +298,7 @@ The security layer handles authentication mechanics:
 
 ### WebFlux Security
 
-- Custom `ServerHttpAuthenticationConverter` extracts `x-dn` header
+- Custom `ServerHttpAuthenticationConverter` extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
 - Reactive `AuthenticationManager` calls `AuthServiceClient` to lookup user by DN
 - Creates `UserInformation` from `UserInfo` returned by auth service
 - `ReactiveSecurityContextHolder` or `@AuthenticationPrincipal` for accessing principal
@@ -301,7 +319,7 @@ The security layer handles authentication mechanics:
 
 ## How They Are The Same
 
-- **Same Security Mechanism**: Both use `x-dn` header for authentication (DN = Distinguished Name)
+- **Same Security Mechanism**: Both use `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication
 - **Same Authentication Flow**: Both call auth service via REST to lookup users by DN
 - **Same User Principal**: Both create `UserInformation` (derivative) from `UserInfo` with roles from auth service
 - **Same Role-Based Access Control**: Both use `@PreAuthorize` annotations with database-backed roles
@@ -348,7 +366,7 @@ The security layer handles authentication mechanics:
 
 ### Header-Based Authentication
 
-Both implementations extract the `x-dn` header (Distinguished Name) from HTTP requests. The flow is:
+Both implementations extract the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers (Subject and Issuer Distinguished Names from X509 certificate) from HTTP requests. The flow is:
 
 1. Security layer extracts DN from header
 2. Security layer calls `CachedUserLookupService` which checks cache first
@@ -362,7 +380,7 @@ Both implementations extract the `x-dn` header (Distinguished Name) from HTTP re
 
 ### Missing Header
 
-If the `x-dn` header is missing or empty, both implementations return `401 Unauthorized`.
+If the `ssl-client-subject-dn` or `ssl-client-issuer-dn` headers are missing or empty, both implementations return `401 Unauthorized`.
 
 ### User Lookup
 
@@ -378,11 +396,11 @@ The auth service queries its user store (LDAP directory or PostgreSQL database) 
     - Users loaded via Flyway database migrations
     - Users stored in `users` and `user_roles` tables
 - **Available users** (same users in both variants):
-  - `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_WRITE` group
-  - `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_WRITE` group
-  - `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_ONLY` group
-  - `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_ONLY` group
-  - `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=acme,dc=org` - No group membership (no roles)
+  - `cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_WRITE` group
+  - `cn=asmith,ou=hr,ou=users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_WRITE` group
+  - `cn=bwilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_ONLY` group
+  - `cn=mgarcia,ou=it,ou=users,dc=corp,dc=acme,dc=org` - Member of `ACME_READ_ONLY` group
+  - `cn=ktran,ou=security,ou=users,dc=corp,dc=acme,dc=org` - No group membership (no roles)
 - **LDAP Groups**: `ACME_READ_ONLY`, `ACME_READ_WRITE` (stored as `groupOfNames` in LDAP)
 - **Spring Security Authorities**: Group names are used directly as authorities (e.g., `ACME_READ_WRITE`, `ACME_READ_ONLY`)
 - **Isolation**: User data is completely isolated from main application databases
@@ -425,31 +443,31 @@ Service methods are protected with `@PreAuthorize` annotations:
 
 ### Deployment Context
 
-Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ingress layer above, which forwards headers (including `x-dn`) to the applications.
+Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ingress layer above, which forwards headers (including `ssl-client-subject-dn` and `ssl-client-issuer-dn`) to the applications.
 
 ## Testing the APIs
 
 ### Example Request (MVC)
 
 ```bash
-curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8080/api/v1/books
+curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" http://localhost:8080/api/v1/books
 ```
 
 ### Example Request (WebFlux)
 
 ```bash
-curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" http://localhost:8081/api/v1/books
+curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" http://localhost:8081/api/v1/books
 ```
 
 **Available test users:**
 
 Users are loaded from LDIF file into the LDAP directory:
 
-- `cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_WRITE` group
-- `cn=Alice Smith,ou=HR,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_WRITE` group
-- `cn=Brian Wilson,ou=Finance,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_ONLY` group
-- `cn=Maria Garcia,ou=IT,ou=Users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_ONLY` group
-- `cn=Kevin Tran,ou=Security,ou=Users,dc=corp,dc=acme,dc=org`: No roles assigned
+- `cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_WRITE` group
+- `cn=asmith,ou=hr,ou=users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_WRITE` group
+- `cn=bwilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_ONLY` group
+- `cn=mgarcia,ou=it,ou=users,dc=corp,dc=acme,dc=org`: Member of `ACME_READ_ONLY` group
+- `cn=ktran,ou=security,ou=users,dc=corp,dc=acme,dc=org`: No roles assigned
 
 ### Missing Header (Returns 401)
 
@@ -462,10 +480,12 @@ curl http://localhost:8080/api/v1/books  # Returns 401 Unauthorized
 **Create Book (requires READ_WRITE role):**
 
 ```bash
-curl -X POST -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789","publicationYear":2024}' \
-  http://localhost:8080/api/v1/books
+curl -X POST \
+     -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789","publicationYear":2024}' \
+     http://localhost:8080/api/v1/books
 ```
 
 **Note:** The API uses request/response DTOs (`CreateBookRequest`, `UpdateBookRequest`, `BookResponse`) and MapStruct for mapping between DTOs and entities. Duplicate ISBNs return a 400 Bad Request with RFC 9457 ProblemDetail response.
@@ -473,34 +493,40 @@ curl -X POST -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=or
 **Get All Books (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
-curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  http://localhost:8080/api/v1/books
+curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     http://localhost:8080/api/v1/books
 ```
 
 **Get Book by ID (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
-curl -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  http://localhost:8080/api/v1/books/1
+curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     http://localhost:8080/api/v1/books/1
 ```
 
 **Update Book (requires READ_WRITE role):**
 
 ```bash
-curl -X PUT -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Updated Title","author":"Updated Author"}' \
-  http://localhost:8080/api/v1/books/1
+curl -X PUT \
+     -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Updated Title","author":"Updated Author"}' \
+     http://localhost:8080/api/v1/books/1
 ```
 
 **Delete Book (requires READ_WRITE role):**
 
 ```bash
-curl -X DELETE -H "x-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org" \
-  http://localhost:8080/api/v1/books/1
+curl -X DELETE \
+     -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     http://localhost:8080/api/v1/books/1
 ```
 
-**Note:** See `scripts/test-mvc.sh` and `scripts/test-webflux.sh` for comprehensive test scripts. Use the `X_DN` environment variable to set the DN.
+**Note:** See `scripts/test/test-mvc.sh` and `scripts/test/test-webflux.sh` for comprehensive test scripts. Set the `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables before running curl commands or test scripts.
 
 ### Integration Testing
 
@@ -696,7 +722,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
          UserInformation (principal)                                    Cache (on miss)
 ```
 
-1. Security extracts `x-dn` header (Distinguished Name)
+1. Security extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers (Subject and Issuer Distinguished Names from X509 certificate)
 2. Security calls `CachedUserLookupService.lookupUser(dn)` (cached)
 3. Cache is checked first - if hit, returns cached `UserInfo`
 4. On cache miss, `CachedUserLookupService` calls `AuthServiceClient.lookupUser(dn)`
@@ -745,8 +771,8 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 - `AuthServiceClient`: REST client for calling auth service to lookup users by DN
 - `AuthenticationService`: Creates authenticated `Authentication` from DN (uses `CachedUserLookupService`)
 - `SslConfig`: SSL/TLS configuration for auth service client communication (mTLS)
-- `WebMvcSecurityConfig`: MVC security configuration (extracts `x-dn` header)
-- `WebFluxSecurityConfig`: WebFlux security configuration (extracts `x-dn` header)
+- `WebMvcSecurityConfig`: MVC security configuration (extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers)
+- `WebFluxSecurityConfig`: WebFlux security configuration (extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers)
 - `RequestResponseLoggingFilter`: MVC filter that logs request and response headers (DEBUG level)
 - `RequestResponseLoggingWebFilter`: WebFlux filter that logs request and response headers (DEBUG level)
 
@@ -778,7 +804,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 
 - **Next.js Application**: Web UI for book management built with Next.js 16.1 and React 19.2
 - **Features**: Book listing, create, edit, and delete operations with alphabetical sorting (ignoring leading articles)
-- **Authentication**: Automatically includes `x-dn` header from `LOCAL_DN` environment variable for backend API requests
+- **Authentication**: Automatically includes `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables for backend API requests
 - **Port**: Runs on port 3001 (development server)
 - **Technology Stack**: Next.js, React, TypeScript, Tailwind CSS, pnpm
 - **See `acme-ui/README.md` for detailed documentation**

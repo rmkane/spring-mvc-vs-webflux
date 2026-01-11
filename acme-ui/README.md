@@ -11,7 +11,7 @@ This module provides a web-based user interface for managing books, built with N
 - Book listing with alphabetical sorting (ignoring leading articles)
 - Create, edit, and delete book operations
 - Server-side rendering with Next.js App Router
-- Automatic `x-dn` header injection for backend authentication
+- Automatic `ssl-client-subject-dn` and `ssl-client-issuer-dn` header injection for backend authentication
 - Environment-based configuration for local development
 - Responsive design with dark mode support
 - TypeScript for type safety
@@ -33,17 +33,21 @@ Runs on **port 3001** (HTTP, development server).
 For local development, create a `.env.local` file in the `acme-ui` directory:
 
 ```bash
-# Local development DN (Distinguished Name)
-# This DN will be automatically added as the x-dn header to all backend API requests
-LOCAL_DN=cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
+# Local development Subject DN (Distinguished Name from X509 certificate)
+# This will be automatically added as the ssl-client-subject-dn header to all backend API requests
+SSL_CLIENT_SUBJECT_DN=cn=jdoe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
+
+# Local development Issuer DN (Issuer Distinguished Name from X509 certificate)
+# This will be automatically added as the ssl-client-issuer-dn header to all backend API requests
+SSL_CLIENT_ISSUER_DN=CN=Acme Intermediate CA,O=Acme Corp,C=US
 
 # Optional: Backend API base URL (defaults to http://localhost:8080)
 # NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
-The `LOCAL_DN` environment variable is used by server-side API utilities to automatically include the `x-dn` header when making requests to the backend. This is necessary for local development since there's no ingress to provide authentication headers.
+The `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables are used by server-side API utilities to automatically include the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers when making requests to the backend. This is necessary for local development since there's no ingress to provide authentication headers.
 
-**Note:** The `LOCAL_DN` environment variable is only available on the server side (API routes, Server Components, Server Actions). It is not exposed to the client for security reasons.
+**Note:** These environment variables are only available on the server side (API routes, Server Components, Server Actions). They are not exposed to the client for security reasons.
 
 ## Running the Application
 
@@ -125,7 +129,7 @@ acme-ui/
 
 ## Making Backend API Requests
 
-The project includes utility functions in `lib/api.ts` for making requests to the backend API. These utilities automatically include the `x-dn` header from the `LOCAL_DN` environment variable.
+The project includes utility functions in `lib/api.ts` for making requests to the backend API. These utilities automatically include the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from the `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables.
 
 **Example usage in API routes or Server Components:**
 
@@ -157,4 +161,4 @@ Books are sorted alphabetically by title, ignoring leading articles ("The", "A",
 ## Dependencies
 
 - **Backend APIs** - Communicates with `acme-api-mvc` (port 8080) or `acme-api-webflux` (port 8081)
-- **Authentication** - Uses `x-dn` header for authentication (configured via `LOCAL_DN` environment variable)
+- **Authentication** - Uses `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication (configured via `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables)

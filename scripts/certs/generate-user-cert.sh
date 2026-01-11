@@ -1,6 +1,9 @@
 #!/bin/bash
 # Generate X509 certificate for LDAP user
-# Usage: ./generate-user-cert.sh "cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org" jdoe
+# Usage: ./generate-user-cert.sh "cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org" jdoe
+#
+# The DN format uses CN as the RDN with the UID value (e.g., "cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org")
+# This matches the LDAP DN format exactly, where CN in the DN is the UID, but the CN attribute is the full name.
 
 set -e
 
@@ -9,12 +12,14 @@ USER_ID="$2"  # e.g., jdoe
 
 if [ -z "$USER_DN" ] || [ -z "$USER_ID" ]; then
   echo "Usage: $0 <user_dn> <user_id>"
-  echo "Example: $0 'cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org' jdoe"
+  echo "Example: $0 'cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org' jdoe"
+  echo ""
+  echo "Note: The DN should use CN as the RDN with the UID value to match LDAP DN format."
   exit 1
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CERT_DIR="$PROJECT_ROOT/k8s/certs"
 CA_INTERMEDIATE="$CERT_DIR/ca/intermediate"
 CA_CHAIN="$CERT_DIR/ca/ca-chain.crt"
@@ -42,8 +47,8 @@ openssl genrsa -out "$USER_CERT_DIR/${USER_ID}.key" 2048
 
 # Parse DN into certificate config format
 # Convert "cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org"
-# to certificate subject format
-CERT_SUBJECT=$(echo "$USER_DN" | sed 's/,/\n/g' | awk -F'=' '{print $1" = "$2}' | tr '\n' ',' | sed 's/,$//')
+# to OpenSSL format with uppercase field names (CN, OU, DC)
+# OpenSSL requires uppercase field names
 
 # Create certificate config with DN in Subject
 cat > "$USER_CERT_DIR/${USER_ID}.conf" <<EOF
@@ -53,16 +58,11 @@ req_extensions = v3_req
 prompt = no
 
 [req_distinguished_name]
-$(echo "$USER_DN" | sed 's/,/\n/g' | sed 's/=/ = /')
+$(echo "$USER_DN" | sed 's/,/\n/g' | sed 's/^uid=/UID=/' | sed 's/^cn=/CN=/' | sed 's/^ou=/OU=/' | sed 's/^dc=/DC=/' | sed 's/^o=/O=/' | sed 's/^c=/C=/')
 
 [v3_req]
 keyUsage = digitalSignature, keyEncipherment
 extendedKeyUsage = clientAuth
-subjectAltName = @alt_names
-
-[alt_names]
-# Alternative DN formats
-DN.1 = $USER_DN
 EOF
 
 # Generate certificate signing request

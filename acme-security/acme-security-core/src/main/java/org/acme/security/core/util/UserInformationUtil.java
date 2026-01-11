@@ -42,10 +42,11 @@ public final class UserInformationUtil {
 
     /**
      * Creates a UserInformation object from a UserInfo returned by the auth
-     * service. This is a derivative object that extracts the DN from the UserInfo.
+     * service. This is a derivative object that extracts the DN and user details
+     * (givenName, surname) from the UserInfo.
      *
      * @param userInfo the UserInfo from the auth service
-     * @return a UserInformation object with the DN from UserInfo
+     * @return a UserInformation object with the DN and name from UserInfo
      * @throws BadCredentialsException if the UserInfo is null or has no DN
      */
     public static UserInformation fromUserInfo(UserInfo userInfo) {
@@ -61,6 +62,8 @@ public final class UserInformationUtil {
 
         return UserInformation.builder()
                 .dn(dn.trim())
+                .givenName(userInfo.getGivenName())
+                .surname(userInfo.getSurname())
                 .build();
     }
 }

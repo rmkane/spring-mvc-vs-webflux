@@ -91,14 +91,30 @@ public class WebFluxSecurityConfig {
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
         return exchange -> {
-            String dn = RequestHeaderExtractor.extractDn(exchange.getRequest());
-
-            if (dn == null || dn.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException("Missing or empty x-dn header"));
+            // Check if this is a public endpoint
+            String path = exchange.getRequest().getPath().value();
+            for (String publicEndpoint : SecurityConstants.PUBLIC_ENDPOINTS) {
+                if (path.matches(publicEndpoint.replace("**", ".*"))) {
+                    // Skip validation for public endpoints
+                    return Mono.empty();
+                }
             }
 
-            // Pass DN as String principal - will be converted to UserInformation
-            // by AuthenticationService after looking up UserInfo from auth service
+            // Validate Subject DN header
+            String dn = RequestHeaderExtractor.extractSubjectDn(exchange.getRequest());
+            if (dn == null || dn.trim().isEmpty()) {
+                return Mono.error(new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE));
+            }
+
+            // Validate Issuer DN header (required)
+            String issuerDn = RequestHeaderExtractor.extractIssuerDn(exchange.getRequest());
+            if (issuerDn == null || issuerDn.trim().isEmpty()) {
+                return Mono.error(new BadCredentialsException(SecurityConstants.MISSING_ISSUER_DN_MESSAGE));
+            }
+
+            // Both headers are present, pass DN as String principal
+            // Will be converted to UserInformation by AuthenticationService after looking
+            // up UserInfo from auth service
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
                     dn.trim(),
                     null));

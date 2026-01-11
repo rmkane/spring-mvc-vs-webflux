@@ -14,15 +14,28 @@ import org.acme.security.core.model.SecurityConstants;
 public final class RequestHeaderExtractor {
 
     /**
-     * Extracts the Distinguished Name (DN) from an MVC HttpServletRequest.
+     * Extracts the Subject Distinguished Name (DN) from an MVC HttpServletRequest.
      *
      * @param request the HttpServletRequest
-     * @return the DN header value, or null if not present
+     * @return the Subject DN header value, or null if not present
      */
-    public static String extractDn(HttpServletRequest request) {
+    public static String extractSubjectDn(HttpServletRequest request) {
         if (request == null) {
             return null;
         }
-        return request.getHeader(SecurityConstants.DN_HEADER);
+        return request.getHeader(SecurityConstants.SSL_CLIENT_SUBJECT_DN_HEADER);
+    }
+
+    /**
+     * Extracts the Issuer Distinguished Name (DN) from an MVC HttpServletRequest.
+     *
+     * @param request the HttpServletRequest
+     * @return the Issuer DN header value, or null if not present
+     */
+    public static String extractIssuerDn(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return request.getHeader(SecurityConstants.SSL_CLIENT_ISSUER_DN_HEADER);
     }
 }

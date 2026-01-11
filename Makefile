@@ -9,9 +9,10 @@
 		ldap-up ldap-down ldap-reset ldap-logs ldap-exec \
 		monitoring-up monitoring-down monitoring-logs prometheus-ui grafana-ui \
 		build clean test format lint clean-logs \
-		run-mvc run-webflux run-auth-ldap run-auth-db run-ui stop-mvc stop-webflux stop-auth stop-ui stop-all \
-		docker-build-mvc docker-build-webflux docker-build-auth-ldap docker-build-auth-db \
-		docker-run-mvc docker-run-webflux docker-run-auth-ldap docker-run-auth-db
+		run-api-mvc run-api-webflux run-auth-ldap run-auth-db run-ui \
+		stop-api-mvc stop-api-webflux stop-auth stop-ui stop-all \
+		docker-build-api-mvc docker-build-api-webflux docker-build-auth-ldap docker-build-auth-db \
+		docker-run-api-mvc docker-run-api-webflux docker-run-auth-ldap docker-run-auth-db
 
 help:
 	@echo "Available targets:"
@@ -62,24 +63,24 @@ help:
 	@echo "  clean-logs     - Remove all log files from submodules"
 	@echo ""
 	@echo "Run Applications:"
-	@echo "  run-mvc        - Build and run MVC API"
-	@echo "  run-webflux    - Build and run WebFlux API"
+	@echo "  run-api-mvc    - Build and run MVC API"
+	@echo "  run-api-webflux - Build and run WebFlux API"
 	@echo "  run-auth-ldap  - Build and run Auth Service (LDAP variant)"
 	@echo "  run-auth-db    - Build and run Auth Service (Database variant)"
 	@echo "  run-ui         - Run Next.js UI (port 3001)"
-	@echo "  stop-mvc       - Stop MVC API"
-	@echo "  stop-webflux   - Stop WebFlux API"
+	@echo "  stop-api-mvc   - Stop MVC API"
+	@echo "  stop-api-webflux - Stop WebFlux API"
 	@echo "  stop-auth      - Stop Auth Service (either variant)"
 	@echo "  stop-ui        - Stop Next.js UI"
 	@echo "  stop-all       - Stop all APIs and UI"
 	@echo ""
 	@echo "Docker Operations:"
-	@echo "  docker-build-mvc        - Build Docker image for MVC API"
-	@echo "  docker-build-webflux    - Build Docker image for WebFlux API"
+	@echo "  docker-build-api-mvc    - Build Docker image for MVC API"
+	@echo "  docker-build-api-webflux - Build Docker image for WebFlux API"
 	@echo "  docker-build-auth-ldap  - Build Docker image for Auth Service (LDAP variant)"
 	@echo "  docker-build-auth-db    - Build Docker image for Auth Service (Database variant)"
-	@echo "  docker-run-mvc          - Run MVC API in Docker container"
-	@echo "  docker-run-webflux      - Run WebFlux API in Docker container"
+	@echo "  docker-run-api-mvc      - Run MVC API in Docker container"
+	@echo "  docker-run-api-webflux  - Run WebFlux API in Docker container"
 	@echo "  docker-run-auth-ldap    - Run Auth Service (LDAP) in Docker container"
 	@echo "  docker-run-auth-db      - Run Auth Service (Database) in Docker container"
 
@@ -247,7 +248,7 @@ clean-logs:
 	@find . -type d -name "logs" -not -path "*/target/*" -not -path "*/.git/*" -exec rm -rf {} + 2>/dev/null || true
 	@echo "Log files cleaned"
 
-run-mvc:
+run-api-mvc:
 	mvn compile -DskipTests -pl acme-api-mvc -am \
 	&& cd acme-api-mvc \
 	&& SERVER_PORT=8080 mvn spring-boot:run \
@@ -257,7 +258,7 @@ run-mvc:
 	-Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787" \
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
-run-webflux:
+run-api-webflux:
 	mvn compile -DskipTests -pl acme-api-webflux -am \
 	&& cd acme-api-webflux \
 	&& SERVER_PORT=8081 mvn spring-boot:run \
@@ -294,10 +295,10 @@ run-ui:
 	fi
 	cd acme-ui && pnpm run dev
 
-stop-mvc:
+stop-api-mvc:
 	@pkill -f "acme-api-mvc.*spring-boot:run" || pkill -f "AcmeApiMvcApplication" || echo "MVC API is not running"
 
-stop-webflux:
+stop-api-webflux:
 	@pkill -f "acme-api-webflux.*spring-boot:run" || pkill -f "AcmeApiWebfluxApplication" || echo "WebFlux API is not running"
 
 stop-auth:
@@ -309,12 +310,12 @@ stop-auth:
 stop-ui:
 	@pkill -f "next dev" || pkill -f "next-server" || echo "UI is not running"
 
-stop-all: stop-mvc stop-webflux stop-auth stop-ui
+stop-all: stop-api-mvc stop-api-webflux stop-auth stop-ui
 
-docker-build-mvc:
+docker-build-api-mvc:
 	docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .
 
-docker-build-webflux:
+docker-build-api-webflux:
 	docker build -f acme-api-webflux/Dockerfile -t acme-api-webflux:latest .
 
 docker-build-auth-ldap:
@@ -323,10 +324,10 @@ docker-build-auth-ldap:
 docker-build-auth-db:
 	docker build -f acme-auth-service-db/Dockerfile -t acme-auth-service-db:latest .
 
-docker-run-mvc: docker-build-mvc
+docker-run-api-mvc: docker-build-api-mvc
 	docker run -p 8080:8080 --network spring-mvc-vs-webflux_acme-network --name acme-api-mvc acme-api-mvc:latest
 
-docker-run-webflux: docker-build-webflux
+docker-run-api-webflux: docker-build-api-webflux
 	docker run -p 8081:8081 --network spring-mvc-vs-webflux_acme-network --name acme-api-webflux acme-api-webflux:latest
 
 docker-run-auth-ldap: docker-build-auth-ldap

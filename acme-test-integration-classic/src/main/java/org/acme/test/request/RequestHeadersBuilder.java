@@ -18,6 +18,17 @@ import org.acme.test.util.MapUtils;
 /** Simple builder for HTTP headers backed by a {@link MultiValueMap}. */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestHeadersBuilder {
+
+    /** Environment variable name for SSL client subject DN. */
+    private static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
+    /** Environment variable name for SSL client issuer DN. */
+    private static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
+
+    /** Header name for SSL client subject DN from X509 certificate. */
+    private static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
+    /** Header name for SSL client issuer DN from X509 certificate. */
+    private static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
+
     @NonNull
     private final LinkedMultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
 
@@ -139,6 +150,22 @@ public final class RequestHeadersBuilder {
     }
 
     /**
+     * Adds default SSL client headers (ssl-client-subject-dn and
+     * ssl-client-issuer-dn) from environment variables. This is a convenience
+     * method for integration tests.
+     *
+     * @return This builder for method chaining
+     * @throws IllegalArgumentException if required environment variables are not
+     *                                  set
+     */
+    public RequestHeadersBuilder withDefaultHeaders() {
+        String subjectDn = getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV);
+        String issuerDn = getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV);
+        return addHeader(SSL_CLIENT_SUBJECT_DN_HEADER, subjectDn)
+                .addHeader(SSL_CLIENT_ISSUER_DN_HEADER, issuerDn);
+    }
+
+    /**
      * Adds multiple values to a header.
      *
      * @param name   The header name
@@ -170,5 +197,21 @@ public final class RequestHeadersBuilder {
     @NonNull
     public HttpHeaders build() {
         return HttpHeaders.readOnlyHttpHeaders(headers);
+    }
+
+    /**
+     * Gets a required environment variable, throwing an exception if it's not set.
+     *
+     * @param variableName The name of the environment variable
+     * @return The value of the environment variable
+     * @throws IllegalArgumentException if the environment variable is not set or is
+     *                                  empty
+     */
+    private String getEnvRequired(String variableName) {
+        String value = System.getenv(variableName);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException("Environment variable '" + variableName + "' is not set");
+        }
+        return value;
     }
 }

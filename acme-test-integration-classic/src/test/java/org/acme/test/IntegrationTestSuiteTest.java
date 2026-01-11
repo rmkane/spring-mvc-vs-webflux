@@ -124,7 +124,10 @@ class IntegrationTestSuiteTest extends IntegrationTestSuite {
     void testGetDefaultHeaders() {
         HttpHeaders headers = getDefaultHeaders();
         assertNotNull(headers);
-        assertEquals("cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org", headers.getFirst("x-dn"));
+        String expectedDn = System.getenv(IntegrationTestSuite.SSL_CLIENT_SUBJECT_DN_ENV);
+        String expectedIssuerDn = System.getenv(IntegrationTestSuite.SSL_CLIENT_ISSUER_DN_ENV);
+        assertEquals(expectedDn, headers.getFirst(IntegrationTestSuite.SSL_CLIENT_SUBJECT_DN_HEADER));
+        assertEquals(expectedIssuerDn, headers.getFirst(IntegrationTestSuite.SSL_CLIENT_ISSUER_DN_HEADER));
     }
 
     @Test

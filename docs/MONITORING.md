@@ -330,14 +330,14 @@ To generate meaningful metrics, run some load tests against your APIs:
 ```bash
 # Simple load test with curl
 for i in {1..100}; do
-  curl -H "x-dn: CN=test" http://localhost:8080/api/books &
+  curl -H "ssl-client-subject-dn: CN=test" -H "ssl-client-issuer-dn: CN=Test CA" http://localhost:8080/api/books &
 done
 
 # Or use Apache Bench
-ab -n 1000 -c 10 -H "x-dn: CN=test" http://localhost:8080/api/books
+ab -n 1000 -c 10 -H "ssl-client-subject-dn: CN=test" -H "ssl-client-issuer-dn: CN=Test CA" http://localhost:8080/api/books
 
 # Or use wrk
-wrk -t4 -c100 -d30s -H "x-dn: CN=test" http://localhost:8080/api/books
+wrk -t4 -c100 -d30s -H "ssl-client-subject-dn: CN=test" -H "ssl-client-issuer-dn: CN=Test CA" http://localhost:8080/api/books
 ```
 
 Then compare MVC vs WebFlux performance in Grafana dashboards.

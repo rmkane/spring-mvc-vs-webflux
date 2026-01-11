@@ -8,4 +8,6 @@ import lombok.Getter;
 public class UserInformation {
 
     private final String dn;
+    private final String givenName;
+    private final String surname;
 }

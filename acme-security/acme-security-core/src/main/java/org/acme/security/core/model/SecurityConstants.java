@@ -10,9 +10,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SecurityConstants {
 
-    public static final String DN_HEADER = "x-dn";
-    public static final String UNAUTHORIZED_MESSAGE = "Missing or invalid x-dn header";
-    public static final String MISSING_DN_MESSAGE = "Missing or empty x-dn header";
+    // Header names
+    public static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
+    public static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
+
+    // Error messages
+    public static final String UNAUTHORIZED_MESSAGE = "Missing or invalid ssl-client-subject-dn or ssl-client-issuer-dn header";
+    public static final String MISSING_DN_MESSAGE = "Missing or empty ssl-client-subject-dn header";
+    public static final String MISSING_ISSUER_DN_MESSAGE = "Missing or empty ssl-client-issuer-dn header";
 
     public static final String[] PUBLIC_ENDPOINTS = {
             "/actuator/**",

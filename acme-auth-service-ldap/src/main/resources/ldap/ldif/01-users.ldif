@@ -44,7 +44,9 @@ objectClass: organizationalUnit
 ou: Roles
 
 # User 1: John Doe with READ_WRITE role
-dn: cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+# CN in DN is the UID (jdoe) for matching with certificate DN
+# CN attribute value is the full name (John Doe)
+dn: cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
@@ -56,7 +58,7 @@ uid: jdoe
 userPassword: {SSHA}password
 
 # User 2: Alice Smith with READ_WRITE role
-dn: cn=alice smith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
+dn: cn=asmith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
@@ -68,7 +70,7 @@ uid: asmith
 userPassword: {SSHA}password
 
 # User 3: Brian Wilson with READ_ONLY role
-dn: cn=brian wilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
+dn: cn=bwilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
@@ -80,7 +82,7 @@ uid: bwilson
 userPassword: {SSHA}password
 
 # User 4: Maria Garcia with READ_ONLY role
-dn: cn=maria garcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
+dn: cn=mgarcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
@@ -92,7 +94,7 @@ uid: mgarcia
 userPassword: {SSHA}password
 
 # User 5: Kevin Tran (no role assigned yet)
-dn: cn=kevin tran,ou=security,ou=users,dc=corp,dc=acme,dc=org
+dn: cn=ktran,ou=security,ou=users,dc=corp,dc=acme,dc=org
 objectClass: top
 objectClass: person
 objectClass: organizationalPerson
@@ -112,8 +114,8 @@ objectClass: groupOfNames
 cn: ACME_READ_WRITE
 description: Users with read and write permissions
 member: cn=admin,dc=corp,dc=acme,dc=org
-member: cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
-member: cn=alice smith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
+member: cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+member: cn=asmith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
 
 # Group for READ_ONLY role
 # Note: groupOfNames requires at least one member
@@ -124,5 +126,5 @@ objectClass: groupOfNames
 cn: ACME_READ_ONLY
 description: Users with read-only permissions
 member: cn=admin,dc=corp,dc=acme,dc=org
-member: cn=brian wilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
-member: cn=maria garcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
+member: cn=bwilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
+member: cn=mgarcia,ou=it,ou=users,dc=corp,dc=acme,dc=org

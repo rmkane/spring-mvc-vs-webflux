@@ -23,7 +23,7 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
     private static final int BAD_REQUEST = 400; // HttpStatus.BAD_REQUEST
 
     private final HttpHeaders headers = RequestHeadersBuilder.create()
-            .addHeader("x-dn", "cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org")
+            .withDefaultHeaders()
             .addHeaderContentTypeJson()
             .build();
 

@@ -45,8 +45,15 @@ import org.acme.test.util.ResponseWriter;
  */
 public abstract class IntegrationTestSuite {
 
-    // TODO: Should be a system property or environment variable
-    private static final String DEFAULT_DN = "cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org";
+    /** Environment variable name for SSL client subject DN. */
+    public static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
+    /** Environment variable name for SSL client issuer DN. */
+    public static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
+
+    /** Header name for SSL client subject DN from X509 certificate. */
+    public static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
+    /** Header name for SSL client issuer DN from X509 certificate. */
+    public static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
 
     private static final int DEFAULT_PORT = 8080;
     private static final String PROTOCOL_HTTP = "http";
@@ -346,23 +353,15 @@ public abstract class IntegrationTestSuite {
     }
 
     /**
-     * Returns the default Distinguished Name (DN) for requests. Can be overridden
-     * by subclasses to provide custom authentication.
-     *
-     * @return The default DN string
-     */
-    protected String getDefaultDn() {
-        return DEFAULT_DN;
-    }
-
-    /**
-     * Returns the default HTTP headers for requests, including the x-dn header.
+     * Returns the default HTTP headers for requests, including the
+     * ssl-client-subject-dn and ssl-client-issuer-dn headers.
      *
      * @return The default HTTP headers
      */
     protected HttpHeaders getDefaultHeaders() {
         return RequestHeadersBuilder.create()
-                .addHeader("x-dn", getDefaultDn())
+                .addHeader(SSL_CLIENT_SUBJECT_DN_HEADER, getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV))
+                .addHeader(SSL_CLIENT_ISSUER_DN_HEADER, getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV))
                 .build();
     }
 
@@ -502,5 +501,13 @@ public abstract class IntegrationTestSuite {
             }
         }
         return defaultValue;
+    }
+
+    private String getEnvRequired(String variableName) {
+        String value = System.getenv(variableName);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException("Environment variable '" + variableName + "' is not set");
+        }
+        return value;
     }
 }

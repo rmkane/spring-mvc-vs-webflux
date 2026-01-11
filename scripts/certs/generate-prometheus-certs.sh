@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CERTS_DIR="$PROJECT_DIR/monitoring/certs"
 KEYSTORE_PATH="$PROJECT_DIR/certs/api-mvc-keystore.jks"
 KEYSTORE_PASSWORD="changeit"

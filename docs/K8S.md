@@ -92,8 +92,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 2. Users import certificates into their browsers
 3. NGINX Ingress requires client certificates (mTLS)
 4. NGINX extracts the user's DN from the certificate
-5. NGINX forwards the DN as an `x-dn` header to backend services
-6. Backend services use the `x-dn` header for authentication (existing behavior)
+5. NGINX forwards the Subject DN as `ssl-client-subject-dn` header and Issuer DN as `ssl-client-issuer-dn` header to backend services
+6. Backend services use the `ssl-client-subject-dn` header for authentication
 
 ## Goals
 
@@ -118,7 +118,9 @@ This migration will move the Acme application from a Docker Compose-based deploy
 │              NGINX Ingress Controller                       │
 │  - Validates client certificate                             │
 │  - Extracts DN from certificate Subject/SAN                 │
-│  - Adds x-dn header: cn=john doe,ou=engineering,...         │
+│  - Adds headers:                                            │
+│    - ssl-client-subject-dn                                  │
+│    - ssl-client-issuer-dn headers                           │
 └──────────────────────┬──────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┐
@@ -215,7 +217,7 @@ This migration will move the Acme application from a Docker Compose-based deploy
 - **Extended Key Usage**: `clientAuth`
 - **Validity**: 1 year (renewable)
 
-**Script**: `scripts/generate-user-cert.sh`
+**Script**: `scripts/certs/generate-user-cert.sh`
 
 ```bash
 #!/bin/bash
@@ -283,7 +285,7 @@ echo "Certificate generated: $CERT_DIR/${USER_ID}.p12"
 echo "Import this file into your browser's certificate store"
 ```
 
-**Batch Generation Script**: `scripts/generate-all-user-certs.sh`
+**Batch Generation Script**: `scripts/certs/generate-all-user-certs.sh`
 
 ```bash
 #!/bin/bash
@@ -304,7 +306,7 @@ ldapsearch -x -H ldap://localhost:389 \
     elif [[ $line == uid:* ]]; then
       USER_ID="${line#uid: }"
       echo "Generating certificate for $USER_ID..."
-      ./scripts/generate-user-cert.sh "$USER_DN" "$USER_ID"
+      ./scripts/certs/generate-user-cert.sh "$USER_DN" "$USER_ID"
     fi
   done
 ```
@@ -545,7 +547,8 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-ingress/ca-chain-secret"
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "x-dn: $ssl_client_s_dn";
+      more_set_headers "ssl-client-subject-dn: $ssl_client_s_dn";
+      more_set_headers "ssl-client-issuer-dn: $ssl_client_i_dn";
 spec:
   ingressClassName: nginx
   tls:
@@ -1238,7 +1241,7 @@ spec:
 
 - User certificate import
 - Browser authentication flow
-- API calls with x-dn header
+- API calls with ssl-client-subject-dn and ssl-client-issuer-dn headers
 - UI functionality
 
 ### Load Tests

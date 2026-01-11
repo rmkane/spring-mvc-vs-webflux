@@ -27,8 +27,15 @@ import org.acme.test.reactive.request.ReactiveRequestBuilder;
  */
 public abstract class ReactiveIntegrationTestSuite {
 
-    // TODO: Should be a system property or environment variable
-    private static final String DEFAULT_DN = "cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org";
+    /** Environment variable name for SSL client subject DN. */
+    public static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
+    /** Environment variable name for SSL client issuer DN. */
+    public static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
+
+    /** Header name for SSL client subject DN from X509 certificate. */
+    public static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
+    /** Header name for SSL client issuer DN from X509 certificate. */
+    public static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
 
     private static final int DEFAULT_PORT = 8081;
     private static final String PROTOCOL_HTTP = "http";
@@ -132,23 +139,15 @@ public abstract class ReactiveIntegrationTestSuite {
     }
 
     /**
-     * Returns the default Distinguished Name (DN) for requests. Can be overridden
-     * by subclasses to provide custom authentication.
-     *
-     * @return The default DN string
-     */
-    protected String getDefaultDn() {
-        return DEFAULT_DN;
-    }
-
-    /**
-     * Returns the default HTTP headers for requests, including the x-dn header.
+     * Returns the default HTTP headers for requests, including the
+     * ssl-client-subject-dn and ssl-client-issuer-dn headers.
      *
      * @return The default HTTP headers
      */
     protected HttpHeaders getDefaultHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-dn", getDefaultDn());
+        headers.set(SSL_CLIENT_SUBJECT_DN_HEADER, getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV));
+        headers.set(SSL_CLIENT_ISSUER_DN_HEADER, getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV));
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
     }
@@ -163,7 +162,7 @@ public abstract class ReactiveIntegrationTestSuite {
      */
     protected ReactiveRequestBuilder request(String endpoint) {
         return ReactiveRequestBuilder.create(getBaseUrl(), endpoint, getWebClient(), objectMapper)
-                .headers(getDefaultHeaders());
+                .withDefaultHeaders();
     }
 
     /**
@@ -400,5 +399,21 @@ public abstract class ReactiveIntegrationTestSuite {
                 .expectNextCount(1)
                 .expectComplete()
                 .verify(Duration.ofSeconds(5));
+    }
+
+    /**
+     * Gets a required environment variable, throwing an exception if it's not set.
+     *
+     * @param variableName The name of the environment variable
+     * @return The value of the environment variable
+     * @throws IllegalArgumentException if the environment variable is not set or is
+     *                                  empty
+     */
+    private String getEnvRequired(String variableName) {
+        String value = System.getenv(variableName);
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException("Environment variable '" + variableName + "' is not set");
+        }
+        return value;
     }
 }

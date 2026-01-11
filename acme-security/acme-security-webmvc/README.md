@@ -16,7 +16,7 @@ This module provides Spring Security configuration specifically for Spring MVC (
 
 ## Usage
 
-Used by `acme-api-mvc` to secure the REST API endpoints. The filter intercepts requests, extracts the `x-dn` header, and authenticates the user via the core security services.
+Used by `acme-api-mvc` to secure the REST API endpoints. The filter intercepts requests, extracts the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers, and authenticates the user via the core security services.
 
 ## Dependencies
 

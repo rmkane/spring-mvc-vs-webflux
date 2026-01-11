@@ -60,29 +60,21 @@ public class LdapUserServiceImpl implements LdapUserService {
             log.warn("Error looking up user by exact DN: {}", dn, e);
         }
 
-        // Fallback: case-insensitive search by extracting CN and searching all users
-        // OpenLDAP's CN attribute matching is case-sensitive, so we search all users
-        // and filter by case-insensitive CN match in Java
+        // Fallback: search by CN from certificate DN (case-insensitive matching)
+        // Since certificate DN and LDAP DN both use CN as RDN, exact match should work
+        // This fallback handles case differences (e.g., CN=Jdoe vs cn=jdoe)
         if (user == null) {
             try {
                 String cn = LdapDnUtil.extractCn(dn);
-                if (cn == null) {
-                    log.debug("Could not extract CN from DN: {}", dn);
-                } else {
+                if (cn != null) {
                     log.debug("Searching for user with CN '{}' (case-insensitive)", cn);
 
-                    // Search all inetOrgPerson entries - use a mapper that extracts the entry DN
-                    // Use empty string to search from context base (ldapBase is set in
-                    // LdapContextSource)
-                    // Spring LDAP will return full DNs when searching from the base
                     List<UserInfoResponse> users = ldapTemplate.search(
                             "",
                             "(objectClass=inetOrgPerson)",
                             (ContextMapper<UserInfoResponse>) ctx -> {
                                 if (ctx instanceof DirContextAdapter adapter) {
                                     String entryDn = adapter.getDn().toString();
-                                    // Spring LDAP should return full DN when searching from base
-                                    // If it's relative, construct full DN by appending base
                                     String fullDn = LdapDnUtil.ensureFullDn(entryDn, ldapBase);
                                     log.debug("Mapped entry DN: {} -> {}", entryDn, fullDn);
                                     return new UserContextMapper(fullDn).mapFromContext(ctx);
@@ -92,7 +84,6 @@ public class LdapUserServiceImpl implements LdapUserService {
 
                     log.debug("Found {} inetOrgPerson entries, filtering by CN '{}'", users.size(), cn);
 
-                    // Filter by case-insensitive CN match
                     UserInfoResponse found = users.stream()
                             .filter(u -> {
                                 String userCn = LdapDnUtil.extractCn(u.getDn());
@@ -109,13 +100,13 @@ public class LdapUserServiceImpl implements LdapUserService {
                         log.debug("Found user in LDAP via case-insensitive CN search: {} (matched CN: {})",
                                 found.getDn(), cn);
                         user = found;
-                        actualDn = found.getDn(); // Use the actual DN from LDAP for group queries
+                        actualDn = found.getDn();
                     } else {
                         log.debug("No user found matching CN '{}' (case-insensitive) from DN: {}", cn, dn);
                     }
                 }
             } catch (Exception e) {
-                log.warn("Error during case-insensitive CN search for DN: {}", dn, e);
+                log.warn("Error during CN search for DN: {}", dn, e);
             }
         }
 

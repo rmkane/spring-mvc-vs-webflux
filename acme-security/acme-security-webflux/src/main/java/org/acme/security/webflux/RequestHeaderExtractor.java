@@ -14,15 +14,29 @@ import org.acme.security.core.model.SecurityConstants;
 public final class RequestHeaderExtractor {
 
     /**
-     * Extracts the Distinguished Name (DN) from a WebFlux ServerHttpRequest.
+     * Extracts the Subject Distinguished Name (DN) from a WebFlux
+     * ServerHttpRequest.
      *
      * @param request the ServerHttpRequest
-     * @return the DN header value, or null if not present
+     * @return the Subject DN header value, or null if not present
      */
-    public static String extractDn(ServerHttpRequest request) {
+    public static String extractSubjectDn(ServerHttpRequest request) {
         if (request == null) {
             return null;
         }
-        return request.getHeaders().getFirst(SecurityConstants.DN_HEADER);
+        return request.getHeaders().getFirst(SecurityConstants.SSL_CLIENT_SUBJECT_DN_HEADER);
+    }
+
+    /**
+     * Extracts the Issuer Distinguished Name (DN) from a WebFlux ServerHttpRequest.
+     *
+     * @param request the ServerHttpRequest
+     * @return the Issuer DN header value, or null if not present
+     */
+    public static String extractIssuerDn(ServerHttpRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return request.getHeaders().getFirst(SecurityConstants.SSL_CLIENT_ISSUER_DN_HEADER);
     }
 }

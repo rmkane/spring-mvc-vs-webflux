@@ -76,3 +76,5 @@ monitoring/certs/*.pem
 monitoring/certs/*.key
 monitoring/certs/*.crt
 
+# Kubernetes certificates (generated, not committed)
+k8s/certs/

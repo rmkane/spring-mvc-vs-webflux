@@ -14,7 +14,7 @@ This module provides a multi-module security layer that implements header-based 
 
 ## Key Features
 
-- Header-based authentication via `x-dn` header
+- Header-based authentication via `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
 - User lookup caching (Caffeine cache)
 - Role-based access control (RBAC)
 - SSL/TLS configuration for auth service communication

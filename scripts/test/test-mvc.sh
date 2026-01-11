@@ -1,17 +1,29 @@
 #!/bin/bash
 
-# Test script for WebFlux API (port 8081)
-# Usage: ./test-webflux.sh <operation> [args...]
+# Test script for MVC API (port 8080)
+# Usage: ./test-mvc.sh <operation> [args...]
 # Operations: get-all, get <id>, create <title> <author> <isbn>, update <id> <title> <author> <isbn>, delete <id>
 
-BASE_URL="http://localhost:8081/api/v1/books"
-DN="${X_DN:-cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org}"
+BASE_URL="http://localhost:8080/api/v1/books"
 
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# Validate required environment variables
+if [ -z "$SSL_CLIENT_SUBJECT_DN" ]; then
+    echo -e "${RED}Error: SSL_CLIENT_SUBJECT_DN environment variable is not set${NC}"
+    echo "Please set SSL_CLIENT_SUBJECT_DN before running this script."
+    exit 1
+fi
+
+if [ -z "$SSL_CLIENT_ISSUER_DN" ]; then
+    echo -e "${RED}Error: SSL_CLIENT_ISSUER_DN environment variable is not set${NC}"
+    echo "Please set SSL_CLIENT_ISSUER_DN before running this script."
+    exit 1
+fi
 
 print_usage() {
     echo "Usage: $0 <operation> [args...]"
@@ -23,19 +35,20 @@ print_usage() {
     echo "  update <id> <title> <author> <isbn>  - Update a book"
     echo "  delete <id>                - Delete a book by ID"
     echo ""
-    echo "Environment variable:"
-    echo "  X_DN                       - Distinguished Name (DN) for authentication"
-    echo "                              (default: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org)"
+    echo "Required environment variables:"
+    echo "  SSL_CLIENT_SUBJECT_DN      - Subject Distinguished Name (DN) for authentication (required)"
+    echo "  SSL_CLIENT_ISSUER_DN       - Issuer Distinguished Name (DN) for authentication (required)"
     echo ""
     echo "Available users (from LDAP):"
-    echo "  cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org"
+    echo "  cn=jdoe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org"
     echo "    - ACME_READ_WRITE (full access)"
 }
 
 get_all() {
     echo -e "${BLUE}GET ${BASE_URL}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
-        -H "x-dn: ${DN}" \
+        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}")
     local http_code=$(echo "$response" | tail -n1)
@@ -55,7 +68,8 @@ get_one() {
 
     echo -e "${BLUE}GET ${BASE_URL}/${id}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
-        -H "x-dn: ${DN}" \
+        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}/${id}")
     local http_code=$(echo "$response" | tail -n1)
@@ -89,7 +103,8 @@ EOF
     echo -e "${BLUE}Body: ${json_body}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
         -X POST \
-        -H "x-dn: ${DN}" \
+        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         -d "${json_body}" \
         "${BASE_URL}")
@@ -125,7 +140,8 @@ EOF
     echo -e "${BLUE}Body: ${json_body}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
         -X PUT \
-        -H "x-dn: ${DN}" \
+        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         -d "${json_body}" \
         "${BASE_URL}/${id}")
@@ -147,7 +163,8 @@ delete() {
     echo -e "${BLUE}DELETE ${BASE_URL}/${id}${NC}"
     local http_code=$(curl -s -w "%{http_code}" -o /dev/null \
         -X DELETE \
-        -H "x-dn: ${DN}" \
+        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}/${id}")
     echo -e "HTTP Status: ${http_code}"
