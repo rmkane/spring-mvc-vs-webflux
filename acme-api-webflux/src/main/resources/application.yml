@@ -33,7 +33,7 @@ auth:
     ssl:
       enabled: true
       truststore:
-        path: classpath:ssl/auth-service-truststore.jks
+        path: classpath:ssl/acme-truststore.jks
         password: changeit
         type: JKS
       keystore:

@@ -35,7 +35,7 @@ public class BookServiceImpl implements BookService {
     public Mono<BookResponse> create(CreateBookRequest request) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
                 .doOnNext(user -> log.debug("User {} performing CREATE action for book: title={}, author={}, isbn={}",
-                        user.getDn(), request.getTitle(), request.getAuthor(), request.getIsbn()))
+                        user.getSubjectDn(), request.getTitle(), request.getAuthor(), request.getIsbn()))
                 .flatMap(user -> {
                     // Check if book with same ISBN already exists
                     return bookRepository.findByIsbn(request.getIsbn())
@@ -44,7 +44,7 @@ public class BookServiceImpl implements BookService {
                             .switchIfEmpty(Mono.defer(() -> {
                                 Book book = bookMapper.toEntity(request);
                                 book.setCreatedAt(LocalDateTime.now());
-                                book.setCreatedBy(user.getDn());
+                                book.setCreatedBy(user.getSubjectDn());
                                 // updatedAt and updatedBy are null on creation, set only on update
                                 return bookRepository.save(book);
                             }))
@@ -56,7 +56,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Flux<BookResponse> findAll() {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing READ ALL action", user.getDn()))
+                .doOnNext(user -> log.debug("User {} performing READ ALL action", user.getSubjectDn()))
                 .flatMapMany(user -> bookRepository.findAll()
                         .map(bookMapper::toResponse));
     }
@@ -65,7 +65,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Mono<BookResponse> findById(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing READ action for book id={}", user.getDn(), id))
+                .doOnNext(user -> log.debug("User {} performing READ action for book id={}", user.getSubjectDn(), id))
                 .flatMap(user -> bookRepository.findById(id)
                         .switchIfEmpty(Mono.error(new BookNotFoundException(id)))
                         .map(bookMapper::toResponse));
@@ -76,7 +76,7 @@ public class BookServiceImpl implements BookService {
     public Mono<BookResponse> update(Long id, UpdateBookRequest request) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
                 .doOnNext(user -> log.debug("User {} performing UPDATE action for book id={}, title={}",
-                        user.getDn(), id, request.getTitle()))
+                        user.getSubjectDn(), id, request.getTitle()))
                 .flatMap(user -> bookRepository.findById(id)
                         .switchIfEmpty(Mono.error(new BookNotFoundException(id)))
                         .flatMap(existingBook -> {
@@ -91,7 +91,7 @@ public class BookServiceImpl implements BookService {
                                             existingBook.setIsbn(request.getIsbn());
                                             existingBook.setPublicationYear(request.getPublicationYear());
                                             existingBook.setUpdatedAt(LocalDateTime.now());
-                                            existingBook.setUpdatedBy(user.getDn());
+                                            existingBook.setUpdatedBy(user.getSubjectDn());
                                             return bookRepository.save(existingBook);
                                         }));
                             } else {
@@ -99,7 +99,7 @@ public class BookServiceImpl implements BookService {
                                 existingBook.setAuthor(request.getAuthor());
                                 existingBook.setPublicationYear(request.getPublicationYear());
                                 existingBook.setUpdatedAt(LocalDateTime.now());
-                                existingBook.setUpdatedBy(user.getDn());
+                                existingBook.setUpdatedBy(user.getSubjectDn());
                                 return bookRepository.save(existingBook);
                             }
                         })
@@ -110,7 +110,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Mono<Void> delete(Long id) {
         return ReactiveSecurityContextUtil.getCurrentUserInformation()
-                .doOnNext(user -> log.debug("User {} performing DELETE action for book id={}", user.getDn(), id))
+                .doOnNext(user -> log.debug("User {} performing DELETE action for book id={}", user.getSubjectDn(), id))
                 .flatMap(user -> bookRepository.existsById(id)
                         .flatMap(exists -> {
                             if (!exists) {

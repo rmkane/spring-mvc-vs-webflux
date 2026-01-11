@@ -42,11 +42,13 @@ public class AuthServiceClient {
                 throw new BadCredentialsException("User not found: " + dn);
             }
 
-            log.debug("User found: dn={}, givenName={}, surname={}, roles={}",
-                    response.dn(), response.givenName(), response.surname(), response.roles());
+            log.debug("User found: subjectDn={}, issuerDn={}, givenName={}, surname={}, roles={}",
+                    response.subjectDn(), response.issuerDn(), response.givenName(), response.surname(),
+                    response.roles());
 
             return UserInfo.builder()
-                    .dn(response.dn())
+                    .subjectDn(response.subjectDn())
+                    .issuerDn(response.issuerDn())
                     .givenName(response.givenName())
                     .surname(response.surname())
                     .roles(response.roles())
@@ -65,6 +67,7 @@ public class AuthServiceClient {
      * org.acme.auth.service.dto.UserInfoResponse but is defined here to avoid
      * creating a dependency from the client to the service module.
      */
-    public record UserInfoResponse(String dn, String givenName, String surname, List<String> roles) {
+    public record UserInfoResponse(String subjectDn, String issuerDn, String givenName, String surname,
+            List<String> roles) {
     }
 }

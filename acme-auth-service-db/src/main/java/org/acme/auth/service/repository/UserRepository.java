@@ -20,6 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param dn the Distinguished Name
      * @return Optional containing User if found, empty otherwise
      */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE LOWER(u.dn) = LOWER(:dn)")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE LOWER(u.subjectDn) = LOWER(:dn)")
     Optional<User> findByDnIgnoreCase(@Param("dn") String dn);
 }

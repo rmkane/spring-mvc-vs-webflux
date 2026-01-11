@@ -36,7 +36,7 @@ public final class UserInformationUtil {
         }
 
         return UserInformation.builder()
-                .dn(normalized)
+                .subjectDn(normalized)
                 .build();
     }
 
@@ -54,14 +54,15 @@ public final class UserInformationUtil {
             throw new BadCredentialsException("UserInfo cannot be null");
         }
 
-        // getUsername() returns the DN (for Spring Security compatibility)
-        String dn = userInfo.getUsername();
-        if (dn == null || dn.trim().isEmpty()) {
-            throw new BadCredentialsException("UserInfo has no DN");
+        // getUsername() returns the Subject DN (for Spring Security compatibility)
+        String subjectDn = userInfo.getUsername();
+        if (subjectDn == null || subjectDn.trim().isEmpty()) {
+            throw new BadCredentialsException("UserInfo has no Subject DN");
         }
 
         return UserInformation.builder()
-                .dn(dn.trim())
+                .subjectDn(subjectDn.trim())
+                .issuerDn(userInfo.getIssuerDn())
                 .givenName(userInfo.getGivenName())
                 .surname(userInfo.getSurname())
                 .build();

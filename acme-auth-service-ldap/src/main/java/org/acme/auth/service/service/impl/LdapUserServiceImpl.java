@@ -86,10 +86,10 @@ public class LdapUserServiceImpl implements LdapUserService {
 
                     UserInfoResponse found = users.stream()
                             .filter(u -> {
-                                String userCn = LdapDnUtil.extractCn(u.getDn());
+                                String userCn = LdapDnUtil.extractCn(u.getSubjectDn());
                                 boolean matches = userCn != null && userCn.equalsIgnoreCase(cn);
                                 if (matches) {
-                                    log.debug("Matched user: DN={}, CN={}", u.getDn(), userCn);
+                                    log.debug("Matched user: SubjectDN={}, CN={}", u.getSubjectDn(), userCn);
                                 }
                                 return matches;
                             })
@@ -98,9 +98,9 @@ public class LdapUserServiceImpl implements LdapUserService {
 
                     if (found != null) {
                         log.debug("Found user in LDAP via case-insensitive CN search: {} (matched CN: {})",
-                                found.getDn(), cn);
+                                found.getSubjectDn(), cn);
                         user = found;
-                        actualDn = found.getDn();
+                        actualDn = found.getSubjectDn();
                     } else {
                         log.debug("No user found matching CN '{}' (case-insensitive) from DN: {}", cn, dn);
                     }
@@ -117,13 +117,14 @@ public class LdapUserServiceImpl implements LdapUserService {
 
         // Query groups to find which groups contain this user as a member
         // (memberOf overlay is not enabled, so we query groups directly)
-        String userDnForQuery = actualDn != null ? actualDn : user.getDn();
+        String userDnForQuery = actualDn != null ? actualDn : user.getSubjectDn();
         List<String> roles = queryUserRoles(userDnForQuery);
-        log.debug("Found {} roles for user {}: {}", roles.size(), user.getDn(), roles);
+        log.debug("Found {} roles for user {}: {}", roles.size(), user.getSubjectDn(), roles);
 
         // Return user with roles populated
         return UserInfoResponse.builder()
-                .dn(dn) // Use original DN (may differ from actualDn in case of case-insensitive match)
+                .subjectDn(dn) // Use original DN (may differ from actualDn in case of case-insensitive match)
+                .issuerDn(user.getIssuerDn())
                 .givenName(user.getGivenName())
                 .surname(user.getSurname())
                 .roles(roles)

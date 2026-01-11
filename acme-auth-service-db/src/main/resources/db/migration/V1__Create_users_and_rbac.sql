@@ -2,7 +2,8 @@
 CREATE TABLE users
 (
     id         BIGSERIAL PRIMARY KEY,
-    dn         VARCHAR(500) NOT NULL UNIQUE,
+    subject_dn VARCHAR(500) NOT NULL UNIQUE,
+    issuer_dn  VARCHAR(500) NOT NULL,
     given_name VARCHAR(100),
     surname    VARCHAR(100),
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -21,6 +22,7 @@ CREATE TABLE user_roles
 );
 
 -- Create indexes
-CREATE INDEX idx_users_dn ON users (dn);
+CREATE INDEX idx_users_subject_dn ON users (subject_dn);
+CREATE INDEX idx_users_issuer_dn ON users (issuer_dn);
 CREATE INDEX idx_user_roles_user_id ON user_roles (user_id);
 CREATE INDEX idx_user_roles_role_name ON user_roles (role_name);

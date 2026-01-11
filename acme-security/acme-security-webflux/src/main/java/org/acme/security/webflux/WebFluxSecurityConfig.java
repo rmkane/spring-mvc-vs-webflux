@@ -63,7 +63,7 @@ public class WebFluxSecurityConfig {
             if (principal instanceof String principalString) {
                 dn = principalString;
             } else if (principal instanceof UserInformation userInfo) {
-                dn = userInfo.getDn();
+                dn = userInfo.getSubjectDn();
             } else {
                 return Mono.error(new BadCredentialsException(
                         "Invalid principal type: " + principal.getClass().getName()));

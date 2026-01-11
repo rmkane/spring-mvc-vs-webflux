@@ -47,7 +47,8 @@ public class DbUserServiceImpl implements UserService {
                 .collect(Collectors.toList());
 
         return UserInfoResponse.builder()
-                .dn(user.getDn())
+                .subjectDn(user.getSubjectDn())
+                .issuerDn(user.getIssuerDn())
                 .givenName(user.getGivenName())
                 .surname(user.getSurname())
                 .roles(roles)

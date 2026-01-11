@@ -75,7 +75,7 @@ public class WebMvcSecurityConfig {
             if (principal instanceof String principalString) {
                 dn = principalString;
             } else if (principal instanceof UserInformation userInfo) {
-                dn = userInfo.getDn();
+                dn = userInfo.getSubjectDn();
             } else {
                 throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
             }

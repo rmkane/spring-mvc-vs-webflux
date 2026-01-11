@@ -45,29 +45,37 @@ echo "DN: $USER_DN"
 # Generate user private key
 openssl genrsa -out "$USER_CERT_DIR/${USER_ID}.key" 2048
 
-# Parse DN into certificate config format
-# Convert "cn=john doe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org"
-# to OpenSSL format with uppercase field names (CN, OU, DC)
-# OpenSSL requires uppercase field names
+# Convert DN to OpenSSL -subj format
+# OpenSSL -subj format: /CN=value/OU=value1/OU=value2/DC=value1/DC=value2
+# Note: OpenSSL may not fully support DC in subject, but we'll include it for LDAP compatibility
 
-# Create certificate config with DN in Subject
+# Convert DN components to OpenSSL format
+OPENSSL_SUBJ=""
+IFS=',' read -ra DN_PARTS <<< "$USER_DN"
+for part in "${DN_PARTS[@]}"; do
+  if [[ $part =~ ^cn=(.+)$ ]]; then
+    OPENSSL_SUBJ="${OPENSSL_SUBJ}/CN=${BASH_REMATCH[1]}"
+  elif [[ $part =~ ^ou=(.+)$ ]]; then
+    # Capitalize first letter of OU value
+    OU_VALUE="${BASH_REMATCH[1]^}"
+    OPENSSL_SUBJ="${OPENSSL_SUBJ}/OU=${OU_VALUE}"
+  elif [[ $part =~ ^dc=(.+)$ ]]; then
+    # OpenSSL may not support DC, but we'll try it
+    OPENSSL_SUBJ="${OPENSSL_SUBJ}/DC=${BASH_REMATCH[1]}"
+  fi
+done
+
+# Create certificate config for extensions only
 cat > "$USER_CERT_DIR/${USER_ID}.conf" <<EOF
-[req]
-distinguished_name = req_distinguished_name
-req_extensions = v3_req
-prompt = no
-
-[req_distinguished_name]
-$(echo "$USER_DN" | sed 's/,/\n/g' | sed 's/^uid=/UID=/' | sed 's/^cn=/CN=/' | sed 's/^ou=/OU=/' | sed 's/^dc=/DC=/' | sed 's/^o=/O=/' | sed 's/^c=/C=/')
-
 [v3_req]
 keyUsage = digitalSignature, keyEncipherment
 extendedKeyUsage = clientAuth
 EOF
 
-# Generate certificate signing request
+# Generate certificate signing request using -subj
 openssl req -new -key "$USER_CERT_DIR/${USER_ID}.key" \
   -out "$USER_CERT_DIR/${USER_ID}.csr" \
+  -subj "$OPENSSL_SUBJ" \
   -config "$USER_CERT_DIR/${USER_ID}.conf"
 
 # Sign certificate with intermediate CA (valid for 1 year)

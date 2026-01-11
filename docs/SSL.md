@@ -47,7 +47,7 @@ Each service has its own **keystore** containing its identity certificate and pr
 
 ### Truststore
 
-All services share the same **truststore** (`auth-service-truststore.jks`) that contains:
+All services share the same **truststore** (`acme-truststore.jks`) that contains:
 
 - The auth service's certificate (for clients to verify the server)
 - The MVC API's certificate (for the server to verify the MVC client)
@@ -69,7 +69,7 @@ server:
     enabled: true
     key-store: classpath:ssl/auth-service-keystore.jks
     key-store-password: changeit
-    trust-store: classpath:ssl/auth-service-truststore.jks
+    trust-store: classpath:ssl/acme-truststore.jks
     trust-store-password: changeit
     client-auth: need  # Requires client certificates
 ```
@@ -93,7 +93,7 @@ auth:
     ssl:
       enabled: true
       truststore:
-        path: classpath:ssl/auth-service-truststore.jks
+        path: classpath:ssl/acme-truststore.jks
         password: changeit
       keystore:
         path: classpath:ssl/api-mvc-keystore.jks

@@ -25,8 +25,8 @@ public class AuthController {
         log.debug("Looking up user by DN: {}", dn);
 
         UserInfoResponse user = userService.findByDn(dn);
-        log.debug("Found user: dn={}, givenName={}, surname={}, roles={}",
-                user.getDn(), user.getGivenName(), user.getSurname(), user.getRoles());
+        log.debug("Found user: subjectDn={}, issuerDn={}, givenName={}, surname={}, roles={}",
+                user.getSubjectDn(), user.getIssuerDn(), user.getGivenName(), user.getSurname(), user.getRoles());
 
         return ResponseEntity.ok(user);
     }

@@ -9,7 +9,8 @@ import lombok.Getter;
 @Builder
 public class UserInfoResponse {
 
-    private final String dn;
+    private final String subjectDn;
+    private final String issuerDn;
     private final String givenName;
     private final String surname;
     private final List<String> roles;

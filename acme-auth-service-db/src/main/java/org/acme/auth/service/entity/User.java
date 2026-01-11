@@ -33,8 +33,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "dn", nullable = false, unique = true, length = 500)
-    private String dn;
+    @Column(name = "subject_dn", nullable = false, unique = true, length = 500)
+    private String subjectDn;
+
+    @Column(name = "issuer_dn", nullable = false, length = 500)
+    private String issuerDn;
 
     @Column(name = "given_name", length = 100)
     private String givenName;

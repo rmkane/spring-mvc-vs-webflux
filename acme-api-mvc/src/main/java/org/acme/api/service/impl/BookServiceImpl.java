@@ -35,7 +35,7 @@ public class BookServiceImpl implements BookService {
     public BookResponse create(CreateBookRequest request) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
         log.debug("User {} performing CREATE action for book: title={}, author={}, isbn={}",
-                user.getDn(), request.getTitle(), request.getAuthor(), request.getIsbn());
+                user.getSubjectDn(), request.getTitle(), request.getAuthor(), request.getIsbn());
 
         // Check if book with same ISBN already exists
         bookRepository.findByIsbn(request.getIsbn())
@@ -45,7 +45,7 @@ public class BookServiceImpl implements BookService {
                 });
 
         Book book = bookMapper.toEntity(request);
-        book.setCreatedBy(user.getDn());
+        book.setCreatedBy(user.getSubjectDn());
         // updatedBy and updatedAt are null on creation, set only on update
         Book saved = bookRepository.save(book);
         return bookMapper.toResponse(saved);
@@ -56,7 +56,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public List<BookResponse> findAll() {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
-        log.debug("User {} performing READ ALL action", user.getDn());
+        log.debug("User {} performing READ ALL action", user.getSubjectDn());
         return bookRepository.findAll().stream()
                 .map(bookMapper::toResponse)
                 .toList();
@@ -67,7 +67,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public BookResponse findById(Long id) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
-        log.debug("User {} performing READ action for book id={}", user.getDn(), id);
+        log.debug("User {} performing READ action for book id={}", user.getSubjectDn(), id);
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
         return bookMapper.toResponse(book);
@@ -79,7 +79,7 @@ public class BookServiceImpl implements BookService {
     public BookResponse update(Long id, UpdateBookRequest request) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
         log.debug("User {} performing UPDATE action for book id={}, title={}",
-                user.getDn(), id, request.getTitle());
+                user.getSubjectDn(), id, request.getTitle());
         Book existingBook = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException(id));
 
@@ -96,7 +96,7 @@ public class BookServiceImpl implements BookService {
         existingBook.setAuthor(request.getAuthor());
         existingBook.setIsbn(request.getIsbn());
         existingBook.setPublicationYear(request.getPublicationYear());
-        existingBook.setUpdatedBy(user.getDn());
+        existingBook.setUpdatedBy(user.getSubjectDn());
         Book saved = bookRepository.save(existingBook);
         return bookMapper.toResponse(saved);
     }
@@ -106,7 +106,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public void delete(Long id) {
         UserInformation user = SecurityContextUtil.getCurrentUserInformation();
-        log.debug("User {} performing DELETE action for book id={}", user.getDn(), id);
+        log.debug("User {} performing DELETE action for book id={}", user.getSubjectDn(), id);
 
         // Verify book exists before deleting
         if (!bookRepository.existsById(id)) {

@@ -35,6 +35,8 @@ public class UserContextMapper implements ContextMapper<UserInfoResponse> {
         // Extract user attributes
         String givenName = LdapAttributeUtil.getAttributeValue(attrs, "givenName");
         String surname = LdapAttributeUtil.getAttributeValue(attrs, "sn");
+        // Extract issuer DN from custom schema attribute
+        String issuerDn = LdapAttributeUtil.getAttributeValue(attrs, "certificateIssuerDN");
 
         // Extract roles from memberOf attribute (LDAP groups)
         // Get all groups and filter to only ACME roles
@@ -44,7 +46,8 @@ public class UserContextMapper implements ContextMapper<UserInfoResponse> {
                 .toList();
 
         return UserInfoResponse.builder()
-                .dn(entryDn) // Use the entry DN
+                .subjectDn(entryDn) // Use the entry DN
+                .issuerDn(issuerDn)
                 .givenName(givenName)
                 .surname(surname)
                 .roles(roles)

@@ -39,8 +39,8 @@ public class AuthenticationService {
         }
 
         if (principal instanceof UserInformation userInfo) {
-            String dn = userInfo.getDn();
-            if (!StringUtils.hasText(dn)) {
+            String subjectDn = userInfo.getSubjectDn();
+            if (!StringUtils.hasText(subjectDn)) {
                 throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
             }
             return userInfo;
@@ -87,7 +87,8 @@ public class AuthenticationService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(", "));
 
-        log.debug("User authenticated: dn={}, roles=[{}]", userInformation.getDn(), roles);
+        log.debug("User authenticated: subjectDn={}, issuerDn={}, roles=[{}]", userInformation.getSubjectDn(),
+                userInformation.getIssuerDn(), roles);
 
         return UsernamePasswordAuthenticationToken.authenticated(
                 userInformation,

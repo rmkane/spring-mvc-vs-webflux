@@ -14,13 +14,15 @@ import lombok.Getter;
 @Builder
 public class UserInfo implements UserDetails {
 
-    private final String dn;
+    private final String subjectDn;
+    private final String issuerDn;
     private final String givenName;
     private final String surname;
     private final List<String> roles;
 
-    public UserInfo(String dn, String givenName, String surname, List<String> roles) {
-        this.dn = dn;
+    public UserInfo(String subjectDn, String issuerDn, String givenName, String surname, List<String> roles) {
+        this.subjectDn = subjectDn;
+        this.issuerDn = issuerDn;
         this.givenName = givenName;
         this.surname = surname;
         this.roles = roles != null ? roles : List.of();
@@ -40,7 +42,7 @@ public class UserInfo implements UserDetails {
 
     @Override
     public String getUsername() {
-        return dn; // Spring Security expects getUsername(), return DN
+        return subjectDn; // Spring Security expects getUsername(), return Subject DN
     }
 
     @Override

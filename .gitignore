@@ -66,15 +66,22 @@ application-local.properties
 *.bak
 *.cache
 
-# SSL Certificates (generated in root certs/ directory, not committed)
-# Note: Certificates in src/main/resources/ssl/ are committed for development
+# SSL Certificates (all generated, not committed)
+# Generate certificates using: ./scripts/certs/setup-all-certs.sh
 /certs/
 *.cer
+*.jks
+*.p12
+*.pem
+*.key
+*.crt
 
 # Monitoring certificates (generated, not committed)
-monitoring/certs/*.pem
-monitoring/certs/*.key
-monitoring/certs/*.crt
+monitoring/certs/
 
 # Kubernetes certificates (generated, not committed)
 k8s/certs/
+
+# Service keystores and truststores (generated, not committed)
+**/src/main/resources/ssl/*.jks
+**/src/main/resources/ssl/*.p12
