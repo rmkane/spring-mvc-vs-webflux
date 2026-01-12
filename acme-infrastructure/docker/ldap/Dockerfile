@@ -37,23 +37,15 @@ exec /usr/sbin/slapd -h "$HOST_PARAM" -F /etc/ldap/slapd.d -u openldap -g openld
 EOF
 RUN chmod +x /container/service/slapd/process.sh
 
-# Patch the startup script that generates the config - CRITICAL: this is where the malformed URL is created
-# The startup script has a section "force OpenLDAP to listen on all interfaces" that constructs the URL wrong
+# Patch the startup script to prevent malformed URL construction
+# The startup script constructs URLs like "ldap://FQDN:tcp://IP:PORT" which is invalid
 RUN if [ -f /container/service/slapd/startup.sh ]; then \
-      # Replace the entire section that sets listeners - find the ldapmodify command and replace it \
-      sed -i '/force OpenLDAP to listen/,/ldapmodify.*olcListener/c\
-# Kubernetes fix: Set listeners to 0.0.0.0 directly\
-ldapmodify -Y EXTERNAL -Q -H ldapi:/// <<EOF\
-dn: cn=config\
-changetype: modify\
-replace: olcListener\
-olcListener: ldap://0.0.0.0:389\
-olcListener: ldaps://0.0.0.0:636\
-olcListener: ldapi:///\
-EOF' /container/service/slapd/startup.sh 2>/dev/null || true; \
-      # Also replace FQDN construction \
-      sed -i 's|FQDN="\$(/bin/hostname --fqdn)"|FQDN="0.0.0.0"|g' /container/service/slapd/startup.sh 2>/dev/null || true; \
-      sed -i 's|FQDN_PARAM=.*|FQDN_PARAM="0.0.0.0"|g' /container/service/slapd/startup.sh 2>/dev/null || true; \
+      # Replace FQDN construction with simple hostname \
+      sed -i 's|FQDN="\$(/bin/hostname --fqdn)"|FQDN="ldap"|g' /container/service/slapd/startup.sh 2>/dev/null || true; \
+      sed -i 's|\$(/bin/hostname --fqdn)|ldap|g' /container/service/slapd/startup.sh 2>/dev/null || true; \
+      # Replace any URL construction that includes :tcp:// pattern \
+      sed -i 's|ldap://[^:]*:tcp://[^:]*:[0-9]*|ldap://0.0.0.0:389|g' /container/service/slapd/startup.sh 2>/dev/null || true; \
+      sed -i 's|ldaps://[^:]*:tcp://[^:]*:[0-9]*|ldaps://0.0.0.0:636|g' /container/service/slapd/startup.sh 2>/dev/null || true; \
     fi
 
 # Create a custom entrypoint that patches config after generation
@@ -131,6 +123,31 @@ RUN echo '#!/bin/bash' > /custom-entrypoint.sh && \
     echo 'exec /container/tool/run' >> /custom-entrypoint.sh && \
     chmod +x /custom-entrypoint.sh
 
-# Override entrypoint to use simpler approach (just copy files and run)
-# The process.sh script will handle the URL fixing
-ENTRYPOINT ["/bin/bash", "-c", "mkdir -p /container/service/slapd/assets/config/bootstrap/schema/custom && mkdir -p /container/service/slapd/assets/config/bootstrap/ldif/custom && cp /schema-import/*.schema /container/service/slapd/assets/config/bootstrap/schema/custom/ 2>/dev/null || true && cp /ldif-import/*.ldif /container/service/slapd/assets/config/bootstrap/ldif/custom/ 2>/dev/null || true && /container/tool/run"]
+# Replace /container/tool/run with a wrapper that fixes the issue
+# The osixia entrypoint calls /container/tool/run, so we'll intercept it
+RUN mv /container/tool/run /container/tool/run.orig && \
+    cat > /container/tool/run << 'EOF'
+#!/bin/bash
+# Wrapper around osixia tool/run that fixes malformed URLs after startup
+
+# Run the original tool/run but only for startup phase
+/container/tool/run.orig --skip-start 2>&1 || {
+  # If --skip-start doesn't work, run normally but intercept process.sh
+  /container/tool/run.orig &
+  TOOL_PID=$!
+  sleep 20
+  pkill -f "process/slapd/run" || true
+  kill $TOOL_PID 2>/dev/null || true
+  wait $TOOL_PID 2>/dev/null || true
+}
+
+# Fix malformed URLs in config
+if [ -d /etc/ldap/slapd.d ]; then
+  find /etc/ldap/slapd.d -name "*.ldif" -type f -exec sed -i '/olcListener:/d' {} \; 2>/dev/null || true
+  find /etc/ldap/slapd.d -name "*.ldif" -type f -exec sed -i '/:tcp:\/\//d' {} \; 2>/dev/null || true
+fi
+
+# Start slapd directly
+exec /usr/sbin/slapd -h "ldap://0.0.0.0:389 ldaps://0.0.0.0:636 ldapi:///" -F /etc/ldap/slapd.d -u openldap -g openldap -d 256
+EOF
+RUN chmod +x /container/tool/run

@@ -1,26 +1,56 @@
+<!-- omit in toc -->
 # Kubernetes Setup for X.509 Client Certificate Authentication
 
 This directory contains Kubernetes manifests for testing X.509 client certificate authentication with Minikube.
+
+<!-- omit in toc -->
+## Table of Contents
+
+- [Directory Structure](#directory-structure)
+- [Prerequisites](#prerequisites)
+- [Quick Start (Automated)](#quick-start-automated)
+- [Manual Setup](#manual-setup)
+  - [1. Create Namespaces](#1-create-namespaces)
+  - [2. Create CA Chain Secret](#2-create-ca-chain-secret)
+  - [3. Create TLS Secret for Ingress](#3-create-tls-secret-for-ingress)
+  - [4. Deploy Test Service](#4-deploy-test-service)
+  - [5. Deploy Ingress](#5-deploy-ingress)
+  - [6. Create TLS Secret (if not already created)](#6-create-tls-secret-if-not-already-created)
+  - [7. Expose Ingress](#7-expose-ingress)
+  - [8. Configure /etc/hosts](#8-configure-etchosts)
+  - [9. Test](#9-test)
+- [Deploying All Services](#deploying-all-services)
+- [Component Details](#component-details)
+  - [Infrastructure (`infrastructure/`)](#infrastructure-infrastructure)
+  - [LDAP (`ldap/`)](#ldap-ldap)
+  - [Auth Service (`auth/`)](#auth-service-auth)
+  - [API (`api/`)](#api-api)
+  - [Database (`database/`)](#database-database)
+  - [Test (`test/`)](#test-test)
+- [Troubleshooting](#troubleshooting)
+- [Scripts](#scripts)
+- [Verification](#verification)
+- [Next Steps](#next-steps)
 
 ## Directory Structure
 
 The Kubernetes manifests are organized by component:
 
-```
-k8s/
-├── infrastructure/          # Shared infrastructure (Ingress, Namespaces, Secrets)
-│   ├── namespace.yaml
-│   ├── ingress.yaml
-│   ├── ingress-secret.yaml
-│   └── ingress-tls-secret.yaml
+```none
+acme-infrastructure/
 ├── deployments/             # Application deployments
 │   ├── ldap.yaml
 │   ├── auth-service-ldap.yaml
 │   ├── api-mvc.yaml
 │   └── postgres-jpa.yaml
-├── ldap/                    # LDAP build files (Dockerfile, scripts)
-│   ├── Dockerfile.ldap-fix
-│   └── ldap-entrypoint.sh
+├── docker/                  # Custom Docker images
+│   └── ldap/
+│       └── Dockerfile      # Custom LDAP image with Kubernetes fixes
+├── infrastructure/          # Shared infrastructure (Ingress, Namespaces, Secrets)
+│   ├── namespace.yaml
+│   ├── ingress.yaml
+│   ├── ingress-secret.yaml
+│   └── ingress-tls-secret.yaml
 ├── test/                    # Test services and alternative configurations
 │   ├── test-service.yaml
 │   ├── ingress-api-test.yaml
@@ -29,8 +59,14 @@ k8s/
 │   ├── deploy.sh
 │   ├── setup-minikube.sh
 │   ├── enable-snippets.sh
-│   └── port-forward.sh
+│   ├── port-forward.sh
+│   └── certs/              # Certificate generation scripts
+│       ├── generate-ca.sh
+│       ├── generate-user-cert.sh
+│       └── setup-all-certs.sh
 ├── certs/                   # Certificate files (gitignored)
+│   ├── ca/                  # CA certificates
+│   └── users/               # User certificates
 └── README.md               # This file
 ```
 
@@ -51,7 +87,7 @@ k8s/
 3. **Certificates generated**
 
    ```bash
-   ./scripts/certs/setup-all-certs.sh
+   ./acme-infrastructure/scripts/certs/setup-all-certs.sh
    ```
 
 4. **Root CA and user certificates imported into browser** (see `docs/X509.md`)
@@ -61,7 +97,7 @@ k8s/
 Run the setup script:
 
 ```bash
-./k8s/scripts/setup-minikube.sh
+./acme-infrastructure/scripts/setup-minikube.sh
 ```
 
 This will:
@@ -78,7 +114,7 @@ This will:
 ### 1. Create Namespaces
 
 ```bash
-kubectl apply -f k8s/infrastructure/namespace.yaml
+kubectl apply -f acme-infrastructure/infrastructure/namespace.yaml
 ```
 
 ### 2. Create CA Chain Secret
@@ -87,7 +123,7 @@ The Ingress needs the CA chain to validate client certificates:
 
 ```bash
 kubectl create secret generic ca-chain-secret \
-  --from-file=ca-chain.crt=k8s/certs/ca/ca-chain.crt \
+  --from-file=ca-chain.crt=acme-infrastructure/certs/ca/ca-chain.crt \
   -n acme-ingress
 ```
 
@@ -105,13 +141,13 @@ kubectl create secret tls ingress-tls-secret \
 ### 4. Deploy Test Service
 
 ```bash
-kubectl apply -f k8s/test/test-service.yaml
+kubectl apply -f acme-infrastructure/test/test-service.yaml
 ```
 
 ### 5. Deploy Ingress
 
 ```bash
-kubectl apply -f k8s/infrastructure/ingress.yaml
+kubectl apply -f acme-infrastructure/infrastructure/ingress.yaml
 ```
 
 ### 6. Create TLS Secret (if not already created)
@@ -132,7 +168,7 @@ kubectl create secret tls ingress-tls-secret \
 This is the simplest method and works immediately:
 
 ```bash
-./k8s/scripts/port-forward.sh
+./acme-infrastructure/scripts/port-forward.sh
 ```
 
 This will forward `localhost:8443` to the Ingress controller's HTTPS port (443).
@@ -163,7 +199,7 @@ $(minikube ip) acme.local
 
 Open your browser and navigate to:
 
-```
+```none
 https://acme.local:8443/test
 ```
 
@@ -176,7 +212,7 @@ You should be prompted to select a client certificate. After selecting it, you s
 To deploy all services (LDAP, Auth Service, API, Database):
 
 ```bash
-./k8s/scripts/deploy.sh
+./acme-infrastructure/scripts/deploy.sh
 ```
 
 This will:

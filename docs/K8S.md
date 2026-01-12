@@ -159,14 +159,14 @@ This migration will move the Acme application from a Docker Compose-based deploy
 
    ```bash
    # Create CA directory structure
-   mkdir -p k8s/certs/ca/{root,intermediate}
+   mkdir -p acme-infrastructure/certs/ca/{root,intermediate}
    
    # Generate root CA private key
-   openssl genrsa -out k8s/certs/ca/root/ca-root.key 4096
+   openssl genrsa -out acme-infrastructure/certs/ca/root/ca-root.key 4096
    
    # Generate root CA certificate (valid for 10 years)
-   openssl req -new -x509 -days 3650 -key k8s/certs/ca/root/ca-root.key \
-     -out k8s/certs/ca/root/ca-root.crt \
+   openssl req -new -x509 -days 3650 -key acme-infrastructure/certs/ca/root/ca-root.key \
+     -out acme-infrastructure/certs/ca/root/ca-root.crt \
      -subj "/CN=Acme Root CA/O=Acme Corp/C=US"
    ```
 
@@ -174,20 +174,20 @@ This migration will move the Acme application from a Docker Compose-based deploy
 
    ```bash
    # Generate intermediate CA private key
-   openssl genrsa -out k8s/certs/ca/intermediate/ca-intermediate.key 4096
+   openssl genrsa -out acme-infrastructure/certs/ca/intermediate/ca-intermediate.key 4096
    
    # Generate intermediate CA CSR
-   openssl req -new -key k8s/certs/ca/intermediate/ca-intermediate.key \
-     -out k8s/certs/ca/intermediate/ca-intermediate.csr \
+   openssl req -new -key acme-infrastructure/certs/ca/intermediate/ca-intermediate.key \
+     -out acme-infrastructure/certs/ca/intermediate/ca-intermediate.csr \
      -subj "/CN=Acme Intermediate CA/O=Acme Corp/C=US"
    
    # Sign intermediate CA with root CA (valid for 5 years)
    openssl x509 -req -days 1825 \
-     -in k8s/certs/ca/intermediate/ca-intermediate.csr \
-     -CA k8s/certs/ca/root/ca-root.crt \
-     -CAkey k8s/certs/ca/root/ca-root.key \
+     -in acme-infrastructure/certs/ca/intermediate/ca-intermediate.csr \
+     -CA acme-infrastructure/certs/ca/root/ca-root.crt \
+     -CAkey acme-infrastructure/certs/ca/root/ca-root.key \
      -CAcreateserial \
-     -out k8s/certs/ca/intermediate/ca-intermediate.crt \
+     -out acme-infrastructure/certs/ca/intermediate/ca-intermediate.crt \
      -extensions v3_intermediate_ca \
      -extfile <(cat <<EOF
      [v3_intermediate_ca]
@@ -201,8 +201,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 
    ```bash
    # Combine root and intermediate for full chain
-   cat k8s/certs/ca/intermediate/ca-intermediate.crt \
-       k8s/certs/ca/root/ca-root.crt > k8s/certs/ca/ca-chain.crt
+   cat acme-infrastructure/certs/ca/intermediate/ca-intermediate.crt \
+       acme-infrastructure/certs/ca/root/ca-root.crt > acme-infrastructure/certs/ca/ca-chain.crt
    ```
 
 ### User Certificate Generation
@@ -217,7 +217,7 @@ This migration will move the Acme application from a Docker Compose-based deploy
 - **Extended Key Usage**: `clientAuth`
 - **Validity**: 1 year (renewable)
 
-**Script**: `scripts/certs/generate-user-cert.sh`
+**Script**: `acme-infrastructure/scripts/certs/generate-user-cert.sh`
 
 ```bash
 #!/bin/bash
@@ -232,7 +232,7 @@ if [ -z "$USER_DN" ] || [ -z "$USER_ID" ]; then
   exit 1
 fi
 
-CERT_DIR="k8s/certs/users"
+CERT_DIR="acme-infrastructure/certs/users"
 mkdir -p "$CERT_DIR"
 
 # Generate user private key
@@ -266,8 +266,8 @@ openssl req -new -key "$CERT_DIR/${USER_ID}.key" \
 # Sign certificate with intermediate CA (valid for 1 year)
 openssl x509 -req -days 365 \
   -in "$CERT_DIR/${USER_ID}.csr" \
-  -CA k8s/certs/ca/intermediate/ca-intermediate.crt \
-  -CAkey k8s/certs/ca/intermediate/ca-intermediate.key \
+  -CA acme-infrastructure/certs/ca/intermediate/ca-intermediate.crt \
+  -CAkey acme-infrastructure/certs/ca/intermediate/ca-intermediate.key \
   -CAcreateserial \
   -out "$CERT_DIR/${USER_ID}.crt" \
   -extensions v3_req \
@@ -278,14 +278,14 @@ openssl pkcs12 -export \
   -out "$CERT_DIR/${USER_ID}.p12" \
   -inkey "$CERT_DIR/${USER_ID}.key" \
   -in "$CERT_DIR/${USER_ID}.crt" \
-  -certfile k8s/certs/ca/ca-chain.crt \
+  -certfile acme-infrastructure/certs/ca/ca-chain.crt \
   -passout pass:  # No password for easier import
 
 echo "Certificate generated: $CERT_DIR/${USER_ID}.p12"
 echo "Import this file into your browser's certificate store"
 ```
 
-**Batch Generation Script**: `scripts/certs/generate-all-user-certs.sh`
+**Batch Generation Script**: `acme-infrastructure/scripts/certs/generate-all-user-certs.sh`
 
 ```bash
 #!/bin/bash
@@ -306,7 +306,7 @@ ldapsearch -x -H ldap://localhost:389 \
     elif [[ $line == uid:* ]]; then
       USER_ID="${line#uid: }"
       echo "Generating certificate for $USER_ID..."
-      ./scripts/certs/generate-user-cert.sh "$USER_DN" "$USER_ID"
+      ./acme-infrastructure/scripts/certs/generate-user-cert.sh "$USER_DN" "$USER_ID"
     fi
   done
 ```

@@ -13,7 +13,7 @@ ps aux | grep "kubectl port-forward.*8443"
 If not running, start it:
 
 ```bash
-./k8s/port-forward.sh
+./acme-infrastructure/scripts/port-forward.sh
 ```
 
 ### Check 2: Client Certificate Required
@@ -56,7 +56,7 @@ If Chrome tab spins forever without loading:
    # If wrong, recreate:
    kubectl delete secret ca-chain-secret -n acme-apps
    kubectl create secret generic ca-chain-secret \
-     --from-file=ca.crt=k8s/certs/ca/ca-chain.crt \
+     --from-file=ca.crt=acme-infrastructure/certs/ca/ca-chain.crt \
      -n acme-apps
    ```
 
@@ -70,7 +70,7 @@ If Chrome tab spins forever without loading:
      sudo security delete-certificate -c "jdoe" /Library/Keychains/System.keychain
      
      # Import to login keychain (Chrome will see it)
-     security import k8s/certs/users/jdoe.p12 -k ~/Library/Keychains/login.keychain-db
+     security import acme-infrastructure/certs/users/jdoe.p12 -k ~/Library/Keychains/login.keychain-db
      ```
 
    - Or import directly into Chrome: `chrome://settings/certificates` → Your certificates → Import
@@ -103,7 +103,7 @@ If it doesn't exist, create it:
 
 ```bash
 # First, ensure certificates are generated
-./scripts/certs/setup-all-certs.sh
+./acme-infrastructure/scripts/certs/setup-all-certs.sh
 
 # Then create the TLS secret
 kubectl create secret tls ingress-tls-secret \

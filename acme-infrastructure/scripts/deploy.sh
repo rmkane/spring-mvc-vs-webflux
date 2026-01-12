@@ -21,7 +21,7 @@ echo "🔨 Building Docker images..."
 
 # Build custom LDAP image with Kubernetes fix
 echo "Building custom LDAP image (osixia with K8s fix)..."
-docker build -t acme-openldap:latest -f k8s/ldap/Dockerfile.ldap-fix k8s/ldap/ || {
+docker build -t acme-openldap:latest -f acme-infrastructure/docker/ldap/Dockerfile . || {
     echo "❌ Failed to build custom LDAP image"
     exit 1
 }
@@ -42,10 +42,10 @@ docker build -t acme-api-mvc:latest -f acme-api-mvc/Dockerfile . || {
 # Deploy to Kubernetes
 echo ""
 echo "📤 Deploying to Kubernetes..."
-kubectl apply -f k8s/deployments/ldap.yaml
-kubectl apply -f k8s/deployments/auth-service-ldap.yaml
-kubectl apply -f k8s/deployments/api-mvc.yaml
-kubectl apply -f k8s/deployments/postgres-jpa.yaml
+kubectl apply -f acme-infrastructure/deployments/ldap.yaml
+kubectl apply -f acme-infrastructure/deployments/auth-service-ldap.yaml
+kubectl apply -f acme-infrastructure/deployments/api-mvc.yaml
+kubectl apply -f acme-infrastructure/deployments/postgres-jpa.yaml
 
 # Wait for deployments
 echo ""

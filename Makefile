@@ -374,13 +374,13 @@ k8s-describe:
 
 k8s-deploy:
 	@echo "🚀 Deploying to Kubernetes..."
-	@bash k8s/scripts/deploy.sh
+	@bash acme-infrastructure/scripts/deploy.sh
 
 k8s-redeploy: k8s-deploy
 
 k8s-delete:
 	@echo "🗑️  Deleting all deployments from Kubernetes..."
-	@kubectl delete -f k8s/deployments/ --ignore-not-found=true || true
+	@kubectl delete -f acme-infrastructure/deployments/ --ignore-not-found=true || true
 	@echo "✅ Deployments deleted"
 
 k8s-stop:
@@ -406,10 +406,10 @@ k8s-status:
 
 k8s-setup:
 	@echo "🔧 Setting up Minikube (namespaces, secrets, ingress)..."
-	@bash k8s/scripts/setup-minikube.sh
+	@bash acme-infrastructure/scripts/setup-minikube.sh
 
 k8s-port-forward:
 	@echo "🔌 Port-forwarding Ingress controller to localhost:8443..."
 	@echo "Access via: https://acme.local:8443 (or https://localhost:8443)"
 	@echo "Press Ctrl+C to stop"
-	@bash k8s/scripts/port-forward.sh
+	@bash acme-infrastructure/scripts/port-forward.sh

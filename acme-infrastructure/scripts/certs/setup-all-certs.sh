@@ -18,7 +18,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CERT_DIR="$PROJECT_ROOT/k8s/certs"
+CERT_DIR="$PROJECT_ROOT/acme-infrastructure/certs"
 ROOT_CA_DIR="$CERT_DIR/ca/root"
 INTERMEDIATE_CA_DIR="$CERT_DIR/ca/intermediate"
 USER_CERT_DIR="$CERT_DIR/users"

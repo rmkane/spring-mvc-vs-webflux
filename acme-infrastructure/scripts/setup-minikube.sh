@@ -36,15 +36,15 @@ kubectl apply -f "$SCRIPT_DIR/../infrastructure/namespace.yaml"
 
 # Create CA chain secret
 echo "Creating CA chain secret..."
-if [ -f "$PROJECT_ROOT/k8s/certs/ca/ca-chain.crt" ]; then
+if [ -f "$PROJECT_ROOT/acme-infrastructure/certs/ca/ca-chain.crt" ]; then
     kubectl create secret generic ca-chain-secret \
-      --from-file=ca-chain.crt="$PROJECT_ROOT/k8s/certs/ca/ca-chain.crt" \
+      --from-file=ca-chain.crt="$PROJECT_ROOT/acme-infrastructure/certs/ca/ca-chain.crt" \
       -n acme-ingress \
       --dry-run=client -o yaml | kubectl apply -f -
     echo "✓ CA chain secret created"
 else
-    echo "⚠ Error: CA chain certificate not found at k8s/certs/ca/ca-chain.crt"
-    echo "   Run: ./scripts/certs/setup-all-certs.sh"
+    echo "⚠ Error: CA chain certificate not found at acme-infrastructure/certs/ca/ca-chain.crt"
+    echo "   Run: ./acme-infrastructure/scripts/certs/setup-all-certs.sh"
     exit 1
 fi
 
@@ -84,8 +84,8 @@ echo "Enabling snippet directives in Ingress controller..."
 echo "Deploying Ingress..."
 kubectl apply -f "$SCRIPT_DIR/../infrastructure/ingress.yaml" || {
     echo "⚠ Error: Ingress deployment failed. Snippets may not be enabled."
-    echo "   Try running: ./k8s/scripts/enable-snippets.sh"
-    echo "   Or use: kubectl apply -f k8s/test/ingress-no-snippets.yaml (limited functionality)"
+    echo "   Try running: ./acme-infrastructure/scripts/enable-snippets.sh"
+    echo "   Or use: kubectl apply -f acme-infrastructure/test/ingress-no-snippets.yaml (limited functionality)"
     exit 1
 }
 
