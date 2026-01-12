@@ -1,5 +1,6 @@
 package org.acme.security.core.service;
 
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.BadCredentialsException;
@@ -13,9 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.acme.auth.client.UserInfo;
+import org.acme.auth.utils.DnUtil;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
-import org.acme.security.core.util.DnUtil;
 import org.acme.security.core.util.UserInformationUtil;
 
 @Slf4j
@@ -83,7 +84,13 @@ public class AuthenticationService {
         // Create UserInformation (derivative) from UserInfo
         UserInformation userInformation = UserInformationUtil.fromUserInfo(userInfo);
 
-        String roles = userInfo.getAuthorities().stream()
+        // Filter roles to only include ACME roles (defense in depth - auth service is
+        // agnostic)
+        Collection<? extends GrantedAuthority> filteredAuthorities = userInfo.getAuthorities().stream()
+                .filter(authority -> authority.getAuthority().startsWith(SecurityConstants.ACME_GROUP_PREFIX))
+                .toList();
+
+        String roles = filteredAuthorities.stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(", "));
 
@@ -93,6 +100,6 @@ public class AuthenticationService {
         return UsernamePasswordAuthenticationToken.authenticated(
                 userInformation,
                 null,
-                userInfo.getAuthorities());
+                filteredAuthorities);
     }
 }

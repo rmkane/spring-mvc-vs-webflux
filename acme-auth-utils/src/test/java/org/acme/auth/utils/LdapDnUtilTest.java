@@ -1,4 +1,4 @@
-package org.acme.auth.service.util;
+package org.acme.auth.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

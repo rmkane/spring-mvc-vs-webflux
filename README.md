@@ -99,6 +99,7 @@ spring-mvc-vs-webflux/
 │   ├── acme-dependencies/           # BOM for dependency versions
 │   └── acme-starter-parent/         # Parent POM with plugin management
 ├── acme-auth-client/                # REST client wrapper for auth service
+├── acme-auth-utils/                 # Shared DN utility classes for authentication
 ├── acme-auth-service-db/            # Authentication service (PostgreSQL-based)
 ├── acme-auth-service-ldap/          # Authentication service (LDAP-based)
 ├── acme-security/                   # Security layer
@@ -694,6 +695,7 @@ make docker-run-webflux
 
 - **acme-pom**: Dependency management (BOM and parent POM)
 - **acme-auth-client**: REST client wrapper for calling auth service
+- **acme-auth-utils**: Shared utility classes for DN parsing, normalization, and LDAP operations
 - **acme-auth-service-db**: Authentication service with PostgreSQL backend
 - **acme-auth-service-ldap**: Authentication service with LDAP backend
 - **acme-security**: Security layer with core logic and framework-specific configs
@@ -709,9 +711,12 @@ make docker-run-webflux
 
 - `acme-api-mvc` depends on `acme-security-webmvc` and `acme-persistence-jpa`
 - `acme-api-webflux` depends on `acme-security-webflux` and `acme-persistence-r2dbc`
-- `acme-security-core` depends on `acme-auth-client` which provides `AuthServiceClient`
+- `acme-security-core` depends on `acme-auth-client` (provides `AuthServiceClient`) and `acme-auth-utils` (DN utilities)
+- `acme-auth-service-ldap` depends on `acme-auth-utils` (DN utilities for LDAP operations)
 - `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean
-- `acme-auth-service-db` and `acme-auth-service-ldap` are standalone Spring Boot applications (no dependencies on other modules)
+- `acme-auth-utils` provides shared DN parsing and normalization utilities (`DnUtil`, `LdapDnUtil`)
+- `acme-security-core` contains security-specific constants (`SecurityConstants` with `ACME_GROUP_PREFIX`)
+- `acme-auth-service-db` and `acme-auth-service-ldap` are standalone Spring Boot applications
 - All modules inherit from `acme-starter-parent` which inherits from `acme-dependencies`
 
 ### Architecture Flow

@@ -231,6 +231,7 @@ JAVA_MODULES_LIST = \
 	acme-api-mvc \
 	acme-api-webflux \
 	acme-auth-client \
+	acme-auth-utils \
 	acme-auth-service-ldap \
 	acme-auth-service-db \
 	acme-security/acme-security-core \

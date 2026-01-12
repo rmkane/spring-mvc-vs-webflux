@@ -1,4 +1,4 @@
-package org.acme.auth.service.util;
+package org.acme.auth.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,26 +88,6 @@ public final class LdapDnUtil {
             log.debug("Invalid DN format for attribute extraction: {}", dn, e);
         } catch (Exception e) {
             log.debug("Error extracting attribute '{}' from DN: {}", attributeType, dn, e);
-        }
-        return null;
-    }
-
-    /**
-     * Extracts an ACME role name from a group DN if it's valid.
-     * <p>
-     * Uses standard LDAP DN parsing to extract the CN (Common Name) attribute
-     * value. Validates that the group name starts with the ACME group prefix.
-     *
-     * @param groupDn the group Distinguished Name
-     * @return the ACME role name if valid, null otherwise
-     */
-    public static String extractAcmeRoleName(String groupDn) {
-        if (!StringUtils.hasText(groupDn)) {
-            return null;
-        }
-        String cnValue = extractCn(groupDn);
-        if (cnValue != null && cnValue.startsWith(LdapConstants.ACME_GROUP_PREFIX)) {
-            return cnValue;
         }
         return null;
     }

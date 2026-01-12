@@ -18,7 +18,7 @@ import org.acme.auth.service.dto.UserInfoResponse;
 import org.acme.auth.service.exception.UserNotFoundException;
 import org.acme.auth.service.mapper.UserContextMapper;
 import org.acme.auth.service.service.LdapUserService;
-import org.acme.auth.service.util.LdapDnUtil;
+import org.acme.auth.utils.LdapDnUtil;
 
 /**
  * Implementation of {@link LdapUserService} for querying user information from
@@ -163,9 +163,10 @@ public class LdapUserServiceImpl implements LdapUserService {
 
             log.debug("Found {} groups containing user {}: {}", groupDns.size(), userDn, groupDns);
 
-            // Extract role names from group DNs
+            // Extract role names from group DNs (return all groups - auth service is
+            // agnostic)
             for (String groupDn : groupDns) {
-                String roleName = LdapDnUtil.extractAcmeRoleName(groupDn);
+                String roleName = LdapDnUtil.extractCn(groupDn);
                 if (roleName != null) {
                     roles.add(roleName);
                     log.debug("Added role '{}' from group DN: {}", roleName, groupDn);

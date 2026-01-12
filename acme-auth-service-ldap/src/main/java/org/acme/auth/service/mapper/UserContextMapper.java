@@ -11,8 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.acme.auth.service.dto.UserInfoResponse;
 import org.acme.auth.service.util.LdapAttributeUtil;
-import org.acme.auth.service.util.LdapConstants;
-import org.acme.auth.service.util.LdapDnUtil;
+import org.acme.auth.utils.LdapDnUtil;
 
 /**
  * Context mapper that extracts user information from LDAP entry. The DN is
@@ -39,10 +38,10 @@ public class UserContextMapper implements ContextMapper<UserInfoResponse> {
         String issuerDn = LdapAttributeUtil.getAttributeValue(attrs, "certificateIssuerDN");
 
         // Extract roles from memberOf attribute (LDAP groups)
-        // Get all groups and filter to only ACME roles
+        // Return all groups - auth service is agnostic about role naming
         var roles = LdapAttributeUtil.getGroupsFromMemberOf(attrs).stream()
                 .map(LdapDnUtil::extractCn)
-                .filter(cn -> cn != null && cn.startsWith(LdapConstants.ACME_GROUP_PREFIX))
+                .filter(cn -> cn != null)
                 .toList();
 
         return UserInfoResponse.builder()
