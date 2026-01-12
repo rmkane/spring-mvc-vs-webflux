@@ -1,0 +1,78 @@
+# Simple test service that echoes headers to verify X.509 extraction
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-headers-service
+  namespace: acme-apps
+spec:
+  selector:
+    app: test-headers
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-headers
+  namespace: acme-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-headers
+  template:
+    metadata:
+      labels:
+        app: test-headers
+    spec:
+      containers:
+      - name: test-headers
+        image: nginx:alpine
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: test-headers-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-headers-config
+  namespace: acme-apps
+data:
+  default.conf: |
+    server {
+        listen 8080;
+        server_name _;
+
+        location / {
+            default_type application/json;
+            add_header Content-Type "application/json; charset=utf-8" always;
+            return 200 '{"ssl-client-subject-dn": "$http_ssl_client_subject_dn", "ssl-client-issuer-dn": "$http_ssl_client_issuer_dn"}';
+        }
+
+        location /test {
+            default_type application/json;
+            add_header Content-Type "application/json; charset=utf-8" always;
+            add_header Content-Disposition "inline" always;
+            return 200 '{"ssl-client-subject-dn": "$http_ssl_client_subject_dn", "ssl-client-issuer-dn": "$http_ssl_client_issuer_dn"}';
+        }
+
+        location /test/headers {
+            default_type text/plain;
+            add_header Content-Type "text/plain; charset=utf-8" always;
+            add_header Content-Disposition "inline" always;
+            return 200 'ssl-client-subject-dn: $http_ssl_client_subject_dn\nssl-client-issuer-dn: $http_ssl_client_issuer_dn\n';
+        }
+
+        location /test/debug {
+            default_type text/plain;
+            add_header Content-Type "text/plain; charset=utf-8" always;
+            return 200 'SSL Client Subject DN: $http_ssl_client_subject_dn\nSSL Client Issuer DN: $http_ssl_client_issuer_dn\n';
+        }
+    }

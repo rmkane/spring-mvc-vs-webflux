@@ -1,0 +1,199 @@
+# Note: LDAP is running in Docker Compose, not as a Kubernetes pod
+# The Service and Endpoints below point to the Docker Compose LDAP on the host
+---
+# LDAP Service - Points to Docker Compose LDAP running on host
+apiVersion: v1
+kind: Service
+metadata:
+  name: ldap
+  namespace: acme-apps
+spec:
+  ports:
+  - port: 389
+    targetPort: 389
+    name: ldap
+  - port: 636
+    targetPort: 636
+    name: ldaps
+---
+# LDAP Endpoints - Points to Docker Compose LDAP on host
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: ldap
+  namespace: acme-apps
+subsets:
+- addresses:
+  - ip: 192.168.49.1  # Minikube host IP (Docker Desktop host)
+  ports:
+  - port: 389
+    name: ldap
+  - port: 636
+    name: ldaps
+---
+# LDAP LDIF ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ldap-ldif
+  namespace: acme-apps
+data:
+  01-users.ldif: |
+    # LDIF file for Acme Corp users and roles
+    dn: ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: Users
+
+    dn: ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: Engineering
+
+    dn: ou=hr,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: HR
+
+    dn: ou=finance,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: Finance
+
+    dn: ou=it,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: IT
+
+    dn: ou=security,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: Security
+
+    # Role Groups
+    dn: ou=roles,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: Roles
+
+    # User 1: John Doe with READ_WRITE role
+    # CN in DN is the UID (jdoe) for matching with certificate DN
+    # CN attribute value is the full name (John Doe)
+    # certificateIssuerDN stores the Issuer DN from the X.509 certificate (custom schema attribute)
+    dn: cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: acmeCertificatePerson
+    cn: John Doe
+    givenName: John
+    sn: Doe
+    uid: jdoe
+    userPassword: {SSHA}password
+    certificateIssuerDN: CN=Acme Intermediate CA,O=Acme Corp,C=US
+
+    # User 2: Alice Smith with READ_WRITE role
+    dn: cn=asmith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: acmeCertificatePerson
+    cn: Alice Smith
+    givenName: Alice
+    sn: Smith
+    uid: asmith
+    userPassword: {SSHA}password
+    certificateIssuerDN: CN=Acme Intermediate CA,O=Acme Corp,C=US
+
+    # User 3: Brian Wilson with READ_ONLY role
+    dn: cn=bwilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: acmeCertificatePerson
+    cn: Brian Wilson
+    givenName: Brian
+    sn: Wilson
+    uid: bwilson
+    userPassword: {SSHA}password
+    certificateIssuerDN: CN=Acme Intermediate CA,O=Acme Corp,C=US
+
+    # User 4: Maria Garcia with READ_ONLY role
+    dn: cn=mgarcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: acmeCertificatePerson
+    cn: Maria Garcia
+    givenName: Maria
+    sn: Garcia
+    uid: mgarcia
+    userPassword: {SSHA}password
+    certificateIssuerDN: CN=Acme Intermediate CA,O=Acme Corp,C=US
+
+    # User 5: Kevin Tran (no role assigned yet)
+    dn: cn=ktran,ou=security,ou=users,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: acmeCertificatePerson
+    cn: Kevin Tran
+    givenName: Kevin
+    sn: Tran
+    uid: ktran
+    userPassword: {SSHA}password
+    certificateIssuerDN: CN=Acme Intermediate CA,O=Acme Corp,C=US
+
+    # Group for READ_WRITE role
+    # Note: groupOfNames requires at least one member
+    # Include all members in initial creation to avoid modify operations during bootstrap
+    dn: cn=ACME_READ_WRITE,ou=roles,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: groupOfNames
+    cn: ACME_READ_WRITE
+    description: Users with read and write permissions
+    member: cn=admin,dc=corp,dc=acme,dc=org
+    member: cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+    member: cn=asmith,ou=hr,ou=users,dc=corp,dc=acme,dc=org
+
+    # Group for READ_ONLY role
+    # Note: groupOfNames requires at least one member
+    # Include all members in initial creation to avoid modify operations during bootstrap
+    dn: cn=ACME_READ_ONLY,ou=roles,dc=corp,dc=acme,dc=org
+    objectClass: top
+    objectClass: groupOfNames
+    cn: ACME_READ_ONLY
+    description: Users with read-only permissions
+    member: cn=admin,dc=corp,dc=acme,dc=org
+    member: cn=bwilson,ou=finance,ou=users,dc=corp,dc=acme,dc=org
+    member: cn=mgarcia,ou=it,ou=users,dc=corp,dc=acme,dc=org
+---
+# LDAP Schema ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ldap-schema
+  namespace: acme-apps
+data:
+  acme-cert.schema: |
+    # Custom schema for Acme Corp certificate authentication
+    # Defines the certificateIssuerDN attribute for storing X.509 certificate issuer DNs
+
+    attributetype ( 1.3.6.1.4.1.99999.1.1.1
+      NAME 'certificateIssuerDN'
+      DESC 'Distinguished Name of the X.509 certificate issuer'
+      EQUALITY distinguishedNameMatch
+      SYNTAX 1.3.6.1.4.1.1466.115.121.1.12
+      SINGLE-VALUE )
+
+    objectclass ( 1.3.6.1.4.1.99999.2.1.1
+      NAME 'acmeCertificatePerson'
+      DESC 'Acme Corp certificate person object class'
+      SUP inetOrgPerson
+      STRUCTURAL
+      MAY ( certificateIssuerDN ) )

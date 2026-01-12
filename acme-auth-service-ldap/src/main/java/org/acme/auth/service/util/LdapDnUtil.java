@@ -1,5 +1,9 @@
 package org.acme.auth.service.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -137,11 +141,16 @@ public final class LdapDnUtil {
     /**
      * Extracts the relative DN from a full DN by removing the base DN suffix.
      * <p>
-     * If the DN ends with the base DN, it's removed. Otherwise, the DN is returned
-     * as-is (assuming it's already relative).
+     * Handles DN order differences (e.g.,
+     * "CN=jdoe,OU=engineering,DC=corp,DC=acme,DC=org" vs
+     * "DC=org,DC=acme,DC=corp,OU=engineering,CN=jdoe") by using RFC 4514 compliant
+     * DN parsing to compare DNs regardless of component order.
      * <p>
      * Example: extractRelativeDn("cn=john,ou=users,dc=corp,dc=acme,dc=org",
      * "dc=corp,dc=acme,dc=org") -> "cn=john,ou=users"
+     * <p>
+     * Example: extractRelativeDn("DC=org,DC=acme,DC=corp,OU=users,CN=john",
+     * "dc=corp,dc=acme,dc=org") -> "CN=john,OU=users" (handles reverse order)
      *
      * @param dn     the full Distinguished Name
      * @param baseDn the base DN to remove
@@ -154,6 +163,147 @@ public final class LdapDnUtil {
         if (!StringUtils.hasText(baseDn)) {
             return dn;
         }
+        try {
+            // Use RFC 4514 compliant DN parsing to handle order differences
+            LdapName dnName = new LdapName(dn);
+            LdapName baseName = new LdapName(baseDn);
+
+            // LdapName normalizes DNs, so we can use equals() to check if DN ends with base
+            // But we need to check if the base DN is a suffix of the full DN
+            // LdapName.getRdns() returns RDNs from most specific (index 0) to least
+            // specific (last index)
+            int dnSize = dnName.size();
+            int baseSize = baseName.size();
+
+            if (dnSize < baseSize) {
+                // DN is shorter than base, can't contain it
+                log.debug("DN is shorter than base DN, returning full DN: dn={}, baseDn={}", dn, baseDn);
+                return dn;
+            }
+
+            // Check if the base DN is a suffix of the full DN
+            // LdapName.getRdns() returns RDNs from most specific (index 0) to least
+            // specific (last index)
+            // For DN: cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+            // RDNs: [cn=jdoe, ou=engineering, ou=users, dc=corp, dc=acme, dc=org]
+            // For Base: dc=corp,dc=acme,dc=org
+            // RDNs: [dc=org, dc=acme, dc=corp] (normalized, most specific first)
+            // The base DN RDNs are in reverse order compared to the DN's suffix RDNs
+            // So we need to compare dnRdns[last baseSize] with baseRdns[reversed]
+            List<Rdn> dnRdns = dnName.getRdns();
+            List<Rdn> baseRdns = baseName.getRdns();
+
+            // Check if the base DN is a suffix of the full DN
+            // LdapName.getRdns() returns RDNs from most specific (index 0) to least
+            // specific (last index)
+            // For normal order DN: "cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org"
+            // RDNs: [dc=org, dc=acme, dc=corp, ou=users, ou=engineering, cn=jdoe] (base is
+            // at start)
+            // For reverse order DN:
+            // "dc=org,dc=acme,dc=corp,ou=users,ou=engineering,cn=jdoe"
+            // RDNs: [cn=jdoe, ou=engineering, ou=users, dc=corp, dc=acme, dc=org] (base is
+            // at end)
+            // So we need to check both the first baseSize RDNs and the last baseSize RDNs
+
+            boolean matches = false;
+            boolean baseAtEnd = false;
+
+            // Check if the last baseSize RDNs match the base (for reverse order DNs from
+            // certificates)
+            List<Rdn> dnSuffixRdns = dnRdns.subList(dnSize - baseSize, dnSize);
+            LdapName dnSuffix = new LdapName(dnSuffixRdns);
+            matches = dnSuffix.equals(baseName);
+            if (matches) {
+                baseAtEnd = true;
+            }
+
+            if (!matches) {
+                // Try reversed base comparison
+                List<Rdn> reversedBaseRdns = new ArrayList<>(baseRdns);
+                Collections.reverse(reversedBaseRdns);
+                LdapName reversedBase = new LdapName(reversedBaseRdns);
+                matches = dnSuffix.equals(reversedBase);
+                if (matches) {
+                    baseAtEnd = true;
+                }
+            }
+
+            if (!matches) {
+                // Check if the first baseSize RDNs match the base (for normal order DNs)
+                List<Rdn> dnPrefixRdns = dnRdns.subList(0, baseSize);
+                LdapName dnPrefix = new LdapName(dnPrefixRdns);
+                matches = dnPrefix.equals(baseName);
+                if (matches) {
+                    baseAtEnd = false;
+                }
+
+                if (!matches) {
+                    // Try reversed base comparison
+                    List<Rdn> reversedBaseRdns = new ArrayList<>(baseRdns);
+                    Collections.reverse(reversedBaseRdns);
+                    LdapName reversedBase = new LdapName(reversedBaseRdns);
+                    matches = dnPrefix.equals(reversedBase);
+                    if (matches) {
+                        baseAtEnd = false;
+                    }
+                }
+            }
+
+            if (!matches) {
+                log.debug("DN does not contain base DN: dn={}, baseDn={}", dn, baseDn);
+            }
+
+            log.debug("DN base match check: matches={}, baseAtEnd={}, dn={}, baseDn={}", matches, baseAtEnd, dn,
+                    baseDn);
+
+            if (matches) {
+                // Extract the relative DN
+                // If base matched at the end (reverse order), extract from the start
+                // If base matched at the start (normal order), extract from the end
+
+                List<Rdn> relativeRdns;
+                if (baseAtEnd) {
+                    // Base is at the end, extract from the start
+                    relativeRdns = new ArrayList<>(dnRdns.subList(0, dnSize - baseSize));
+                } else {
+                    // Base is at the start, extract from the end
+                    relativeRdns = new ArrayList<>(dnRdns.subList(baseSize, dnSize));
+                }
+
+                if (relativeRdns.isEmpty()) {
+                    return ""; // Root entry
+                }
+
+                // Simple logic: If CN is at the end, reverse the entire list
+                // This handles both normal order (CN at end) and reverse order (CN at start)
+                Rdn lastRdn = relativeRdns.get(relativeRdns.size() - 1);
+                if ("cn".equalsIgnoreCase(lastRdn.getType())) {
+                    // CN is at the end, reverse to put it first
+                    Collections.reverse(relativeRdns);
+                }
+                // Otherwise, CN should already be at the start (or we'll handle it below)
+
+                // Build DN string manually to ensure CN comes first
+                // Use Rdn.toString() to handle proper escaping
+                StringBuilder dnBuilder = new StringBuilder();
+                for (Rdn rdn : relativeRdns) {
+                    if (dnBuilder.length() > 0) {
+                        dnBuilder.append(",");
+                    }
+                    dnBuilder.append(rdn.toString());
+                }
+
+                return dnBuilder.toString();
+            }
+        } catch (InvalidNameException e) {
+            log.debug("Invalid DN format for relative DN extraction: dn={}, baseDn={}", dn, baseDn, e);
+            // Fall back to string-based matching for backward compatibility
+        } catch (Exception e) {
+            log.debug("Error extracting relative DN: dn={}, baseDn={}", dn, baseDn, e);
+            // Fall back to string-based matching for backward compatibility
+        }
+
+        // Fallback: String-based matching (original logic for backward compatibility)
         // If DN ends with base DN (with comma separator), remove it
         String baseSuffix = "," + baseDn;
         if (dn.endsWith(baseSuffix)) {

@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-test-ingress
+  namespace: acme-apps
+  annotations:
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "ssl-client-subject-dn: $ssl_client_s_dn";
+      more_set_headers "ssl-client-issuer-dn: $ssl_client_i_dn";
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api-test.local
+    secretName: ingress-tls-secret
+  rules:
+  - host: api-test.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-mvc
+            port:
+              number: 8080

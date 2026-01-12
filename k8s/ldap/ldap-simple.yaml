@@ -1,0 +1,58 @@
+# Simple LDAP using OpenLDAP directly (no osixia wrapper)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ldap
+  namespace: acme-apps
+spec:
+  serviceName: ldap
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ldap
+  template:
+    metadata:
+      labels:
+        app: ldap
+    spec:
+      containers:
+      - name: ldap
+        image: openldap/openldap:1.5.0
+        ports:
+        - containerPort: 389
+          name: ldap
+        - containerPort: 636
+          name: ldaps
+        env:
+        - name: LDAP_ORGANISATION
+          value: "Acme Corp"
+        - name: LDAP_DOMAIN
+          value: "corp.acme.org"
+        - name: LDAP_BASE_DN
+          value: "dc=corp,dc=acme,dc=org"
+        - name: LDAP_ADMIN_PASSWORD
+          value: "admin"
+        - name: LDAP_CONFIG_PASSWORD
+          value: "config"
+        volumeMounts:
+        - name: ldap-data
+          mountPath: /var/lib/ldap
+        - name: ldap-config
+          mountPath: /etc/ldap/slapd.d
+        - name: ldif-import
+          mountPath: /ldif-import
+          readOnly: true
+        - name: schema-import
+          mountPath: /schema-import
+          readOnly: true
+      volumes:
+      - name: ldap-data
+        emptyDir: {}
+      - name: ldap-config
+        emptyDir: {}
+      - name: ldif-import
+        configMap:
+          name: ldap-ldif
+      - name: schema-import
+        configMap:
+          name: ldap-schema

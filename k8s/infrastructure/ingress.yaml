@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: acme-ingress
+  namespace: acme-apps
+  annotations:
+    # Enable client certificate authentication
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    # Note: Headers will be added via a custom Ingress controller configuration
+    # The snippet annotations are being rejected even with allow-risky-annotations enabled
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - acme.local
+    secretName: ingress-tls-secret
+  rules:
+  - host: acme.local
+    http:
+      paths:
+      - path: /test
+        pathType: Prefix
+        backend:
+          service:
+            name: test-headers-service
+            port:
+              number: 8080
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-mvc
+            port:
+              number: 8080
