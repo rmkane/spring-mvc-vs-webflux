@@ -28,6 +28,7 @@ This document outlines the plan for migrating the Acme application from Docker C
   - [Database Services](#database-services)
   - [LDAP Service](#ldap-service)
   - [Auth Services](#auth-services)
+    - [Switching Between Auth Services](#switching-between-auth-services)
   - [API Services](#api-services)
   - [UI Service](#ui-service)
   - [Monitoring Services](#monitoring-services)
@@ -779,6 +780,60 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 5
 ```
+
+#### Switching Between Auth Services
+
+The application supports two interchangeable auth services:
+
+- **`auth-service-ldap`**: LDAP-based authentication (requires LDAP server)
+- **`auth-service-db`**: PostgreSQL-based authentication (simpler setup)
+
+Both services provide the same REST API contract and can be swapped without code changes.
+
+**Quick Switch Using Script:**
+
+```bash
+# Switch to database auth service (default)
+./acme-infrastructure/scripts/switch-auth-service.sh db
+
+# Switch to LDAP auth service
+./acme-infrastructure/scripts/switch-auth-service.sh ldap
+```
+
+**Manual Switch:**
+
+1. Update API service environment variables:
+
+   ```bash
+   kubectl set env deployment/api-mvc -n acme-apps \
+       AUTH_SERVICE_BASE_URL="https://auth-service-db:8082"
+   ```
+
+2. Scale down the old auth service:
+
+   ```bash
+   kubectl scale deployment/auth-service-ldap -n acme-apps --replicas=0
+   ```
+
+3. Scale up the new auth service:
+
+   ```bash
+   kubectl scale deployment/auth-service-db -n acme-apps --replicas=1
+   ```
+
+4. Restart API services to pick up the change:
+
+   ```bash
+   kubectl rollout restart deployment/api-mvc -n acme-apps
+   ```
+
+**Deployment Files:**
+
+- `acme-infrastructure/deployments/auth-service-ldap.yaml` - LDAP auth service
+- `acme-infrastructure/deployments/auth-service-db.yaml` - Database auth service
+- `acme-infrastructure/deployments/postgres-auth.yaml` - PostgreSQL for DB auth service
+
+**Note:** The DB auth service requires a separate PostgreSQL instance (`postgres-auth`) with the `acme_auth` database. Flyway migrations will automatically create the schema on first startup.
 
 ### API Services
 

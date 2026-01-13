@@ -20,6 +20,10 @@ RUN mkdir -p acme-test-integration-reactive \
 COPY acme-auth-client/pom.xml ./acme-auth-client/
 COPY acme-auth-client ./acme-auth-client
 
+# Copy auth utils (dependency)
+COPY acme-auth-utils/pom.xml ./acme-auth-utils/
+COPY acme-auth-utils ./acme-auth-utils
+
 # Copy test-integration-classic (test dependency)
 COPY acme-test-integration-classic/pom.xml ./acme-test-integration-classic/
 COPY acme-test-integration-classic ./acme-test-integration-classic

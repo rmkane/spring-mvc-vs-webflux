@@ -18,6 +18,10 @@ RUN mkdir -p acme-test-integration-classic acme-test-integration-reactive \
         echo '<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><groupId>org.acme</groupId><artifactId>'$dir'</artifactId><version>1.0.0-SNAPSHOT</version><packaging>pom</packaging></project>' > $dir/pom.xml; \
     done
 
+# Copy auth utils (dependency)
+COPY acme-auth-utils/pom.xml ./acme-auth-utils/
+COPY acme-auth-utils ./acme-auth-utils
+
 # Copy auth client (dependency)
 COPY acme-auth-client/pom.xml ./acme-auth-client/
 COPY acme-auth-client ./acme-auth-client

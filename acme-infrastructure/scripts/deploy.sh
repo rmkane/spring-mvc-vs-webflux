@@ -33,6 +33,12 @@ docker build -t acme-auth-service-ldap:latest -f acme-auth-service-ldap/Dockerfi
     exit 1
 }
 
+echo "Building auth-service-db..."
+docker build -t acme-auth-service-db:latest -f acme-auth-service-db/Dockerfile . || {
+    echo "❌ Failed to build auth-service-db"
+    exit 1
+}
+
 echo "Building api-mvc..."
 docker build -t acme-api-mvc:latest -f acme-api-mvc/Dockerfile . || {
     echo "❌ Failed to build api-mvc"
@@ -42,16 +48,21 @@ docker build -t acme-api-mvc:latest -f acme-api-mvc/Dockerfile . || {
 # Deploy to Kubernetes
 echo ""
 echo "📤 Deploying to Kubernetes..."
+kubectl apply -f acme-infrastructure/deployments/postgres-jpa.yaml
+kubectl apply -f acme-infrastructure/deployments/postgres-auth.yaml
 kubectl apply -f acme-infrastructure/deployments/ldap.yaml
 kubectl apply -f acme-infrastructure/deployments/auth-service-ldap.yaml
+kubectl apply -f acme-infrastructure/deployments/auth-service-db.yaml
 kubectl apply -f acme-infrastructure/deployments/api-mvc.yaml
-kubectl apply -f acme-infrastructure/deployments/postgres-jpa.yaml
 
 # Wait for deployments
 echo ""
 echo "⏳ Waiting for deployments to be ready..."
+kubectl wait --for=condition=available --timeout=300s deployment/postgres-jpa -n acme-apps || true
+kubectl wait --for=condition=available --timeout=300s deployment/postgres-auth -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/ldap -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/auth-service-ldap -n acme-apps || true
+kubectl wait --for=condition=available --timeout=300s deployment/auth-service-db -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/api-mvc -n acme-apps || true
 
 # Show status

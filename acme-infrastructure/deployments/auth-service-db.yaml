@@ -1,64 +1,65 @@
-# MVC API Deployment
+# Auth Service (Database) Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-mvc
+  name: auth-service-db
   namespace: acme-apps
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api-mvc
+      app: auth-service-db
   template:
     metadata:
       labels:
-        app: api-mvc
+        app: auth-service-db
     spec:
       containers:
-      - name: api-mvc
-        image: acme-api-mvc:latest
+      - name: auth-service-db
+        image: acme-auth-service-db:latest
         imagePullPolicy: Never  # Use local image (built with minikube docker-env)
         ports:
-        - containerPort: 8080
+        - containerPort: 8082
           name: http
         env:
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:postgresql://postgres-jpa:5432/acme_jpa"
+          value: "jdbc:postgresql://postgres-auth:5432/acme_auth"
         - name: SPRING_DATASOURCE_USERNAME
           value: "acme_user"
         - name: SPRING_DATASOURCE_PASSWORD
           value: "acme_password"
-        - name: AUTH_SERVICE_BASE_URL
-          value: "https://auth-service-db:8082"
         - name: LOG_DIR
           value: "/tmp/logs"
         # Create logs directory before starting
         command: ["/bin/sh", "-c", "mkdir -p /tmp/logs && exec java -jar app.jar"]
         livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 60
+          # Use TCP socket probe since HTTP probe can't provide client cert for mTLS
+          tcpSocket:
+            port: 8082
+          initialDelaySeconds: 90
           periodSeconds: 10
           timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 30
+          # Use TCP socket probe since HTTP probe can't provide client cert for mTLS
+          # This verifies the service is listening on port 8082
+          tcpSocket:
+            port: 8082
+          initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 3
+          failureThreshold: 3
 ---
-# MVC API Service
+# Auth Service (Database) Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: api-mvc
+  name: auth-service-db
   namespace: acme-apps
 spec:
   selector:
-    app: api-mvc
+    app: auth-service-db
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8082
+    targetPort: 8082
     name: http
