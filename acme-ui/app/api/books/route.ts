@@ -10,7 +10,8 @@ import type { CreateBookRequest } from '@/lib/types'
 export async function POST(request: Request) {
   try {
     const body: CreateBookRequest = await request.json()
-    const book = await createBook(body)
+    // Pass incoming headers to forward SSL client certificate info from ingress
+    const book = await createBook(body, request.headers)
     return NextResponse.json(book, { status: 201 })
   } catch (error) {
     console.error('Error creating book:', error)

@@ -23,6 +23,9 @@ export default async function BookEditPage({ params }: PageProps) {
   let error: string | null = null
 
   try {
+    // Headers are automatically retrieved from Next.js headers() in getBookById()
+    // In Kubernetes: comes from ingress headers (via middleware)
+    // In local dev: falls back to environment variables
     book = await getBookById(bookId)
   } catch (err) {
     if (err instanceof Error && err.message.includes('404')) {

@@ -45,6 +45,12 @@ docker build -t acme-api-mvc:latest -f acme-api-mvc/Dockerfile . || {
     exit 1
 }
 
+echo "Building ui..."
+docker build -t acme-ui:latest -f acme-ui/Dockerfile acme-ui || {
+    echo "❌ Failed to build ui"
+    exit 1
+}
+
 # Deploy to Kubernetes
 echo ""
 echo "📤 Deploying to Kubernetes..."
@@ -54,6 +60,7 @@ kubectl apply -f acme-infrastructure/deployments/ldap.yaml
 kubectl apply -f acme-infrastructure/deployments/auth-service-ldap.yaml
 kubectl apply -f acme-infrastructure/deployments/auth-service-db.yaml
 kubectl apply -f acme-infrastructure/deployments/api-mvc.yaml
+kubectl apply -f acme-infrastructure/deployments/ui.yaml
 
 # Wait for deployments
 echo ""
@@ -64,6 +71,7 @@ kubectl wait --for=condition=available --timeout=300s deployment/ldap -n acme-ap
 kubectl wait --for=condition=available --timeout=300s deployment/auth-service-ldap -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/auth-service-db -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/api-mvc -n acme-apps || true
+kubectl wait --for=condition=available --timeout=300s deployment/ui -n acme-apps || true
 
 # Show status
 echo ""

@@ -1,6 +1,9 @@
 /**
  * API utility functions for making requests to the backend.
- * Automatically includes the ssl-client-subject-dn and ssl-client-issuer-dn headers from environment variables.
+ * Automatically includes the ssl-client-subject-dn and ssl-client-issuer-dn headers.
+ *
+ * In Kubernetes: Headers come from ingress (via middleware)
+ * In local dev: Headers come from environment variables (.env.local)
  */
 
 // Alternatively, port 8081 can be used for WebFlux
@@ -15,35 +18,123 @@ const SSL_CLIENT_SUBJECT_DN_HEADER = 'ssl-client-subject-dn'
 const SSL_CLIENT_ISSUER_DN_HEADER = 'ssl-client-issuer-dn'
 
 /**
- * Gets a required environment variable value.
- * Throws an error if the variable is not set.
+ * Attempts to get headers from Next.js headers() function.
+ *
+ * IMPORTANT: In Next.js, headers() must be called at the top level of Server Components.
+ * This function tries to get headers, but it may not work if called from deep within
+ * the call stack. For reliability, Server Components should call headers() at the top
+ * level and pass it explicitly, or rely on environment variables for local dev.
+ *
+ * @returns Headers if available, undefined otherwise
+ */
+async function tryGetHeadersFromContext(): Promise<Headers | undefined> {
+  try {
+    // Dynamic import to avoid issues if not in Server Component context
+    const { headers } = await import('next/headers')
+    // In Next.js 16.1, headers() is synchronous
+    return headers()
+  } catch {
+    // Not in a Server Component context (e.g., API routes, client components)
+    return undefined
+  }
+}
+
+/**
+ * Gets an environment variable value, or returns undefined if not set.
  *
  * @param envVar - The environment variable name
- * @returns The environment variable value
+ * @returns The environment variable value or undefined
  */
-function getRequiredEnv(envVar: string): string {
-  const value = process.env[envVar]
-  if (!value) {
-    throw new Error(`${envVar} environment variable is not set. Please set it in .env.local`)
+function getEnv(envVar: string): string | undefined {
+  return process.env[envVar]
+}
+
+/**
+ * Gets the Subject DN (Distinguished Name) from headers or environment variables.
+ * In Kubernetes, the ingress passes this as a header. For local development, uses environment variable.
+ *
+ * This function tries multiple sources in order:
+ * 1. Explicit headers parameter (from API routes or Server Components)
+ * 2. Environment variable (local development)
+ *
+ * For Server Components, pass headers from next/headers:
+ * ```ts
+ * import { headers } from 'next/headers'
+ * const headersList = headers()
+ * getAllBooks(headersList)
+ * ```
+ *
+ * @param headers - Optional headers object to read from (from incoming request or next/headers)
+ * @returns The Subject DN, or throws an error if not found
+ */
+function getSubjectDn(headers?: Headers | Record<string, string>): string {
+  // Try to get from explicit headers parameter first (API routes or Server Components)
+  if (headers) {
+    const headerValue =
+      headers instanceof Headers
+        ? headers.get(SSL_CLIENT_SUBJECT_DN_HEADER)
+        : headers[SSL_CLIENT_SUBJECT_DN_HEADER]
+    if (headerValue) {
+      return headerValue
+    }
   }
-  return value
+
+  // Try to get from environment variable (local development)
+  const envValue = getEnv(SSL_CLIENT_SUBJECT_DN_ENV)
+  if (envValue) {
+    return envValue
+  }
+
+  // If neither is available, throw an error
+  throw new Error(
+    `${SSL_CLIENT_SUBJECT_DN_ENV} is not set. ` +
+      `In Kubernetes, pass headers from next/headers() to API functions. ` +
+      `For local development, set it in .env.local`
+  )
 }
 
 /**
- * Gets the Subject DN (Distinguished Name) from environment variables.
- * For local development, uses SSL_CLIENT_SUBJECT_DN from .env.local
+ * Gets the Issuer DN (Distinguished Name) from headers or environment variables.
+ * In Kubernetes, the ingress passes this as a header. For local development, uses environment variable.
+ *
+ * This function tries multiple sources in order:
+ * 1. Explicit headers parameter (from API routes or Server Components)
+ * 2. Environment variable (local development)
+ *
+ * For Server Components, pass headers from next/headers:
+ * ```ts
+ * import { headers } from 'next/headers'
+ * const headersList = headers()
+ * getAllBooks(headersList)
+ * ```
+ *
+ * @param headers - Optional headers object to read from (from incoming request or next/headers)
+ * @returns The Issuer DN, or throws an error if not found
  */
-function getSubjectDn(): string {
-  return getRequiredEnv(SSL_CLIENT_SUBJECT_DN_ENV)
-}
+function getIssuerDn(headers?: Headers | Record<string, string>): string {
+  // Try to get from explicit headers parameter first (API routes or Server Components)
+  if (headers) {
+    const headerValue =
+      headers instanceof Headers
+        ? headers.get(SSL_CLIENT_ISSUER_DN_HEADER)
+        : headers[SSL_CLIENT_ISSUER_DN_HEADER]
+    if (headerValue) {
+      return headerValue
+    }
+  }
 
-/**
- * Gets the Issuer DN (Distinguished Name) from environment variables.
- * For local development, uses SSL_CLIENT_ISSUER_DN from .env.local
- * This is required.
- */
-function getIssuerDn(): string {
-  return getRequiredEnv(SSL_CLIENT_ISSUER_DN_ENV)
+  // Try to get from environment variable (local development)
+  const envValue = getEnv(SSL_CLIENT_ISSUER_DN_ENV)
+  if (envValue) {
+    return envValue
+  }
+
+  // If neither is available, throw an error
+  throw new Error(
+    `${SSL_CLIENT_ISSUER_DN_ENV} is not set. ` +
+      `In Kubernetes, pass headers from next/headers() to API functions. ` +
+      `For local development, set it in .env.local`
+  )
 }
 
 /**
@@ -51,11 +142,22 @@ function getIssuerDn(): string {
  * This should be used for server-side requests (API routes, Server Components).
  *
  * @param options - Additional fetch options to merge
+ * @param incomingHeaders - Optional headers from the incoming request (for Kubernetes/ingress)
+ *                         If not provided, will try to get from Next.js headers() (Server Components)
  * @returns Fetch options with SSL client DN headers included
  */
-export function createApiRequestOptions(options: RequestInit = {}): RequestInit {
-  const subjectDn = getSubjectDn()
-  const issuerDn = getIssuerDn()
+export async function createApiRequestOptions(
+  options: RequestInit = {},
+  incomingHeaders?: Headers | Record<string, string>
+): Promise<RequestInit> {
+  // If headers not provided, try to get from Next.js context (Server Components)
+  let headersToUse = incomingHeaders
+  if (!headersToUse) {
+    headersToUse = await tryGetHeadersFromContext()
+  }
+
+  const subjectDn = getSubjectDn(headersToUse)
+  const issuerDn = getIssuerDn(headersToUse)
 
   return {
     ...options,
@@ -73,11 +175,18 @@ export function createApiRequestOptions(options: RequestInit = {}): RequestInit 
  *
  * @param path - API path (e.g., '/api/books')
  * @param options - Additional fetch options
+ * @param incomingHeaders - Optional headers from the incoming request (for Kubernetes/ingress)
+ *                         If not provided, will try to get from Next.js headers() (Server Components)
  * @returns Promise resolving to the response
  */
-export async function apiRequest(path: string, options: RequestInit = {}): Promise<Response> {
+export async function apiRequest(
+  path: string,
+  options: RequestInit = {},
+  incomingHeaders?: Headers | Record<string, string>
+): Promise<Response> {
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`
-  return fetch(url, createApiRequestOptions(options))
+  const requestOptions = await createApiRequestOptions(options, incomingHeaders)
+  return fetch(url, requestOptions)
 }
 
 /**
@@ -85,13 +194,15 @@ export async function apiRequest(path: string, options: RequestInit = {}): Promi
  *
  * @param path - API path (e.g., '/api/books')
  * @param options - Additional fetch options
+ * @param incomingHeaders - Optional headers from the incoming request (for Kubernetes/ingress)
  * @returns Promise resolving to the parsed JSON data
  */
 export async function apiRequestJson<T = unknown>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  incomingHeaders?: Headers | Record<string, string>
 ): Promise<T> {
-  const response = await apiRequest(path, options)
+  const response = await apiRequest(path, options, incomingHeaders)
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`)
   }

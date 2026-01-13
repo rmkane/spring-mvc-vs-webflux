@@ -12,6 +12,9 @@ export default async function BooksPage() {
   let error: string | null = null
 
   try {
+    // Headers are automatically retrieved from Next.js headers() in getAllBooks()
+    // In Kubernetes: comes from ingress headers (via middleware)
+    // In local dev: falls back to environment variables
     books = await getAllBooks()
     // Sort books by title, ignoring leading articles (The, A, An)
     // This follows standard library/bookstore sorting conventions
