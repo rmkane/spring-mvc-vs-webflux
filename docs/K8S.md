@@ -199,28 +199,54 @@ make k8s-deploy
 
 #### Redeploy a Specific Pod
 
-To redeploy only one service (e.g., the UI):
+To rebuild and redeploy a single service after code changes:
 
 ```bash
-# Rebuild and restart a specific deployment
+# 1. Point Docker to Minikube's Docker daemon
+eval $(minikube docker-env)
+
+# 2. Rebuild the image
+docker build -f <Dockerfile> -t <image-name>:latest .
+
+# 3. Restart the deployment to pick up the new image
+kubectl rollout restart deployment/<deployment-name> -n acme-apps
+```
+
+**Service reference table:**
+
+| Service     | Dockerfile                       | Image Name                    | Deployment Name            |
+|-------------|----------------------------------|-------------------------------|----------------------------|
+| UI          | `acme-ui/Dockerfile`             | `acme-ui:latest`              | `ui`                       |
+| MVC API     | `acme-api-mvc/Dockerfile`        | `acme-api-mvc:latest`.        | `api-mvc`                  |
+| WebFlux API | `acme-api-webflux/Dockerfile`    | `acme-api-webflux:latest`     | `api-webflux`              |
+| Auth (DB)   | `acme-auth-service-db/Dockerfile`| `acme-auth-service-db:latest` | `auth-service-db`          |
+
+**Examples:**
+
+```bash
+# Rebuild and deploy the UI
 eval $(minikube docker-env)
 docker build -f acme-ui/Dockerfile -t acme-ui:latest .
 kubectl rollout restart deployment/ui -n acme-apps
-```
 
-Or to redeploy the MVC API:
-
-```bash
+# Rebuild and deploy the MVC API
 eval $(minikube docker-env)
 docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .
 kubectl rollout restart deployment/api-mvc -n acme-apps
+
+# Rebuild and deploy the WebFlux API
+eval $(minikube docker-env)
+docker build -f acme-api-webflux/Dockerfile -t acme-api-webflux:latest .
+kubectl rollout restart deployment/api-webflux -n acme-apps
 ```
 
 #### Switching Between MVC and WebFlux APIs
 
-The UI can be configured to use either the MVC or WebFlux backend. To switch:
+The UI uses the `NEXT_PUBLIC_API_TYPE` environment variable to determine which backend API to call internally. Valid values are `mvc` (default) or `webflux`.
 
-1. Edit `acme-infrastructure/deployments/ui.yaml` and change `NEXT_PUBLIC_API_TYPE`:
+**To switch the UI to use a different backend:**
+
+1. Edit [acme-infrastructure/deployments/ui.yaml](../acme-infrastructure/deployments/ui.yaml) and change `NEXT_PUBLIC_API_TYPE`:
 
    ```yaml
    env:
@@ -228,12 +254,20 @@ The UI can be configured to use either the MVC or WebFlux backend. To switch:
      value: "mvc"  # Change to "webflux" to use WebFlux API
    ```
 
-2. Reapply the deployment:
+2. Apply the updated deployment and restart the pod:
 
    ```bash
    kubectl apply -f acme-infrastructure/deployments/ui.yaml
    kubectl rollout restart deployment/ui -n acme-apps
    ```
+
+3. Verify the pod restarted with the new configuration:
+
+   ```bash
+   kubectl get pods -n acme-apps -l app=ui
+   ```
+
+**Note:** This only affects which backend the UI calls internally. Both APIs remain running and accessible. You can also access either API directly via the browser (see [Direct API Access](#direct-api-access) below).
 
 #### Direct API Access
 
