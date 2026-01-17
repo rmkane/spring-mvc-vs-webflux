@@ -17,6 +17,7 @@ This document outlines the plan for migrating the Acme application from Docker C
     - [Redeploy All Services](#redeploy-all-services)
     - [Redeploy a Specific Pod](#redeploy-a-specific-pod)
     - [Switching Between MVC and WebFlux APIs](#switching-between-mvc-and-webflux-apis)
+    - [Direct API Access](#direct-api-access)
     - [View Logs](#view-logs)
   - [Available Make Targets](#available-make-targets)
   - [Troubleshooting](#troubleshooting)
@@ -233,6 +234,28 @@ The UI can be configured to use either the MVC or WebFlux backend. To switch:
    kubectl apply -f acme-infrastructure/deployments/ui.yaml
    kubectl rollout restart deployment/ui -n acme-apps
    ```
+
+#### Direct API Access
+
+Both MVC and WebFlux APIs can be accessed directly in the browser (with a valid client certificate):
+
+| API     | URL Pattern                                | Example                                          |
+|---------|--------------------------------------------|--------------------------------------------------|
+| MVC     | `https://acme.local:8443/api/mvc/v1/*`     | `https://acme.local:8443/api/mvc/v1/books`       |
+| WebFlux | `https://acme.local:8443/api/webflux/v1/*` | `https://acme.local:8443/api/webflux/v1/books`.  |
+
+The ingress rewrites these paths to `/api/v1/*` on the respective backend services. This pattern is extensible—to add a new API backend, just add another path entry to the `acme-ingress-api` resource in [ingress.yaml](../acme-infrastructure/infrastructure/ingress.yaml):
+
+```yaml
+# Example: Adding a new "graphql" API backend
+- path: /api/graphql(/v1/(.*))?
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: api-graphql
+      port:
+        number: 8082
+```
 
 #### View Logs
 
