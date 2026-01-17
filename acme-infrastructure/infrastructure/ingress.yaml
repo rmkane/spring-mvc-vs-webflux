@@ -10,8 +10,10 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
     nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
-    # Note: Headers will be added via a custom Ingress controller configuration
-    # The snippet annotations are being rejected even with allow-risky-annotations enabled
+    # Add SSL client certificate DN headers for backend services
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header ssl-client-subject-dn $ssl_client_s_dn;
+      proxy_set_header ssl-client-issuer-dn $ssl_client_i_dn;
 spec:
   ingressClassName: nginx
   tls:
@@ -38,6 +40,13 @@ spec:
             name: api-mvc
             port:
               number: 8080
+      - path: /api-webflux/v1
+        pathType: Prefix
+        backend:
+          service:
+            name: api-webflux
+            port:
+              number: 8081
       - path: /
         pathType: Prefix
         backend:

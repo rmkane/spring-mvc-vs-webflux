@@ -6,8 +6,37 @@
  * In local dev: Headers come from environment variables (.env.local)
  */
 
-// Alternatively, port 8081 can be used for WebFlux
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+/**
+ * Determines the API base URL based on environment configuration.
+ *
+ * Priority:
+ * 1. NEXT_PUBLIC_API_URL (explicit URL override)
+ * 2. NEXT_PUBLIC_API_TYPE (mvc or webflux) - uses internal service names
+ * 3. Default to MVC API (http://localhost:8080 for local, api-mvc:8080 for K8s)
+ */
+function getApiBaseUrl(): string {
+  // Explicit URL override takes precedence
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+
+  // Check if API type is specified
+  const apiType = process.env.NEXT_PUBLIC_API_TYPE?.toLowerCase()
+
+  // In Kubernetes, use internal service names
+  // In local dev, use localhost with different ports
+  const isK8s = process.env.NODE_ENV === 'production' || process.env.KUBERNETES_SERVICE_HOST
+
+  switch (apiType) {
+    case 'webflux':
+      return isK8s ? 'http://api-webflux:8081' : 'http://localhost:8081'
+    case 'mvc':
+    default:
+      return isK8s ? 'http://api-mvc:8080' : 'http://localhost:8080'
+  }
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 // Environment variables
 const SSL_CLIENT_SUBJECT_DN_ENV = 'SSL_CLIENT_SUBJECT_DN'
@@ -186,9 +215,36 @@ export async function apiRequest(
 ): Promise<Response> {
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`
   const requestOptions = await createApiRequestOptions(options, incomingHeaders)
+
+  const requestDetails: Record<string, unknown> = {
+    url,
+    method: options.method || 'GET',
+    hasHeaders: !!incomingHeaders,
+    apiBaseUrl: API_BASE_URL,
+    path,
+    headers: requestOptions.headers,
+  }
+
+  if (requestOptions.body !== undefined) {
+    requestDetails.body = parseBody(requestOptions.body as string)
+  }
+
+  // Debug logging
+  console.log('API Request:', requestDetails)
+
   return fetch(url, requestOptions)
 }
 
+function parseBody(body: string | undefined): unknown {
+  if (!body) {
+    return undefined
+  }
+  try {
+    return JSON.parse(body)
+  } catch {
+    return body
+  }
+}
 /**
  * Makes a fetch request and parses the JSON response.
  *
@@ -204,7 +260,17 @@ export async function apiRequestJson<T = unknown>(
 ): Promise<T> {
   const response = await apiRequest(path, options, incomingHeaders)
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+    const errorText = await response.text().catch(() => 'Unknown error')
+    let errorMessage = `API request failed: ${response.status} ${response.statusText}`
+    try {
+      const errorJson = JSON.parse(errorText)
+      errorMessage = errorJson.message || errorJson.detail || errorMessage
+    } catch {
+      if (errorText) {
+        errorMessage = `${errorMessage}: ${errorText}`
+      }
+    }
+    throw new Error(errorMessage)
   }
   return response.json()
 }

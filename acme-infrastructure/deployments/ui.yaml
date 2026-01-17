@@ -22,10 +22,13 @@ spec:
         - containerPort: 3001
           name: http
         env:
-        # Backend API URL - points to the API service in the cluster
-        # Use internal service name (not acme.local which is only for ingress)
-        - name: NEXT_PUBLIC_API_URL
-          value: "http://api-mvc:8080"
+        # Backend API configuration
+        # Option 1: Explicit URL (takes precedence)
+        # - name: NEXT_PUBLIC_API_URL
+        #   value: "http://api-mvc:8080"
+        # Option 2: API type selector (mvc or webflux)
+        - name: NEXT_PUBLIC_API_TYPE
+          value: "webflux"  # Change to "mvc" or "webflux" to use different API
         # Note: SSL client certificate DNs are passed as headers by the ingress
         # API routes will read them from request.headers automatically
         # Server Components that call the backend directly will need these as env vars

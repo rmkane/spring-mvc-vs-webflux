@@ -1,0 +1,70 @@
+# WebFlux API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-webflux
+  namespace: acme-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-webflux
+  template:
+    metadata:
+      labels:
+        app: api-webflux
+    spec:
+      containers:
+      - name: api-webflux
+        image: acme-api-webflux:latest
+        imagePullPolicy: Never  # Use local image (built with minikube docker-env)
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        - name: SPRING_R2DBC_URL
+          value: "r2dbc:postgresql://postgres-r2dbc:5432/acme_r2dbc"
+        - name: SPRING_R2DBC_USERNAME
+          value: "acme_user"
+        - name: SPRING_R2DBC_PASSWORD
+          value: "acme_password"
+        - name: SPRING_FLYWAY_URL
+          value: "jdbc:postgresql://postgres-r2dbc:5432/acme_r2dbc"
+        - name: SPRING_FLYWAY_USER
+          value: "acme_user"
+        - name: SPRING_FLYWAY_PASSWORD
+          value: "acme_password"
+        - name: AUTH_SERVICE_BASE_URL
+          value: "https://auth-service-db:8082"
+        - name: LOG_DIR
+          value: "/tmp/logs"
+        # Create logs directory before starting
+        command: ["/bin/sh", "-c", "mkdir -p /tmp/logs && exec java -jar app.jar"]
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+---
+# WebFlux API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-webflux
+  namespace: acme-apps
+spec:
+  selector:
+    app: api-webflux
+  ports:
+  - port: 8081
+    targetPort: 8081
+    name: http

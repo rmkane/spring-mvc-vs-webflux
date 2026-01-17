@@ -45,6 +45,12 @@ docker build -t acme-api-mvc:latest -f acme-api-mvc/Dockerfile . || {
     exit 1
 }
 
+echo "Building api-webflux..."
+docker build -t acme-api-webflux:latest -f acme-api-webflux/Dockerfile . || {
+    echo "❌ Failed to build api-webflux"
+    exit 1
+}
+
 echo "Building ui..."
 docker build -t acme-ui:latest -f acme-ui/Dockerfile acme-ui || {
     echo "❌ Failed to build ui"
@@ -55,22 +61,26 @@ docker build -t acme-ui:latest -f acme-ui/Dockerfile acme-ui || {
 echo ""
 echo "📤 Deploying to Kubernetes..."
 kubectl apply -f acme-infrastructure/deployments/postgres-jpa.yaml
+kubectl apply -f acme-infrastructure/deployments/postgres-r2dbc.yaml
 kubectl apply -f acme-infrastructure/deployments/postgres-auth.yaml
 kubectl apply -f acme-infrastructure/deployments/ldap.yaml
 kubectl apply -f acme-infrastructure/deployments/auth-service-ldap.yaml
 kubectl apply -f acme-infrastructure/deployments/auth-service-db.yaml
 kubectl apply -f acme-infrastructure/deployments/api-mvc.yaml
+kubectl apply -f acme-infrastructure/deployments/api-webflux.yaml
 kubectl apply -f acme-infrastructure/deployments/ui.yaml
 
 # Wait for deployments
 echo ""
 echo "⏳ Waiting for deployments to be ready..."
 kubectl wait --for=condition=available --timeout=300s deployment/postgres-jpa -n acme-apps || true
+kubectl wait --for=condition=available --timeout=300s deployment/postgres-r2dbc -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/postgres-auth -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/ldap -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/auth-service-ldap -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/auth-service-db -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/api-mvc -n acme-apps || true
+kubectl wait --for=condition=available --timeout=300s deployment/api-webflux -n acme-apps || true
 kubectl wait --for=condition=available --timeout=300s deployment/ui -n acme-apps || true
 
 # Show status
