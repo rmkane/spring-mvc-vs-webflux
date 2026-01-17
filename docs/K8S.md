@@ -11,6 +11,13 @@ This document outlines the plan for migrating the Acme application from Docker C
   - [After Docker System Prune](#after-docker-system-prune)
     - [State 1: Cluster is healthy but images are missing](#state-1-cluster-is-healthy-but-images-are-missing)
     - [State 2: Cluster is corrupted (kubelet/apiserver stopped)](#state-2-cluster-is-corrupted-kubeletapiserver-stopped)
+  - [Common Operations](#common-operations)
+    - [Start the Cluster](#start-the-cluster)
+    - [Stop the Cluster](#stop-the-cluster)
+    - [Redeploy All Services](#redeploy-all-services)
+    - [Redeploy a Specific Pod](#redeploy-a-specific-pod)
+    - [Switching Between MVC and WebFlux APIs](#switching-between-mvc-and-webflux-apis)
+    - [View Logs](#view-logs)
   - [Available Make Targets](#available-make-targets)
   - [Troubleshooting](#troubleshooting)
 - [Overview](#overview)
@@ -104,7 +111,7 @@ Run the following commands to set up the entire cluster from scratch:
 # 1. Start Minikube
 make k8s-start
 
-# 2. Run the initial setup (creates namespaces, secrets, enables ingress and snippets)
+# 2. Run the initial setup (creates namespaces, secrets, and ingress)
 make k8s-setup
 
 # 3. Generate certificates (if not already done)
@@ -152,43 +159,120 @@ If `make k8s-status` shows `kubelet: Stopped` or `apiserver: Stopped`, the clust
 # 1. Delete and recreate the cluster
 minikube delete && minikube start
 
-# 2. Enable the ingress addon
-minikube addons enable ingress
-
-# 3. Run full setup
+# 2. Run full setup (includes enabling ingress addon)
 make k8s-setup
 
-# 4. Deploy services
+# 3. Deploy services
 eval $(minikube docker-env)
 make k8s-deploy
 
-# 5. Start port forwarding
+# 4. Start port forwarding
 make k8s-port-forward
 ```
 
 The `k8s-deploy` target rebuilds all Docker images inside Minikube's Docker environment and restarts the deployments.
+
+### Common Operations
+
+#### Start the Cluster
+
+```bash
+make k8s-start
+make k8s-port-forward  # In a separate terminal or backgrounded
+```
+
+#### Stop the Cluster
+
+```bash
+make k8s-stop
+```
+
+#### Redeploy All Services
+
+After making code changes:
+
+```bash
+eval $(minikube docker-env)
+make k8s-deploy
+```
+
+#### Redeploy a Specific Pod
+
+To redeploy only one service (e.g., the UI):
+
+```bash
+# Rebuild and restart a specific deployment
+eval $(minikube docker-env)
+docker build -f acme-ui/Dockerfile -t acme-ui:latest .
+kubectl rollout restart deployment/ui -n acme-apps
+```
+
+Or to redeploy the MVC API:
+
+```bash
+eval $(minikube docker-env)
+docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .
+kubectl rollout restart deployment/api-mvc -n acme-apps
+```
+
+#### Switching Between MVC and WebFlux APIs
+
+The UI can be configured to use either the MVC or WebFlux backend. To switch:
+
+1. Edit `acme-infrastructure/deployments/ui.yaml` and change `NEXT_PUBLIC_API_TYPE`:
+
+   ```yaml
+   env:
+   - name: NEXT_PUBLIC_API_TYPE
+     value: "mvc"  # Change to "webflux" to use WebFlux API
+   ```
+
+2. Reapply the deployment:
+
+   ```bash
+   kubectl apply -f acme-infrastructure/deployments/ui.yaml
+   kubectl rollout restart deployment/ui -n acme-apps
+   ```
+
+#### View Logs
+
+```bash
+# List pods to get names
+make k8s-pods
+
+# View logs for a specific pod
+make k8s-logs POD=ui-xxxxx-xxxxx
+
+# Or directly with kubectl
+kubectl logs -f deployment/ui -n acme-apps
+kubectl logs -f deployment/api-mvc -n acme-apps
+kubectl logs -f deployment/api-webflux -n acme-apps
+```
 
 ### Available Make Targets
 
 | Target                         | Description                                  |
 |--------------------------------|----------------------------------------------|
 | `make k8s-start`               | Start Minikube cluster                       |
-| `make k8s-stop`.               | Stop Minikube cluster                        |
+| `make k8s-stop`                | Stop Minikube cluster                        |
 | `make k8s-status`              | Show Minikube and Kubernetes status          |
 | `make k8s-setup`               | Initial setup (namespaces, secrets, ingress) |
-| `make k8s-deploy`.             | Build images and deploy all services         |
+| `make k8s-deploy`              | Build images and deploy all services         |
 | `make k8s-redeploy`            | Rebuild and redeploy all services            |
 | `make k8s-delete`              | Delete all deployments                       |
-| `make k8s-pods`.               | List all pods in acme-apps namespace         |
-| `make k8s-logs POD=<name>`.    | View logs for a specific pod                 |
+| `make k8s-pods`                | List all pods in acme-apps namespace         |
+| `make k8s-logs POD=<name>`     | View logs for a specific pod                 |
 | `make k8s-describe POD=<name>` | Describe a specific pod                      |
 | `make k8s-port-forward`        | Port-forward Ingress to localhost:8443       |
 
 ### Troubleshooting
 
-- If pods are stuck, delete them to force recreation: `kubectl delete pods --all -n acme-apps`
-- Check pod status: `make k8s-describe POD=<pod-name>`
-- View logs: `make k8s-logs POD=<pod-name>`
+- **Pods stuck in ImagePullBackOff**: Run `eval $(minikube docker-env)` before building images
+- **Pods stuck in CrashLoopBackOff**: Check logs with `make k8s-logs POD=<pod-name>`
+- **Force recreation of all pods**: `kubectl delete pods --all -n acme-apps`
+- **Check pod status**: `make k8s-describe POD=<pod-name>`
+- **403 Forbidden from Ingress**: Make sure your client certificate is loaded in the browser
+- **TLS certificate errors**: Recreate secrets with `make k8s-setup`
 - See [TROUBLESHOOTING.md](../acme-infrastructure/TROUBLESHOOTING.md) for more help
 
 ## Overview

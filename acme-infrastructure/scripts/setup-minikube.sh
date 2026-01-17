@@ -78,18 +78,9 @@ kubectl wait --namespace acme-apps \
   --for=condition=available deployment/test-headers \
   --timeout=60s || echo "Warning: Test service may still be starting"
 
-# Enable snippets (required for header forwarding)
-echo "Enabling snippet directives in Ingress controller..."
-"$SCRIPT_DIR/enable-snippets.sh" || echo "⚠ Warning: Failed to enable snippets. You may need to enable them manually."
-
 # Deploy ingress
 echo "Deploying Ingress..."
-kubectl apply -f "$PROJECT_ROOT/acme-infrastructure/infrastructure/ingress.yaml" || {
-    echo "⚠ Error: Ingress deployment failed. Snippets may not be enabled."
-    echo "   Try running: ./acme-infrastructure/scripts/enable-snippets.sh"
-    echo "   Or use: kubectl apply -f acme-infrastructure/test/ingress-no-snippets.yaml (limited functionality)"
-    exit 1
-}
+kubectl apply -f "$PROJECT_ROOT/acme-infrastructure/infrastructure/ingress.yaml"
 
 # Get ingress IP
 echo ""

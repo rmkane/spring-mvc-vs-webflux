@@ -10,10 +10,8 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
     nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
-    # Add SSL client certificate DN headers for backend services
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header ssl-client-subject-dn $ssl_client_s_dn;
-      proxy_set_header ssl-client-issuer-dn $ssl_client_i_dn;
+    # Note: ssl-client-subject-dn and ssl-client-issuer-dn headers are automatically
+    # set by the Ingress when auth-tls-pass-certificate-to-upstream is "true"
 spec:
   ingressClassName: nginx
   tls:
