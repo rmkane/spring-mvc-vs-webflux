@@ -226,7 +226,7 @@ kubectl rollout restart deployment/<deployment-name> -n acme-apps
 ```bash
 # Rebuild and deploy the UI
 eval $(minikube docker-env)
-docker build -f acme-ui/Dockerfile -t acme-ui:latest .
+docker build -f acme-ui/Dockerfile -t acme-ui:latest acme-ui
 kubectl rollout restart deployment/ui -n acme-apps
 
 # Rebuild and deploy the MVC API
