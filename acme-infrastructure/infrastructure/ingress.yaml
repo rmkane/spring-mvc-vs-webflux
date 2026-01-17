@@ -29,7 +29,9 @@ spec:
             name: test-headers-service
             port:
               number: 8080
-      - path: /api
+      # Route /api/v1/* to the backend API
+      # Note: /api/* without v1 goes to the UI (Next.js API routes)
+      - path: /api/v1
         pathType: Prefix
         backend:
           service:

@@ -6,6 +6,13 @@ This document outlines the plan for migrating the Acme application from Docker C
 <!-- omit in toc -->
 ## Table of Contents
 
+- [Getting Started](#getting-started)
+  - [Quick Start (From Scratch)](#quick-start-from-scratch)
+  - [After Docker System Prune](#after-docker-system-prune)
+    - [State 1: Cluster is healthy but images are missing](#state-1-cluster-is-healthy-but-images-are-missing)
+    - [State 2: Cluster is corrupted (kubelet/apiserver stopped)](#state-2-cluster-is-corrupted-kubeletapiserver-stopped)
+  - [Available Make Targets](#available-make-targets)
+  - [Troubleshooting](#troubleshooting)
 - [Overview](#overview)
 - [Goals](#goals)
 - [Architecture Overview](#architecture-overview)
@@ -84,6 +91,105 @@ This document outlines the plan for migrating the Acme application from Docker C
 - [Future Enhancements](#future-enhancements)
   - [Short-term](#short-term)
   - [Long-term](#long-term)
+
+## Getting Started
+
+This section covers how to get the Kubernetes cluster running locally using Minikube. All commands use `make` targets defined in the root [Makefile](../Makefile).
+
+### Quick Start (From Scratch)
+
+Run the following commands to set up the entire cluster from scratch:
+
+```bash
+# 1. Start Minikube
+make k8s-start
+
+# 2. Run the initial setup (creates namespaces, secrets, enables ingress and snippets)
+make k8s-setup
+
+# 3. Generate certificates (if not already done)
+./acme-infrastructure/scripts/certs/setup-all-certs.sh
+
+# 4. Build and deploy all services
+make k8s-deploy
+
+# 5. Start port forwarding to access the cluster
+make k8s-port-forward
+```
+
+After setup, add `acme.local` to your `/etc/hosts` (if not already present):
+
+```bash
+echo "127.0.0.1 acme.local" | sudo tee -a /etc/hosts
+```
+
+Access the application at `https://acme.local:8443/`.
+
+### After Docker System Prune
+
+If you ran `docker system prune` and lost your Docker images, the cluster may be in one of two states:
+
+#### State 1: Cluster is healthy but images are missing
+
+Pods will be in `ImagePullBackOff` or `ErrImagePull` state. To recover:
+
+```bash
+# 1. Check cluster status
+make k8s-status
+
+# 2. If Minikube is running with healthy kubelet/apiserver, just redeploy
+eval $(minikube docker-env)
+make k8s-deploy
+make k8s-pods
+make k8s-port-forward
+```
+
+#### State 2: Cluster is corrupted (kubelet/apiserver stopped)
+
+If `make k8s-status` shows `kubelet: Stopped` or `apiserver: Stopped`, the cluster needs to be recreated:
+
+```bash
+# 1. Delete and recreate the cluster
+minikube delete && minikube start
+
+# 2. Enable the ingress addon
+minikube addons enable ingress
+
+# 3. Run full setup
+make k8s-setup
+
+# 4. Deploy services
+eval $(minikube docker-env)
+make k8s-deploy
+
+# 5. Start port forwarding
+make k8s-port-forward
+```
+
+The `k8s-deploy` target rebuilds all Docker images inside Minikube's Docker environment and restarts the deployments.
+
+### Available Make Targets
+
+| Target                         | Description                                  |
+|--------------------------------|----------------------------------------------|
+| `make k8s-start`               | Start Minikube cluster                       |
+| `make k8s-stop`.               | Stop Minikube cluster                        |
+| `make k8s-status`              | Show Minikube and Kubernetes status          |
+| `make k8s-setup`               | Initial setup (namespaces, secrets, ingress) |
+| `make k8s-deploy`.             | Build images and deploy all services         |
+| `make k8s-redeploy`            | Rebuild and redeploy all services            |
+| `make k8s-delete`              | Delete all deployments                       |
+| `make k8s-pods`.               | List all pods in acme-apps namespace         |
+| `make k8s-logs POD=<name>`.    | View logs for a specific pod                 |
+| `make k8s-describe POD=<name>` | Describe a specific pod                      |
+| `make k8s-port-forward`        | Port-forward Ingress to localhost:8443       |
+
+### Troubleshooting
+
+- If pods are stuck, delete them to force recreation: `kubectl delete pods --all -n acme-apps`
+- Check pod status: `make k8s-describe POD=<pod-name>`
+- View logs: `make k8s-logs POD=<pod-name>`
+- See [TROUBLESHOOTING.md](../acme-infrastructure/TROUBLESHOOTING.md) for more help
 
 ## Overview
 

@@ -4,7 +4,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 echo "=========================================="
 echo "Minikube X.509 Setup"
@@ -32,43 +32,45 @@ kubectl wait --namespace ingress-nginx \
 
 # Create namespaces
 echo "Creating namespaces..."
-kubectl apply -f "$SCRIPT_DIR/../infrastructure/namespace.yaml"
+kubectl apply -f "$PROJECT_ROOT/acme-infrastructure/infrastructure/namespace.yaml"
 
-# Create CA chain secret
+# Create CA chain secret (in acme-apps namespace where the Ingress is)
 echo "Creating CA chain secret..."
 if [ -f "$PROJECT_ROOT/acme-infrastructure/certs/ca/ca-chain.crt" ]; then
+    # Note: NGINX Ingress requires the key to be named "ca.crt"
     kubectl create secret generic ca-chain-secret \
-      --from-file=ca-chain.crt="$PROJECT_ROOT/acme-infrastructure/certs/ca/ca-chain.crt" \
-      -n acme-ingress \
+      --from-file=ca.crt="$PROJECT_ROOT/acme-infrastructure/certs/ca/ca-chain.crt" \
+      -n acme-apps \
       --dry-run=client -o yaml | kubectl apply -f -
-    echo "✓ CA chain secret created"
+    echo "✓ CA chain secret created in acme-apps namespace"
 else
     echo "⚠ Error: CA chain certificate not found at acme-infrastructure/certs/ca/ca-chain.crt"
     echo "   Run: ./acme-infrastructure/scripts/certs/setup-all-certs.sh"
     exit 1
 fi
 
-# Create TLS secret for ingress (using auth-service cert)
-if [ -f "$PROJECT_ROOT/monitoring/certs/auth-service.crt" ] && [ -f "$PROJECT_ROOT/monitoring/certs/auth-service.key" ]; then
+# Create TLS secret for ingress (in acme-apps namespace where the Ingress is)
+# Note: TLS secrets must be in the same namespace as the Ingress resource
+if [ -f "$PROJECT_ROOT/acme-infrastructure/certs/ingress.crt" ] && [ -f "$PROJECT_ROOT/acme-infrastructure/certs/ingress.key" ]; then
     echo "Creating Ingress TLS secret..."
     kubectl create secret tls ingress-tls-secret \
-      --cert="$PROJECT_ROOT/monitoring/certs/auth-service.crt" \
-      --key="$PROJECT_ROOT/monitoring/certs/auth-service.key" \
-      -n acme-ingress \
+      --cert="$PROJECT_ROOT/acme-infrastructure/certs/ingress.crt" \
+      --key="$PROJECT_ROOT/acme-infrastructure/certs/ingress.key" \
+      -n acme-apps \
       --dry-run=client -o yaml | kubectl apply -f -
-    echo "✓ Ingress TLS secret created"
+    echo "✓ Ingress TLS secret created in acme-apps namespace"
 else
-    echo "⚠ Warning: auth-service certificates not found."
+    echo "⚠ Warning: Ingress certificates not found."
     echo "   You'll need to create ingress-tls-secret manually:"
     echo "   kubectl create secret tls ingress-tls-secret \\"
-    echo "     --cert=monitoring/certs/auth-service.crt \\"
-    echo "     --key=monitoring/certs/auth-service.key \\"
-    echo "     -n acme-ingress"
+    echo "     --cert=acme-infrastructure/certs/ingress.crt \\"
+    echo "     --key=acme-infrastructure/certs/ingress.key \\"
+    echo "     -n acme-apps"
 fi
 
 # Deploy test service
 echo "Deploying test service..."
-kubectl apply -f "$SCRIPT_DIR/../test/test-service.yaml"
+kubectl apply -f "$PROJECT_ROOT/acme-infrastructure/test/test-service.yaml"
 
 # Wait for test service to be ready
 echo "Waiting for test service to be ready..."
@@ -82,7 +84,7 @@ echo "Enabling snippet directives in Ingress controller..."
 
 # Deploy ingress
 echo "Deploying Ingress..."
-kubectl apply -f "$SCRIPT_DIR/../infrastructure/ingress.yaml" || {
+kubectl apply -f "$PROJECT_ROOT/acme-infrastructure/infrastructure/ingress.yaml" || {
     echo "⚠ Error: Ingress deployment failed. Snippets may not be enabled."
     echo "   Try running: ./acme-infrastructure/scripts/enable-snippets.sh"
     echo "   Or use: kubectl apply -f acme-infrastructure/test/ingress-no-snippets.yaml (limited functionality)"
