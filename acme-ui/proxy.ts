@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
  * In Kubernetes, the ingress passes ssl-client-subject-dn and ssl-client-issuer-dn
  * as headers. This middleware ensures they're available throughout the request.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Extract SSL client certificate headers from ingress
   const subjectDn = request.headers.get('ssl-client-subject-dn')
   const issuerDn = request.headers.get('ssl-client-issuer-dn')
