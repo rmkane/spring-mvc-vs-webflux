@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM --platform=linux/amd64 maven:3.9-eclipse-temurin-17 AS build
+FROM --platform=linux/amd64 maven:3.9.12-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy parent POMs
@@ -34,7 +34,7 @@ COPY acme-auth-service-ldap ./acme-auth-service-ldap
 RUN mvn clean package -DskipTests -pl acme-auth-service-ldap -am
 
 # Stage 2: Runtime
-FROM --platform=linux/amd64 eclipse-temurin:17-jre-alpine
+FROM --platform=linux/amd64 eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring

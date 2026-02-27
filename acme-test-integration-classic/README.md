@@ -250,6 +250,6 @@ export TEST_SERVER_PORT=8080
 
 ## Requirements
 
-- Java 17+
+- Java 21+
 - Spring Boot 3.5.6+
 - JUnit 5

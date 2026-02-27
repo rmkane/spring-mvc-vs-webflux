@@ -119,7 +119,7 @@ spring-mvc-vs-webflux/
 
 ### Prerequisites
 
-- Java 17+
+- Java 21+
 - Maven 3.9+
 - Node.js 20+ and pnpm 8+
 - Docker and Docker Compose

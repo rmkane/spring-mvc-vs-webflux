@@ -757,11 +757,11 @@ Each service has a multi-stage Dockerfile:
 
 ```dockerfile
 # Build stage
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9.12-eclipse-temurin-21 AS build
 # ... build application
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 # ... run application
 ```
 
@@ -784,7 +784,7 @@ Services orchestrated with Docker Compose:
 | Persistence   | JPA + Hibernate | R2DBC           | Spring LDAP     | Spring Data JPA  | N/A          |
 | Database      | PostgreSQL      | PostgreSQL      | OpenLDAP        | PostgreSQL       | N/A          |
 | HTTP Client   | RestTemplate    | WebClient       | N/A             | N/A              | Fetch API    |
-| Language      | Java 17         | Java 17         | Java 17         | Java 17          | TypeScript 5 |
+| Language      | Java 21         | Java 21         | Java 21         | Java 21          | TypeScript 5 |
 
 ### Supporting Libraries
 
@@ -800,7 +800,7 @@ Services orchestrated with Docker Compose:
 ### Build Tools
 
 - **Build System**: Maven 3.9+ (Java modules), pnpm (UI)
-- **Java Version**: 17 (LTS)
+- **Java Version**: 21 (LTS)
 - **Node.js**: 20+ (for UI)
 - **Code Formatting**: Spotless (Java), ESLint (TypeScript)
 - **Containerization**: Docker + Docker Compose

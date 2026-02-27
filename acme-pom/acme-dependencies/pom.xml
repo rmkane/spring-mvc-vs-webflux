@@ -19,10 +19,6 @@
 	<description>BOM (Bill of Materials) for dependency version management</description>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>17</java.version>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<!-- Spring Boot -->
 		<spring-boot.version>3.5.6</spring-boot.version>
 		<lombok.version>1.18.40</lombok.version>

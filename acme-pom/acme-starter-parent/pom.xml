@@ -19,6 +19,16 @@
 	<description>Parent POM with plugin management and default configurations</description>
 
 	<properties>
+		<!-- Override Spring Boot default Java version -->
+		<java.version>21</java.version>
+
+		<!-- Defaults for Spring Boot starter parent -->
+		<resource.delimiter>@</resource.delimiter>
+		<maven.compiler.release>${java.version}</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<spring-boot.run.main-class>${start-class}</spring-boot.run.main-class>
+
 		<!-- Spring Boot maven plugin versions -->
 		<!-- Must match versions in Spring Boot dependencies -->
 		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
@@ -126,6 +136,8 @@
 					<version>${maven-javadoc-plugin.version}</version>
 					<configuration>
 						<release>${java.version}</release>
+						<!-- Don't require Javadoc on private/default members (e.g. Lombok-generated constructors) -->
+						<doclint>all,-missing</doclint>
 					</configuration>
 					<executions>
 						<execution>
