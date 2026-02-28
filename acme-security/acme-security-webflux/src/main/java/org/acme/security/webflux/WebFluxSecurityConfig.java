@@ -1,5 +1,8 @@
 package org.acme.security.webflux;
 
+import java.util.Objects;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -16,8 +19,6 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 
-import lombok.RequiredArgsConstructor;
-
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -28,11 +29,21 @@ import org.acme.security.core.service.AuthenticationService;
 @Configuration
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
-@RequiredArgsConstructor
 @Order(2)
 public class WebFluxSecurityConfig {
 
     private final AuthenticationService authenticationService;
+    private final String subjectDnHeader;
+    private final String issuerDnHeader;
+
+    public WebFluxSecurityConfig(
+            AuthenticationService authenticationService,
+            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader,
+            @Value("${acme.security.headers.issuer-dn:#{null}}") String issuerDnHeader) {
+        this.authenticationService = authenticationService;
+        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
+        this.issuerDnHeader = Objects.requireNonNullElse(issuerDnHeader, SecurityConstants.SSL_CLIENT_ISSUER_HEADER);
+    }
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -89,6 +100,7 @@ public class WebFluxSecurityConfig {
     }
 
     @Bean
+    @SuppressWarnings("null") // getFirst() returns nullable; we validate before use
     public ServerAuthenticationConverter serverAuthenticationConverter() {
         return exchange -> {
             // Check if this is a public endpoint
@@ -101,22 +113,25 @@ public class WebFluxSecurityConfig {
             }
 
             // Validate Subject DN header
-            String dn = RequestHeaderExtractor.extractSubjectDn(exchange.getRequest());
-            if (dn == null || dn.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE));
+            String dnValue = exchange.getRequest().getHeaders().getFirst(subjectDnHeader);
+            if (dnValue == null || dnValue.trim().isEmpty()) {
+                return Mono.error(new BadCredentialsException(
+                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, subjectDnHeader)));
             }
+            String dn = dnValue.trim();
 
             // Validate Issuer DN header (required)
-            String issuerDn = RequestHeaderExtractor.extractIssuerDn(exchange.getRequest());
-            if (issuerDn == null || issuerDn.trim().isEmpty()) {
-                return Mono.error(new BadCredentialsException(SecurityConstants.MISSING_ISSUER_DN_MESSAGE));
+            String issuerDnValue = exchange.getRequest().getHeaders().getFirst(issuerDnHeader);
+            if (issuerDnValue == null || issuerDnValue.trim().isEmpty()) {
+                return Mono.error(new BadCredentialsException(
+                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, issuerDnHeader)));
             }
 
             // Both headers are present, pass DN as String principal
             // Will be converted to UserInformation by AuthenticationService after looking
             // up UserInfo from auth service
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
-                    dn.trim(),
+                    dn,
                     null));
         };
     }

@@ -11,8 +11,9 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
     nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
-    # Note: ssl-client-subject-dn and ssl-client-issuer-dn headers are automatically
-    # set by the Ingress when auth-tls-pass-certificate-to-upstream is "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "x-amzn-mtls-clientcert-subject: $ssl_client_s_dn";
+      more_set_headers "x-amzn-mtls-clientcert-issuer: $ssl_client_i_dn";
 spec:
   ingressClassName: nginx
   tls:
@@ -59,6 +60,9 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
     nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "x-amzn-mtls-clientcert-subject: $ssl_client_s_dn";
+      more_set_headers "x-amzn-mtls-clientcert-issuer: $ssl_client_i_dn";
     # Rewrite /api/{backend}/v1/{path} to /api/v1/{path}
     nginx.ingress.kubernetes.io/rewrite-target: /api/v1/$2
     # Use regex for path matching

@@ -11,13 +11,13 @@ import lombok.NoArgsConstructor;
 public final class SecurityConstants {
 
     // Header names
-    public static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
-    public static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
+    public static final String SSL_CLIENT_SUBJECT_HEADER = "x-amzn-mtls-clientcert-subject";
+    public static final String SSL_CLIENT_ISSUER_HEADER = "x-amzn-mtls-clientcert-issuer";
 
     // Error messages
-    public static final String UNAUTHORIZED_MESSAGE = "Missing or invalid ssl-client-subject-dn or ssl-client-issuer-dn header";
-    public static final String MISSING_DN_MESSAGE = "Missing or empty ssl-client-subject-dn header";
-    public static final String MISSING_ISSUER_DN_MESSAGE = "Missing or empty ssl-client-issuer-dn header";
+    public static final String UNAUTHORIZED_MESSAGE = "Missing or invalid client subject or issuer header";
+    public static final String MISSING_HEADER_MESSAGE = "Missing or empty header: %s";
+    public static final String MISSING_SUBJECT_MESSAGE = "Missing or empty subject DN";
 
     /**
      * Prefix for ACME role groups.

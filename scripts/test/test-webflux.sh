@@ -6,6 +6,10 @@
 
 BASE_URL="http://localhost:8081/api/v1/books"
 
+# Header names (match backend defaults; override with ACME_HEADER_SUBJECT_DN / ACME_HEADER_ISSUER_DN if backend uses custom headers)
+SUBJECT_DN_HEADER="${ACME_HEADER_SUBJECT_DN:-x-amzn-mtls-clientcert-subject}"
+ISSUER_DN_HEADER="${ACME_HEADER_ISSUER_DN:-x-amzn-mtls-clientcert-issuer}"
+
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -47,8 +51,8 @@ print_usage() {
 get_all() {
     echo -e "${BLUE}GET ${BASE_URL}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
-        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+        -H "${SUBJECT_DN_HEADER}: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "${ISSUER_DN_HEADER}: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}")
     local http_code=$(echo "$response" | tail -n1)
@@ -68,8 +72,8 @@ get_one() {
 
     echo -e "${BLUE}GET ${BASE_URL}/${id}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
-        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+        -H "${SUBJECT_DN_HEADER}: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "${ISSUER_DN_HEADER}: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}/${id}")
     local http_code=$(echo "$response" | tail -n1)
@@ -103,8 +107,8 @@ EOF
     echo -e "${BLUE}Body: ${json_body}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
         -X POST \
-        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+        -H "${SUBJECT_DN_HEADER}: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "${ISSUER_DN_HEADER}: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         -d "${json_body}" \
         "${BASE_URL}")
@@ -140,8 +144,8 @@ EOF
     echo -e "${BLUE}Body: ${json_body}${NC}"
     local response=$(curl -s -w "\n%{http_code}" \
         -X PUT \
-        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+        -H "${SUBJECT_DN_HEADER}: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "${ISSUER_DN_HEADER}: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         -d "${json_body}" \
         "${BASE_URL}/${id}")
@@ -163,8 +167,8 @@ delete() {
     echo -e "${BLUE}DELETE ${BASE_URL}/${id}${NC}"
     local http_code=$(curl -s -w "%{http_code}" -o /dev/null \
         -X DELETE \
-        -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-        -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+        -H "${SUBJECT_DN_HEADER}: ${SSL_CLIENT_SUBJECT_DN}" \
+        -H "${ISSUER_DN_HEADER}: ${SSL_CLIENT_ISSUER_DN}" \
         -H "Content-Type: application/json" \
         "${BASE_URL}/${id}")
     echo -e "HTTP Status: ${http_code}"

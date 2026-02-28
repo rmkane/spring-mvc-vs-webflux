@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server'
 
+import { SSL_CLIENT_ISSUER_HEADER, SSL_CLIENT_SUBJECT_HEADER } from '@/lib/auth-headers'
 import { createBook } from '@/lib/books'
 import type { CreateBookRequest } from '@/lib/types'
 
@@ -19,8 +20,8 @@ export async function POST(request: Request) {
 
     // Debug: log headers to see what we're getting
     console.log('API route headers:', {
-      'ssl-client-subject-dn': headersObj['ssl-client-subject-dn'],
-      'ssl-client-issuer-dn': headersObj['ssl-client-issuer-dn'],
+      [SSL_CLIENT_SUBJECT_HEADER]: headersObj[SSL_CLIENT_SUBJECT_HEADER],
+      [SSL_CLIENT_ISSUER_HEADER]: headersObj[SSL_CLIENT_ISSUER_HEADER],
       allHeaders: Object.keys(headersObj),
     })
 

@@ -31,10 +31,11 @@
 
 		<!-- Spring Boot maven plugin versions -->
 		<!-- Must match versions in Spring Boot dependencies -->
+		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
 		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
 		<maven-clean-plugin.version>3.4.1</maven-clean-plugin.version>
-		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 		<maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
 		<maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
 		<maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
@@ -49,8 +50,6 @@
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
 		<maven-war-plugin.version>3.4.0</maven-war-plugin.version>
-		<!-- Not managed by Spring Boot BOM -->
-		<maven-build-helper-plugin.version>3.6.1</maven-build-helper-plugin.version>
 	</properties>
 
 	<build>
@@ -99,7 +98,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>build-helper-maven-plugin</artifactId>
-					<version>${maven-build-helper-plugin.version}</version>
+					<version>${build-helper-maven-plugin.version}</version>
 					<executions>
 						<execution>
 							<id>add-integration-test-source</id>

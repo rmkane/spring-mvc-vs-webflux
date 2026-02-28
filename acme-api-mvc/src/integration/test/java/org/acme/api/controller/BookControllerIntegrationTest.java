@@ -24,6 +24,8 @@ public class BookControllerIntegrationTest extends IntegrationTestSuite {
 
     private final HttpHeaders headers = RequestHeadersBuilder.create()
             .withDefaultHeaders()
+            .addHeader("ssl-client-subject-dn", System.getenv("SSL_CLIENT_SUBJECT_DN"))
+            .addHeader("ssl-client-issuer-dn", System.getenv("SSL_CLIENT_ISSUER_DN"))
             .addHeaderContentTypeJson()
             .build();
 

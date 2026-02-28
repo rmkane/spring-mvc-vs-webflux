@@ -1,0 +1,6 @@
+acme:
+  security:
+    # Override default header names (optional)
+    headers:
+      subject-dn: x-amzn-mtls-clientcert-subject
+      issuer-dn: x-amzn-mtls-clientcert-issuer

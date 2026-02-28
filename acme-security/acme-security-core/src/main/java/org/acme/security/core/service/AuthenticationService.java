@@ -36,13 +36,13 @@ public class AuthenticationService {
      */
     public UserInformation validateUserInformation(Object principal) {
         if (principal == null) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
         }
 
         if (principal instanceof UserInformation userInfo) {
             String subjectDn = userInfo.getSubjectDn();
             if (!StringUtils.hasText(subjectDn)) {
-                throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+                throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
             }
             return userInfo;
         }
@@ -69,13 +69,13 @@ public class AuthenticationService {
      */
     public Authentication createAuthenticatedAuthentication(String dn) {
         if (!StringUtils.hasText(dn)) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
         }
 
         // Normalize DN for consistent lookup and caching
         String normalizedDn = DnUtil.normalize(dn);
         if (normalizedDn == null) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
         }
 
         // Look up user from auth service by DN to get UserInfo with roles (cached)

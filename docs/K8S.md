@@ -340,8 +340,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 2. Users import certificates into their browsers
 3. NGINX Ingress requires client certificates (mTLS)
 4. NGINX extracts the user's DN from the certificate
-5. NGINX forwards the Subject DN as `ssl-client-subject-dn` header and Issuer DN as `ssl-client-issuer-dn` header to backend services
-6. Backend services use the `ssl-client-subject-dn` header for authentication
+5. NGINX forwards the Subject DN and Issuer DN to backend services using the default header names (`x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`); backend header names are configurable via `acme.security.headers.subject-dn` / `issuer-dn` if needed.
+6. Backend services use the configured subject DN header for authentication
 
 ## Goals
 
@@ -367,8 +367,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 │  - Validates client certificate                             │
 │  - Extracts DN from certificate Subject/SAN                 │
 │  - Adds headers:                                            │
-│    - ssl-client-subject-dn                                  │
-│    - ssl-client-issuer-dn headers                           │
+│    - x-amzn-mtls-clientcert-subject                         │
+│    - x-amzn-mtls-clientcert-issuer                          │
 └──────────────────────┬──────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┐
@@ -795,8 +795,8 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-ingress/ca-chain-secret"
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "ssl-client-subject-dn: $ssl_client_s_dn";
-      more_set_headers "ssl-client-issuer-dn: $ssl_client_i_dn";
+      more_set_headers "x-amzn-mtls-clientcert-subject: $ssl_client_s_dn";
+      more_set_headers "x-amzn-mtls-clientcert-issuer: $ssl_client_i_dn";
 spec:
   ingressClassName: nginx
   tls:
@@ -1543,7 +1543,7 @@ spec:
 
 - User certificate import
 - Browser authentication flow
-- API calls with ssl-client-subject-dn and ssl-client-issuer-dn headers
+- API calls with subject and issuer DN auth headers (names must match backend/ingress config)
 - UI functionality
 
 ### Load Tests

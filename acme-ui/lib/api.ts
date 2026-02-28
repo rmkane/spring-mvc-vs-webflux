@@ -1,10 +1,12 @@
 /**
  * API utility functions for making requests to the backend.
- * Automatically includes the ssl-client-subject-dn and ssl-client-issuer-dn headers.
+ * Automatically includes the client certificate subject and issuer headers.
  *
  * In Kubernetes: Headers come from ingress (via middleware)
  * In local dev: Headers come from environment variables (.env.local)
  */
+
+import { SSL_CLIENT_ISSUER_HEADER, SSL_CLIENT_SUBJECT_HEADER } from '@/lib/auth-headers'
 
 /**
  * Determines the API base URL based on environment configuration.
@@ -38,13 +40,9 @@ function getApiBaseUrl(): string {
 
 const API_BASE_URL = getApiBaseUrl()
 
-// Environment variables
+// Environment variables for DN values (local dev)
 const SSL_CLIENT_SUBJECT_DN_ENV = 'SSL_CLIENT_SUBJECT_DN'
 const SSL_CLIENT_ISSUER_DN_ENV = 'SSL_CLIENT_ISSUER_DN'
-
-// Headers
-const SSL_CLIENT_SUBJECT_DN_HEADER = 'ssl-client-subject-dn'
-const SSL_CLIENT_ISSUER_DN_HEADER = 'ssl-client-issuer-dn'
 
 /**
  * Attempts to get headers from Next.js headers() function.
@@ -101,8 +99,8 @@ function getSubjectDn(headers?: Headers | Record<string, string>): string {
   if (headers) {
     const headerValue =
       headers instanceof Headers
-        ? headers.get(SSL_CLIENT_SUBJECT_DN_HEADER)
-        : headers[SSL_CLIENT_SUBJECT_DN_HEADER]
+        ? headers.get(SSL_CLIENT_SUBJECT_HEADER)
+        : headers[SSL_CLIENT_SUBJECT_HEADER]
     if (headerValue) {
       return headerValue
     }
@@ -145,8 +143,8 @@ function getIssuerDn(headers?: Headers | Record<string, string>): string {
   if (headers) {
     const headerValue =
       headers instanceof Headers
-        ? headers.get(SSL_CLIENT_ISSUER_DN_HEADER)
-        : headers[SSL_CLIENT_ISSUER_DN_HEADER]
+        ? headers.get(SSL_CLIENT_ISSUER_HEADER)
+        : headers[SSL_CLIENT_ISSUER_HEADER]
     if (headerValue) {
       return headerValue
     }
@@ -167,7 +165,7 @@ function getIssuerDn(headers?: Headers | Record<string, string>): string {
 }
 
 /**
- * Creates fetch options with the ssl-client-subject-dn and ssl-client-issuer-dn headers automatically included.
+ * Creates fetch options with the subject and issuer DN auth headers automatically included.
  * This should be used for server-side requests (API routes, Server Components).
  *
  * @param options - Additional fetch options to merge
@@ -192,14 +190,14 @@ export async function createApiRequestOptions(
     ...options,
     headers: {
       ...((options.headers as Record<string, string>) || {}),
-      [SSL_CLIENT_SUBJECT_DN_HEADER]: subjectDn,
-      [SSL_CLIENT_ISSUER_DN_HEADER]: issuerDn,
+      [SSL_CLIENT_SUBJECT_HEADER]: subjectDn,
+      [SSL_CLIENT_ISSUER_HEADER]: issuerDn,
     },
   }
 }
 
 /**
- * Makes a fetch request to the backend API with the ssl-client-subject-dn and ssl-client-issuer-dn headers automatically included.
+ * Makes a fetch request to the backend API with the subject and issuer DN auth headers automatically included.
  * This should be used for server-side requests (API routes, Server Components).
  *
  * @param path - API path (e.g., '/api/books')

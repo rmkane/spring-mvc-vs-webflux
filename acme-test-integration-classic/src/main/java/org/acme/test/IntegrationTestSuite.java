@@ -45,16 +45,6 @@ import org.acme.test.util.ResponseWriter;
  */
 public abstract class IntegrationTestSuite {
 
-    /** Environment variable name for SSL client subject DN. */
-    public static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
-    /** Environment variable name for SSL client issuer DN. */
-    public static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
-
-    /** Header name for SSL client subject DN from X509 certificate. */
-    public static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
-    /** Header name for SSL client issuer DN from X509 certificate. */
-    public static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
-
     private static final int DEFAULT_PORT = 8080;
     private static final String PROTOCOL_HTTP = "http";
     private static final String PORT_PROPERTY = "test.server.port";
@@ -353,15 +343,15 @@ public abstract class IntegrationTestSuite {
     }
 
     /**
-     * Returns the default HTTP headers for requests, including the
-     * ssl-client-subject-dn and ssl-client-issuer-dn headers.
+     * Returns the default HTTP headers for requests, including the subject and
+     * issuer DN headers (from SecurityConstants) populated from environment
+     * variables.
      *
      * @return The default HTTP headers
      */
     protected HttpHeaders getDefaultHeaders() {
         return RequestHeadersBuilder.create()
-                .addHeader(SSL_CLIENT_SUBJECT_DN_HEADER, getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV))
-                .addHeader(SSL_CLIENT_ISSUER_DN_HEADER, getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV))
+                .withDefaultHeaders()
                 .build();
     }
 
@@ -501,13 +491,5 @@ public abstract class IntegrationTestSuite {
             }
         }
         return defaultValue;
-    }
-
-    private String getEnvRequired(String variableName) {
-        String value = System.getenv(variableName);
-        if (value == null || value.isEmpty()) {
-            throw new IllegalArgumentException("Environment variable '" + variableName + "' is not set");
-        }
-        return value;
     }
 }

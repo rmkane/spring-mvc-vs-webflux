@@ -2,9 +2,11 @@ package org.acme.security.webmvc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -20,8 +22,6 @@ import org.springframework.security.web.authentication.preauth.RequestHeaderAuth
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.RequiredArgsConstructor;
-
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.service.AuthenticationService;
@@ -29,11 +29,20 @@ import org.acme.security.core.service.AuthenticationService;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class WebMvcSecurityConfig {
 
     private final AuthenticationService authenticationService;
     private final ObjectMapper objectMapper;
+    private final String subjectDnHeader;
+
+    public WebMvcSecurityConfig(
+            AuthenticationService authenticationService,
+            ObjectMapper objectMapper,
+            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader) {
+        this.authenticationService = authenticationService;
+        this.objectMapper = objectMapper;
+        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -59,7 +68,7 @@ public class WebMvcSecurityConfig {
     @Bean
     public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() {
         RequestHeaderAuthenticationFilter filter = new RequestHeaderAuthenticationFilter();
-        filter.setPrincipalRequestHeader(SecurityConstants.SSL_CLIENT_SUBJECT_DN_HEADER);
+        filter.setPrincipalRequestHeader(subjectDnHeader);
         filter.setExceptionIfHeaderMissing(false);
         filter.setAuthenticationManager(authenticationManager());
         return filter;

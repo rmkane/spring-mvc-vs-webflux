@@ -19,6 +19,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import org.acme.security.core.model.SecurityConstants;
 import org.acme.test.reactive.request.ReactiveRequestBuilder;
 
 /**
@@ -31,11 +32,6 @@ public abstract class ReactiveIntegrationTestSuite {
     public static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
     /** Environment variable name for SSL client issuer DN. */
     public static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
-
-    /** Header name for SSL client subject DN from X509 certificate. */
-    public static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
-    /** Header name for SSL client issuer DN from X509 certificate. */
-    public static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
 
     private static final int DEFAULT_PORT = 8081;
     private static final String PROTOCOL_HTTP = "http";
@@ -139,15 +135,16 @@ public abstract class ReactiveIntegrationTestSuite {
     }
 
     /**
-     * Returns the default HTTP headers for requests, including the
-     * ssl-client-subject-dn and ssl-client-issuer-dn headers.
+     * Returns the default HTTP headers for requests, including the subject and
+     * issuer DN headers (from SecurityConstants) populated from environment
+     * variables.
      *
      * @return The default HTTP headers
      */
     protected HttpHeaders getDefaultHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set(SSL_CLIENT_SUBJECT_DN_HEADER, getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV));
-        headers.set(SSL_CLIENT_ISSUER_DN_HEADER, getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV));
+        headers.set(SecurityConstants.SSL_CLIENT_SUBJECT_HEADER, getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV));
+        headers.set(SecurityConstants.SSL_CLIENT_ISSUER_HEADER, getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV));
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
     }
@@ -409,7 +406,7 @@ public abstract class ReactiveIntegrationTestSuite {
      * @throws IllegalArgumentException if the environment variable is not set or is
      *                                  empty
      */
-    private String getEnvRequired(String variableName) {
+    protected String getEnvRequired(String variableName) {
         String value = System.getenv(variableName);
         if (value == null || value.isEmpty()) {
             throw new IllegalArgumentException("Environment variable '" + variableName + "' is not set");

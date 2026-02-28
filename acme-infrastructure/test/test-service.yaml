@@ -46,6 +46,9 @@ metadata:
   namespace: acme-apps
 data:
   default.conf: |
+    # Echoes request headers for X.509 DN verification.
+    # Uses default header names (x-amzn-mtls-clientcert-subject, x-amzn-mtls-clientcert-issuer)
+    # to match backend SecurityConstants and ingress configuration.
     server {
         listen 8080;
         server_name _;
@@ -53,26 +56,26 @@ data:
         location / {
             default_type application/json;
             add_header Content-Type "application/json; charset=utf-8" always;
-            return 200 '{"ssl-client-subject-dn": "$http_ssl_client_subject_dn", "ssl-client-issuer-dn": "$http_ssl_client_issuer_dn"}';
+            return 200 '{"x-amzn-mtls-clientcert-subject": "$http_x_amzn_mtls_clientcert_subject", "x-amzn-mtls-clientcert-issuer": "$http_x_amzn_mtls_clientcert_issuer"}';
         }
 
         location /test {
             default_type application/json;
             add_header Content-Type "application/json; charset=utf-8" always;
             add_header Content-Disposition "inline" always;
-            return 200 '{"ssl-client-subject-dn": "$http_ssl_client_subject_dn", "ssl-client-issuer-dn": "$http_ssl_client_issuer_dn"}';
+            return 200 '{"x-amzn-mtls-clientcert-subject": "$http_x_amzn_mtls_clientcert_subject", "x-amzn-mtls-clientcert-issuer": "$http_x_amzn_mtls_clientcert_issuer"}';
         }
 
         location /test/headers {
             default_type text/plain;
             add_header Content-Type "text/plain; charset=utf-8" always;
             add_header Content-Disposition "inline" always;
-            return 200 'ssl-client-subject-dn: $http_ssl_client_subject_dn\nssl-client-issuer-dn: $http_ssl_client_issuer_dn\n';
+            return 200 'x-amzn-mtls-clientcert-subject: $http_x_amzn_mtls_clientcert_subject\nx-amzn-mtls-clientcert-issuer: $http_x_amzn_mtls_clientcert_issuer\n';
         }
 
         location /test/debug {
             default_type text/plain;
             add_header Content-Type "text/plain; charset=utf-8" always;
-            return 200 'SSL Client Subject DN: $http_ssl_client_subject_dn\nSSL Client Issuer DN: $http_ssl_client_issuer_dn\n';
+            return 200 'Subject DN: $http_x_amzn_mtls_clientcert_subject\nIssuer DN: $http_x_amzn_mtls_clientcert_issuer\n';
         }
     }

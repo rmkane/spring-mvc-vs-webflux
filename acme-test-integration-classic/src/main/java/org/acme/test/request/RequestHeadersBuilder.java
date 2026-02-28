@@ -13,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import org.acme.security.core.model.SecurityConstants;
 import org.acme.test.util.MapUtils;
 
 /** Simple builder for HTTP headers backed by a {@link MultiValueMap}. */
@@ -24,12 +25,6 @@ public final class RequestHeadersBuilder {
     /** Environment variable name for SSL client issuer DN. */
     private static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
 
-    /** Header name for SSL client subject DN from X509 certificate. */
-    private static final String SSL_CLIENT_SUBJECT_DN_HEADER = "ssl-client-subject-dn";
-    /** Header name for SSL client issuer DN from X509 certificate. */
-    private static final String SSL_CLIENT_ISSUER_DN_HEADER = "ssl-client-issuer-dn";
-
-    @NonNull
     private final LinkedMultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
 
     /**
@@ -150,9 +145,9 @@ public final class RequestHeadersBuilder {
     }
 
     /**
-     * Adds default SSL client headers (ssl-client-subject-dn and
-     * ssl-client-issuer-dn) from environment variables. This is a convenience
-     * method for integration tests.
+     * Adds default SSL client headers (subject and issuer DN from
+     * SecurityConstants) from environment variables. This is a convenience method
+     * for integration tests.
      *
      * @return This builder for method chaining
      * @throws IllegalArgumentException if required environment variables are not
@@ -161,8 +156,8 @@ public final class RequestHeadersBuilder {
     public RequestHeadersBuilder withDefaultHeaders() {
         String subjectDn = getEnvRequired(SSL_CLIENT_SUBJECT_DN_ENV);
         String issuerDn = getEnvRequired(SSL_CLIENT_ISSUER_DN_ENV);
-        return addHeader(SSL_CLIENT_SUBJECT_DN_HEADER, subjectDn)
-                .addHeader(SSL_CLIENT_ISSUER_DN_HEADER, issuerDn);
+        return addHeader(SecurityConstants.SSL_CLIENT_SUBJECT_HEADER, subjectDn)
+                .addHeader(SecurityConstants.SSL_CLIENT_ISSUER_HEADER, issuerDn);
     }
 
     /**
@@ -207,7 +202,7 @@ public final class RequestHeadersBuilder {
      * @throws IllegalArgumentException if the environment variable is not set or is
      *                                  empty
      */
-    private String getEnvRequired(String variableName) {
+    protected String getEnvRequired(String variableName) {
         String value = System.getenv(variableName);
         if (value == null || value.isEmpty()) {
             throw new IllegalArgumentException("Environment variable '" + variableName + "' is not set");
