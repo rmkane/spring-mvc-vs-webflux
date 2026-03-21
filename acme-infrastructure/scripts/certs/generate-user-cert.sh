@@ -20,7 +20,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CERT_DIR="$PROJECT_ROOT/k8s/certs"
+CERT_DIR="$PROJECT_ROOT/acme-infrastructure/certs"
 CA_INTERMEDIATE="$CERT_DIR/ca/intermediate"
 CA_CHAIN="$CERT_DIR/ca/ca-chain.crt"
 USER_CERT_DIR="$CERT_DIR/users"

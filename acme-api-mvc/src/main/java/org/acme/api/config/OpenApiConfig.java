@@ -2,7 +2,9 @@ package org.acme.api.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,14 +15,29 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
+import org.acme.security.core.model.SecurityConstants;
+
 @Configuration
 public class OpenApiConfig {
+
+    private static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
+    private static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
+
+    private final String subjectDnHeader;
+    private final String issuerDnHeader;
+
+    public OpenApiConfig(
+            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader,
+            @Value("${acme.security.headers.issuer-dn:#{null}}") String issuerDnHeader) {
+        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
+        this.issuerDnHeader = Objects.requireNonNullElse(issuerDnHeader, SecurityConstants.SSL_CLIENT_ISSUER_HEADER);
+    }
 
     @Bean
     public OpenAPI customOpenAPI() {
         // Get default values from environment variables
-        String defaultSubjectDn = System.getenv("SSL_CLIENT_SUBJECT_DN");
-        String defaultIssuerDn = System.getenv("SSL_CLIENT_ISSUER_DN");
+        String defaultSubjectDn = System.getenv(SSL_CLIENT_SUBJECT_DN_ENV);
+        String defaultIssuerDn = System.getenv(SSL_CLIENT_ISSUER_DN_ENV);
 
         // Create extensions map for default values (SpringDoc OpenAPI supports this)
         Map<String, Object> subjectDnExtensions = new HashMap<>();
@@ -37,13 +54,13 @@ public class OpenApiConfig {
         String subjectDnDescription = "Subject Distinguished Name (DN) from X509 client certificate. " +
                 "This header is required for all API endpoints. Click 'Authorize' button to set this value globally.";
         if (defaultSubjectDn != null && !defaultSubjectDn.isEmpty()) {
-            subjectDnDescription += " Default value from SSL_CLIENT_SUBJECT_DN: " + defaultSubjectDn;
+            subjectDnDescription += " Default value from " + SSL_CLIENT_SUBJECT_DN_ENV + ": " + defaultSubjectDn;
         }
 
         String issuerDnDescription = "Issuer Distinguished Name (DN) from X509 client certificate. " +
                 "This header is required for all API endpoints. Click 'Authorize' button to set this value globally.";
         if (defaultIssuerDn != null && !defaultIssuerDn.isEmpty()) {
-            issuerDnDescription += " Default value from SSL_CLIENT_ISSUER_DN: " + defaultIssuerDn;
+            issuerDnDescription += " Default value from " + SSL_CLIENT_ISSUER_DN_ENV + ": " + defaultIssuerDn;
         }
 
         return new OpenAPI()
@@ -51,24 +68,25 @@ public class OpenApiConfig {
                         .title("Acme API - MVC")
                         .version("1.0.0")
                         .description("REST API for managing books using Spring MVC. " +
-                                "Use the 'Authorize' button above to set the ssl-client-subject-dn and ssl-client-issuer-dn headers for authentication.")
+                                "Use the 'Authorize' button above to set the " + subjectDnHeader + " and "
+                                + issuerDnHeader + " headers for authentication.")
                         .contact(new Contact()
                                 .name("Acme Team")
                                 .email("api@acme.org")))
                 .addSecurityItem(new SecurityRequirement()
-                        .addList("ssl-client-subject-dn")
-                        .addList("ssl-client-issuer-dn"))
+                        .addList(subjectDnHeader)
+                        .addList(issuerDnHeader))
                 .components(new Components()
-                        .addSecuritySchemes("ssl-client-subject-dn", new SecurityScheme()
+                        .addSecuritySchemes(subjectDnHeader, new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name("ssl-client-subject-dn")
+                                .name(subjectDnHeader)
                                 .description(subjectDnDescription)
                                 .extensions(subjectDnExtensions))
-                        .addSecuritySchemes("ssl-client-issuer-dn", new SecurityScheme()
+                        .addSecuritySchemes(issuerDnHeader, new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name("ssl-client-issuer-dn")
+                                .name(issuerDnHeader)
                                 .description(issuerDnDescription)
                                 .extensions(issuerDnExtensions)));
     }

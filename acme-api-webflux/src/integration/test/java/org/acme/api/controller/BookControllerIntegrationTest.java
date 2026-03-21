@@ -7,6 +7,8 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,6 +26,15 @@ public class BookControllerIntegrationTest extends ReactiveIntegrationTestSuite 
 
     public BookControllerIntegrationTest() {
         super(8081);
+    }
+
+    @Override
+    protected HttpHeaders getDefaultHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("ssl-client-subject-dn", getEnvRequired("SSL_CLIENT_SUBJECT_DN"));
+        headers.set("ssl-client-issuer-dn", getEnvRequired("SSL_CLIENT_ISSUER_DN"));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
     }
 
     @Test

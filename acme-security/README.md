@@ -14,7 +14,7 @@ This module provides a multi-module security layer that implements header-based 
 
 ## Key Features
 
-- Header-based authentication via `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
+- Header-based authentication via configurable subject and issuer DN headers (default: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`; override with `acme.security.headers.subject-dn` / `issuer-dn`)
 - User lookup caching (Caffeine cache)
 - Role-based access control (RBAC)
 - SSL/TLS configuration for auth service communication
@@ -26,3 +26,7 @@ This module provides a multi-module security layer that implements header-based 
 - MVC applications depend on `acme-security-webmvc`
 - WebFlux applications depend on `acme-security-webflux`
 - Both depend on `acme-security-core` for shared logic
+
+## Configuration
+
+For a Spring configuration reference (header names, etc.), see `acme-security-core/src/test/resources/sample-application.yml`.

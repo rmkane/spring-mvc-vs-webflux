@@ -34,6 +34,8 @@ import org.acme.api.service.BookService;
 @Tag(name = "Books", description = "Book management API v1")
 public class BookController {
 
+    private static final String UNAUTHORIZED_401_DESCRIPTION = "Unauthorized - missing required client certificate subject or issuer header";
+
     private final BookService bookService;
 
     @PostMapping
@@ -41,7 +43,7 @@ public class BookController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Book created successfully"),
             @ApiResponse(responseCode = "400", description = "Bad Request - book already exists or validation failed"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing ssl-client-subject-dn or ssl-client-issuer-dn header")
+            @ApiResponse(responseCode = "401", description = UNAUTHORIZED_401_DESCRIPTION)
     })
     public ResponseEntity<BookResponse> create(@Valid @RequestBody CreateBookRequest request) {
         BookResponse created = bookService.create(request);
@@ -52,7 +54,7 @@ public class BookController {
     @Operation(summary = "Get all books", description = "Retrieves all books from the system")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of books"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing ssl-client-subject-dn or ssl-client-issuer-dn header")
+            @ApiResponse(responseCode = "401", description = UNAUTHORIZED_401_DESCRIPTION)
     })
     public ResponseEntity<List<BookResponse>> findAll() {
         List<BookResponse> books = bookService.findAll();
@@ -64,7 +66,7 @@ public class BookController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Book found"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing ssl-client-subject-dn or ssl-client-issuer-dn header")
+            @ApiResponse(responseCode = "401", description = UNAUTHORIZED_401_DESCRIPTION)
     })
     public ResponseEntity<BookResponse> findById(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {
@@ -78,7 +80,7 @@ public class BookController {
             @ApiResponse(responseCode = "200", description = "Book updated successfully"),
             @ApiResponse(responseCode = "400", description = "Bad Request - book already exists or validation failed"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing ssl-client-subject-dn or ssl-client-issuer-dn header")
+            @ApiResponse(responseCode = "401", description = UNAUTHORIZED_401_DESCRIPTION)
     })
     public ResponseEntity<BookResponse> update(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id,
@@ -92,7 +94,7 @@ public class BookController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Book deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Book not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - missing ssl-client-subject-dn or ssl-client-issuer-dn header")
+            @ApiResponse(responseCode = "401", description = UNAUTHORIZED_401_DESCRIPTION)
     })
     public ResponseEntity<Void> delete(
             @Parameter(description = "Book ID", required = true) @PathVariable(name = "id") Long id) {

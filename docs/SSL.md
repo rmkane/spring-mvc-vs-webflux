@@ -165,7 +165,7 @@ Once the mTLS handshake is complete:
 
 Certificates are generated using the script:
 
-**Location**: `scripts/certs/generate-mtls-certs.sh`
+**Location**: `acme-infrastructure/scripts/certs/generate-mtls-certs.sh`
 
 **What it does**:
 
@@ -178,7 +178,7 @@ Certificates are generated using the script:
 **To regenerate certificates**:
 
 ```bash
-./scripts/certs/generate-mtls-certs.sh
+./acme-infrastructure/scripts/certs/generate-mtls-certs.sh
 ```
 
 ## Security Benefits

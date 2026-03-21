@@ -1,0 +1,103 @@
+# Main Ingress for UI, test service, and other non-API routes
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: acme-ingress
+  namespace: acme-apps
+  annotations:
+    # Enable client certificate authentication
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "x-amzn-mtls-clientcert-subject: $ssl_client_s_dn";
+      more_set_headers "x-amzn-mtls-clientcert-issuer: $ssl_client_i_dn";
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - acme.local
+    secretName: ingress-tls-secret
+  rules:
+  - host: acme.local
+    http:
+      paths:
+      - path: /test
+        pathType: Prefix
+        backend:
+          service:
+            name: test-headers-service
+            port:
+              number: 8080
+      # Default catch-all goes to UI
+      # Note: /api/* without a backend prefix goes to UI (Next.js API routes)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ui
+            port:
+              number: 3001
+---
+# API Ingress with path rewriting
+# URL pattern: /api/{backend}/v1/{path} -> rewrites to /api/v1/{path} on the backend
+#
+# Examples:
+#   /api/mvc/v1/books     -> api-mvc:8080/api/v1/books
+#   /api/webflux/v1/books -> api-webflux:8081/api/v1/books
+#
+# To add a new API backend, just add another path entry below.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: acme-ingress-api
+  namespace: acme-apps
+  annotations:
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "acme-apps/ca-chain-secret"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "x-amzn-mtls-clientcert-subject: $ssl_client_s_dn";
+      more_set_headers "x-amzn-mtls-clientcert-issuer: $ssl_client_i_dn";
+    # Rewrite /api/{backend}/v1/{path} to /api/v1/{path}
+    nginx.ingress.kubernetes.io/rewrite-target: /api/v1/$2
+    # Use regex for path matching
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - acme.local
+    secretName: ingress-tls-secret
+  rules:
+  - host: acme.local
+    http:
+      paths:
+      # MVC API: /api/mvc/v1/* -> /api/v1/*
+      - path: /api/mvc(/v1/(.*))?
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: api-mvc
+            port:
+              number: 8080
+      # WebFlux API: /api/webflux/v1/* -> /api/v1/*
+      - path: /api/webflux(/v1/(.*))?
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: api-webflux
+            port:
+              number: 8081
+      # To add more APIs, just add entries like:
+      # - path: /api/newbackend(/v1/(.*))?
+      #   pathType: ImplementationSpecific
+      #   backend:
+      #     service:
+      #       name: api-newbackend
+      #       port:
+      #         number: 8082

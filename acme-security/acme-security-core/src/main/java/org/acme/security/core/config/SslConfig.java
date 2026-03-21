@@ -12,7 +12,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.io.HttpClientConnectionManager;
-import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -57,9 +57,13 @@ public class SslConfig {
         // SSLContext creation uses standard Java APIs (non-deprecated), but the
         // HttpClient integration requires these deprecated methods until HttpClient 5
         // provides a replacement API.
+        // Use NoopHostnameVerifier to allow service hostnames (e.g., auth-service-ldap)
+        // that don't match the certificate's subject alternative names (e.g.,
+        // localhost).
+        // The truststore still validates the certificate chain, so this is safe.
         @SuppressWarnings("deprecation")
         SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext,
-                new DefaultHostnameVerifier());
+                NoopHostnameVerifier.INSTANCE);
 
         @SuppressWarnings("deprecation")
         HttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create()

@@ -46,7 +46,7 @@ Both implementations share common security and authentication infrastructure whi
 │  - API routes for backend communication  │
 └───────┬──────────────────────────────────┘
         │
-        │ HTTP (ssl-client-subject-dn, ssl-client-issuer-dn headers)
+        │ HTTP (subject/issuer DN headers; names configurable)
         │
 ┌───────▼──────────────────────────────────┐
 │         Load Balancer / Gateway          │
@@ -302,13 +302,13 @@ acme-auth-service-ldap depends on:
 - Next.js web application (React/TypeScript)
 - Server-side rendering with App Router
 - Client-side interactivity for forms and actions
-- API routes that proxy requests to backend with `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
+- API routes that proxy requests to backend with subject and issuer DN auth headers (header names configurable)
 - Automatic header injection from environment variables
 - Book management interface (list, create, edit, delete)
 - Runs on port 3001
 - Uses pnpm for package management
 
-**Note:** The UI is a separate Node.js application, not a Maven module. It communicates with the backend APIs via HTTP, automatically including the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from environment configuration for local development.
+**Note:** The UI is a separate Node.js application, not a Maven module. It communicates with the backend APIs via HTTP, automatically including the subject and issuer DN headers (names configurable via `ACME_HEADER_SUBJECT_DN` / `ACME_HEADER_ISSUER_DN`; DN values from env) for local development.
 
 ## Data Flow
 
@@ -328,8 +328,8 @@ HTTP Request
 ┌─────────────────────────────────────┐
 │  Spring Security Filter Chain       │
 │  - Extract DN headers               │
-│    - ssl-client-subject-dn          │
-│    - ssl-client-issuer-dn           │
+│    - x-amzn-mtls-clientcert-subject │
+│    - x-amzn-mtls-clientcert-issuer  │
 │  - Validate DN format               │
 │  - Check cache for user             │
 │  - Call auth service if not cached  │  ◄── Blocking HTTP call
@@ -459,12 +459,12 @@ Both MVC and WebFlux use the same conceptual authentication flow:
 
 ```none
 1. Client Request
-   ├─ Header: ssl-client-subject-dn: cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
-   ├─ Header: ssl-client-issuer-dn: CN=Acme Intermediate CA,O=Acme Corp,C=US
+   ├─ Header: subject DN (e.g. x-amzn-mtls-clientcert-subject): cn=John Doe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
+   ├─ Header: issuer DN (e.g. x-amzn-mtls-clientcert-issuer): CN=Acme Intermediate CA,O=Acme Corp,C=US
    └─ HTTPS with mTLS (in production)
 
 2. Security Filter/WebFilter
-   ├─ Extract DN from ssl-client-subject-dn header
+   ├─ Extract DN from configured subject header
    ├─ Validate DN format
    └─ Normalize DN (trim whitespace)
 
@@ -498,7 +498,7 @@ Both MVC and WebFlux use the same conceptual authentication flow:
 **SecurityConstants**
 
 - Utility class with security-related constants
-- DN header names (`ssl-client-subject-dn`, `ssl-client-issuer-dn`)
+- Default DN header names (`x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`); overridable via `acme.security.headers.subject-dn` / `issuer-dn`
 - Public endpoints (Swagger, Actuator)
 - Error messages
 
@@ -757,11 +757,11 @@ Each service has a multi-stage Dockerfile:
 
 ```dockerfile
 # Build stage
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9.12-eclipse-temurin-21 AS build
 # ... build application
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 # ... run application
 ```
 
@@ -784,7 +784,7 @@ Services orchestrated with Docker Compose:
 | Persistence   | JPA + Hibernate | R2DBC           | Spring LDAP     | Spring Data JPA  | N/A          |
 | Database      | PostgreSQL      | PostgreSQL      | OpenLDAP        | PostgreSQL       | N/A          |
 | HTTP Client   | RestTemplate    | WebClient       | N/A             | N/A              | Fetch API    |
-| Language      | Java 17         | Java 17         | Java 17         | Java 17          | TypeScript 5 |
+| Language      | Java 21         | Java 21         | Java 21         | Java 21          | TypeScript 5 |
 
 ### Supporting Libraries
 
@@ -800,7 +800,7 @@ Services orchestrated with Docker Compose:
 ### Build Tools
 
 - **Build System**: Maven 3.9+ (Java modules), pnpm (UI)
-- **Java Version**: 17 (LTS)
+- **Java Version**: 21 (LTS)
 - **Node.js**: 20+ (for UI)
 - **Code Formatting**: Spotless (Java), ESLint (TypeScript)
 - **Containerization**: Docker + Docker Compose

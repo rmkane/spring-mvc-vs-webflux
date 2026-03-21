@@ -17,8 +17,11 @@
 		<!-- Parent POM -->
 		<module>acme-pom</module>
 
-		<!-- Libraries -->
+		<!-- Auth Libraries -->
 		<module>acme-auth-client</module>
+		<module>acme-auth-utils</module>
+
+		<!-- Test Libraries -->
 		<module>acme-test-integration-classic</module>
 		<module>acme-test-integration-reactive</module>
 

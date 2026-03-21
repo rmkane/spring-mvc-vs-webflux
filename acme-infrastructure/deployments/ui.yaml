@@ -1,0 +1,69 @@
+# Next.js UI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: acme-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+      - name: ui
+        image: acme-ui:latest
+        imagePullPolicy: Never  # Use local image (built with minikube docker-env)
+        ports:
+        - containerPort: 3001
+          name: http
+        env:
+        # Backend API configuration
+        # Option 1: Explicit URL (takes precedence)
+        # - name: NEXT_PUBLIC_API_URL
+        #   value: "http://api-mvc:8080"
+        # Option 2: API type selector (mvc or webflux)
+        - name: NEXT_PUBLIC_API_TYPE
+          value: "webflux"  # Change to "mvc" or "webflux" to use different API
+        # Note: SSL client certificate DNs are passed as headers by the ingress
+        # API routes will read them from request.headers automatically
+        # Server Components that call the backend directly will need these as env vars
+        # For now, API routes handle authentication via headers from ingress
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3001"
+        - name: HOSTNAME
+          value: "0.0.0.0"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+---
+# Next.js UI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: acme-apps
+spec:
+  selector:
+    app: ui
+  ports:
+  - port: 3001
+    targetPort: 3001
+    name: http

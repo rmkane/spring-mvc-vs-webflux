@@ -49,7 +49,6 @@ export function BookForm({ book }: BookFormProps) {
 
       showSuccess(`Book ${isEditing ? 'updated' : 'created'} successfully`)
       router.push('/books')
-      router.refresh()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       setError(errorMessage)

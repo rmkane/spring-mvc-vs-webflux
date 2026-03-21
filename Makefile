@@ -12,7 +12,8 @@
 		run-api-mvc run-api-webflux run-auth-ldap run-auth-db run-ui \
 		stop-api-mvc stop-api-webflux stop-auth stop-ui stop-all \
 		docker-build-api-mvc docker-build-api-webflux docker-build-auth-ldap docker-build-auth-db \
-		docker-run-api-mvc docker-run-api-webflux docker-run-auth-ldap docker-run-auth-db
+		docker-run-api-mvc docker-run-api-webflux docker-run-auth-ldap docker-run-auth-db \
+		k8s-pods k8s-logs k8s-describe k8s-deploy k8s-redeploy k8s-delete k8s-stop k8s-start k8s-status k8s-setup k8s-port-forward
 
 help:
 	@echo "Available targets:"
@@ -83,6 +84,19 @@ help:
 	@echo "  docker-run-api-webflux  - Run WebFlux API in Docker container"
 	@echo "  docker-run-auth-ldap    - Run Auth Service (LDAP) in Docker container"
 	@echo "  docker-run-auth-db      - Run Auth Service (Database) in Docker container"
+	@echo ""
+	@echo "Kubernetes Operations:"
+	@echo "  k8s-pods        - List all pods in acme-apps namespace"
+	@echo "  k8s-logs        - View logs for a pod (usage: make k8s-logs POD=<pod-name>)"
+	@echo "  k8s-describe    - Describe a pod (usage: make k8s-describe POD=<pod-name>)"
+	@echo "  k8s-deploy      - Deploy all services to Kubernetes (builds images and applies manifests)"
+	@echo "  k8s-redeploy    - Rebuild and redeploy all services to Kubernetes"
+	@echo "  k8s-delete      - Delete all deployments from Kubernetes"
+	@echo "  k8s-stop        - Stop Minikube cluster"
+	@echo "  k8s-start       - Start Minikube cluster"
+	@echo "  k8s-status     - Show Minikube and Kubernetes status"
+	@echo "  k8s-setup      - Initial setup of Minikube (namespaces, secrets, ingress)"
+	@echo "  k8s-port-forward - Port-forward Ingress controller (for local access)"
 
 # Infrastructure Operations
 infra-up:
@@ -217,6 +231,7 @@ JAVA_MODULES_LIST = \
 	acme-api-mvc \
 	acme-api-webflux \
 	acme-auth-client \
+	acme-auth-utils \
 	acme-auth-service-ldap \
 	acme-auth-service-db \
 	acme-security/acme-security-core \
@@ -335,3 +350,67 @@ docker-run-auth-ldap: docker-build-auth-ldap
 
 docker-run-auth-db: docker-build-auth-db
 	docker run -p 8082:8082 --network spring-mvc-vs-webflux_acme-network --name acme-auth-service-db acme-auth-service-db:latest
+
+# Kubernetes Operations
+k8s-pods:
+	@kubectl get pods -n acme-apps
+
+k8s-logs:
+	@if [ -z "$(POD)" ]; then \
+		echo "Usage: make k8s-logs POD=<pod-name>"; \
+		echo "Available pods:"; \
+		kubectl get pods -n acme-apps -o name | sed 's|pod/||'; \
+	else \
+		kubectl logs -f $(POD) -n acme-apps; \
+	fi
+
+k8s-describe:
+	@if [ -z "$(POD)" ]; then \
+		echo "Usage: make k8s-describe POD=<pod-name>"; \
+		echo "Available pods:"; \
+		kubectl get pods -n acme-apps -o name | sed 's|pod/||'; \
+	else \
+		kubectl describe pod $(POD) -n acme-apps; \
+	fi
+
+k8s-deploy:
+	@echo "🚀 Deploying to Kubernetes..."
+	@bash acme-infrastructure/scripts/deploy.sh
+
+k8s-redeploy: k8s-deploy
+
+k8s-delete:
+	@echo "🗑️  Deleting all deployments from Kubernetes..."
+	@kubectl delete -f acme-infrastructure/deployments/ --ignore-not-found=true || true
+	@echo "✅ Deployments deleted"
+
+k8s-stop:
+	@echo "🛑 Stopping Minikube cluster..."
+	@minikube stop
+
+k8s-start:
+	@echo "▶️  Starting Minikube cluster..."
+	@minikube start
+
+k8s-status:
+	@echo "📊 Minikube Status:"
+	@minikube status || echo "Minikube is not running"
+	@echo ""
+	@echo "📊 Kubernetes Pods:"
+	@kubectl get pods -n acme-apps 2>/dev/null || echo "Kubernetes is not accessible"
+	@echo ""
+	@echo "📊 Kubernetes Services:"
+	@kubectl get svc -n acme-apps 2>/dev/null || echo "Kubernetes is not accessible"
+	@echo ""
+	@echo "📊 Kubernetes Ingress:"
+	@kubectl get ingress -n acme-apps 2>/dev/null || echo "Kubernetes is not accessible"
+
+k8s-setup:
+	@echo "🔧 Setting up Minikube (namespaces, secrets, ingress)..."
+	@bash acme-infrastructure/scripts/setup-minikube.sh
+
+k8s-port-forward:
+	@echo "🔌 Port-forwarding Ingress controller to localhost:8443..."
+	@echo "Access via: https://acme.local:8443 (or https://localhost:8443)"
+	@echo "Press Ctrl+C to stop"
+	@bash acme-infrastructure/scripts/port-forward.sh

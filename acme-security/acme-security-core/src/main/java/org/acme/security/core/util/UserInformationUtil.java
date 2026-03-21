@@ -26,13 +26,13 @@ public final class UserInformationUtil {
      */
     public static UserInformation fromDn(String dn) {
         if (dn == null) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
         }
 
         String normalized = dn.trim();
 
         if (normalized.isEmpty()) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
         }
 
         return UserInformation.builder()

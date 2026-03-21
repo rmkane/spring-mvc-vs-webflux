@@ -52,7 +52,7 @@ public class CachedUserLookupService {
     public UserInfo lookupUser(String dn) {
         log.debug("Cache MISS: cache=users, key={}", dn);
         if (!StringUtils.hasText(dn)) {
-            throw new BadCredentialsException(SecurityConstants.MISSING_DN_MESSAGE);
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
         }
         // DN should already be normalized by caller - pass as-is to auth service
         return authServiceClient.lookupUser(dn);

@@ -1,0 +1,36 @@
+# Alternative Ingress configuration that doesn't require snippets
+# This uses a custom backend service that extracts headers from NGINX variables
+# Note: This approach requires the backend to read from X-Forwarded-* headers
+# or we need to use a sidecar/init container approach
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: acme-ingress
+  namespace: acme-apps
+  annotations:
+    # Enable client certificate authentication
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "2"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "acme-ingress/ca-chain-secret"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client-optional: "false"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    # Note: NGINX Ingress automatically passes some SSL info, but DN headers
+    # require snippets. Use enable-snippets.sh or deploy a custom controller.
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - acme.local
+    secretName: ingress-tls-secret
+  rules:
+  - host: acme.local
+    http:
+      paths:
+      - path: /test
+        pathType: Prefix
+        backend:
+          service:
+            name: test-headers-service
+            port:
+              number: 8080

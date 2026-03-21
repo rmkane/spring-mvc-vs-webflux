@@ -1,4 +1,4 @@
-package org.acme.security.core.util;
+package org.acme.auth.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -41,5 +41,17 @@ class DnUtilTest {
     void normalize_nullOrBlank(String input) {
         String result = DnUtil.normalize(input);
         assertNull(result);
+    }
+
+    @ParameterizedTest(name = "[{index}] {0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            # Description                  | Input DN                                                            | Expected Output
+            Reverse order DN               | DC=org,DC=acme,DC=corp,OU=users,OU=engineering,CN=jdoe            | cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+            Reverse order with spaces      | 'DC=org,DC=acme,DC=corp,OU=users,OU=engineering,CN=jdoe  '         | cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+            Normal order DN                | CN=jdoe,OU=engineering,OU=users,DC=corp,DC=acme,DC=org            | cn=jdoe,ou=engineering,ou=users,dc=corp,dc=acme,dc=org
+            """)
+    void normalize_orderVariations(String description, String input, String expected) {
+        String result = DnUtil.normalize(input);
+        assertEquals(expected, result, description);
     }
 }

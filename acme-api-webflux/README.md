@@ -14,7 +14,7 @@ This module provides a REST API for book management using Spring WebFlux, demons
 ## Key Features
 
 - CRUD operations for book resources
-- Header-based authentication via `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
+- Header-based authentication via configurable subject and issuer DN headers (default: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`)
 - Role-based access control (RBAC)
 - Integration with authentication service for user lookup
 - OpenAPI/Swagger documentation

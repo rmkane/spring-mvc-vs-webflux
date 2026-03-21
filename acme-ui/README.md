@@ -11,7 +11,7 @@ This module provides a web-based user interface for managing books, built with N
 - Book listing with alphabetical sorting (ignoring leading articles)
 - Create, edit, and delete book operations
 - Server-side rendering with Next.js App Router
-- Automatic `ssl-client-subject-dn` and `ssl-client-issuer-dn` header injection for backend authentication
+- Automatic subject and issuer DN header injection for backend authentication (header names configurable via `ACME_HEADER_SUBJECT_DN` / `ACME_HEADER_ISSUER_DN`; default: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`)
 - Environment-based configuration for local development
 - Responsive design with dark mode support
 - TypeScript for type safety
@@ -34,18 +34,22 @@ For local development, create a `.env.local` file in the `acme-ui` directory:
 
 ```bash
 # Local development Subject DN (Distinguished Name from X509 certificate)
-# This will be automatically added as the ssl-client-subject-dn header to all backend API requests
+# This will be automatically added as the configured subject header to all backend API requests
 SSL_CLIENT_SUBJECT_DN=cn=jdoe,ou=Engineering,ou=Users,dc=corp,dc=acme,dc=org
 
 # Local development Issuer DN (Issuer Distinguished Name from X509 certificate)
-# This will be automatically added as the ssl-client-issuer-dn header to all backend API requests
+# This will be automatically added as the configured issuer header to all backend API requests
 SSL_CLIENT_ISSUER_DN=CN=Acme Intermediate CA,O=Acme Corp,C=US
 
 # Optional: Backend API base URL (defaults to http://localhost:8080)
 # NEXT_PUBLIC_API_URL=http://localhost:8080
+
+# Optional: Override header names to match backend (default: x-amzn-mtls-clientcert-subject, x-amzn-mtls-clientcert-issuer)
+# ACME_HEADER_SUBJECT_DN=x-amzn-mtls-clientcert-subject
+# ACME_HEADER_ISSUER_DN=x-amzn-mtls-clientcert-issuer
 ```
 
-The `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables are used by server-side API utilities to automatically include the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers when making requests to the backend. This is necessary for local development since there's no ingress to provide authentication headers.
+The `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables are used by server-side API utilities to automatically include the subject and issuer DN headers when making requests to the backend (header names come from `lib/auth-headers.ts`; configurable via `ACME_HEADER_SUBJECT_DN` / `ACME_HEADER_ISSUER_DN`). This is necessary for local development since there's no ingress to provide authentication headers.
 
 **Note:** These environment variables are only available on the server side (API routes, Server Components, Server Actions). They are not exposed to the client for security reasons.
 
@@ -129,7 +133,7 @@ acme-ui/
 
 ## Making Backend API Requests
 
-The project includes utility functions in `lib/api.ts` for making requests to the backend API. These utilities automatically include the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from the `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables.
+The project includes utility functions in `lib/api.ts` for making requests to the backend API. These utilities automatically include the subject and issuer DN auth headers (names from `lib/auth-headers.ts`; DN values from `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables).
 
 **Example usage in API routes or Server Components:**
 
@@ -161,4 +165,4 @@ Books are sorted alphabetically by title, ignoring leading articles ("The", "A",
 ## Dependencies
 
 - **Backend APIs** - Communicates with `acme-api-mvc` (port 8080) or `acme-api-webflux` (port 8081)
-- **Authentication** - Uses `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication (configured via `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables)
+- **Authentication** - Uses configurable subject and issuer DN headers for authentication (header names: `ACME_HEADER_SUBJECT_DN` / `ACME_HEADER_ISSUER_DN`; DN values: `SSL_CLIENT_SUBJECT_DN` / `SSL_CLIENT_ISSUER_DN` environment variables)

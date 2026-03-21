@@ -36,6 +36,12 @@ spring:
         maximumSize=1000,
         recordStats
 
+# acme:
+#   security:
+#     headers:
+#       subject-dn: ssl-client-subject-dn
+#       issuer-dn: ssl-client-issuer-dn
+
 auth:
   service:
     base-url: https://localhost:8082

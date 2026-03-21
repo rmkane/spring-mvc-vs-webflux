@@ -41,6 +41,12 @@ auth:
         password: changeit
         type: JKS
 
+# acme:
+#   security:
+#     headers:
+#       subject-dn: ssl-client-subject-dn
+#       issuer-dn: ssl-client-issuer-dn
+
 management:
   endpoints:
     web:

@@ -7,7 +7,7 @@ This directory contains keystores and truststores for the Auth Service (Database
 **These files are NOT committed to version control.** To generate them, run:
 
 ```bash
-./scripts/certs/setup-all-certs.sh
+./acme-infrastructure/scripts/certs/setup-all-certs.sh
 ```
 
 This script will:

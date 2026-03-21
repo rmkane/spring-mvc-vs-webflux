@@ -6,7 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CERT_DIR="$PROJECT_ROOT/k8s/certs"
+CERT_DIR="$PROJECT_ROOT/acme-infrastructure/certs"
 ROOT_CA_DIR="$CERT_DIR/ca/root"
 INTERMEDIATE_CA_DIR="$CERT_DIR/ca/intermediate"
 
@@ -110,5 +110,5 @@ echo "  CA Chain:       $CERT_DIR/ca/ca-chain.crt"
 echo ""
 echo "Next steps:"
 echo "  1. Import $ROOT_CA_DIR/ca-root.crt into your browser's trusted root store"
-echo "  2. Generate user certificates using: scripts/certs/generate-user-cert.sh"
+echo "  2. Generate user certificates using: acme-infrastructure/scripts/certs/generate-user-cert.sh"
 echo ""

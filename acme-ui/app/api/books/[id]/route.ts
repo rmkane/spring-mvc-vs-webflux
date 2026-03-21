@@ -20,7 +20,8 @@ export async function GET(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid book ID' }, { status: 400 })
     }
 
-    const book = await getBookById(bookId)
+    // Pass incoming headers to forward SSL client certificate info from ingress
+    const book = await getBookById(bookId, request.headers)
     return NextResponse.json(book)
   } catch (error) {
     console.error('Error fetching book:', error)
@@ -44,7 +45,8 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const body: UpdateBookRequest = await request.json()
-    const book = await updateBook(bookId, body)
+    // Pass incoming headers to forward SSL client certificate info from ingress
+    const book = await updateBook(bookId, body, request.headers)
     return NextResponse.json(book)
   } catch (error) {
     console.error('Error updating book:', error)
@@ -64,7 +66,8 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid book ID' }, { status: 400 })
     }
 
-    await deleteBook(bookId)
+    // Pass incoming headers to forward SSL client certificate info from ingress
+    await deleteBook(bookId, request.headers)
     return new NextResponse(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting book:', error)

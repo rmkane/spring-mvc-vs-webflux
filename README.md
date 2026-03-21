@@ -99,6 +99,7 @@ spring-mvc-vs-webflux/
 │   ├── acme-dependencies/           # BOM for dependency versions
 │   └── acme-starter-parent/         # Parent POM with plugin management
 ├── acme-auth-client/                # REST client wrapper for auth service
+├── acme-auth-utils/                 # Shared DN utility classes for authentication
 ├── acme-auth-service-db/            # Authentication service (PostgreSQL-based)
 ├── acme-auth-service-ldap/          # Authentication service (LDAP-based)
 ├── acme-security/                   # Security layer
@@ -118,7 +119,7 @@ spring-mvc-vs-webflux/
 
 ### Prerequisites
 
-- Java 17+
+- Java 21+
 - Maven 3.9+
 - Node.js 20+ and pnpm 8+
 - Docker and Docker Compose
@@ -195,7 +196,7 @@ make run-ui
 
 Runs on port 3001
 
-The UI provides a web interface for managing books. It communicates with the backend APIs (MVC or WebFlux) and automatically includes the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication. For local development, configure the DNs in `acme-ui/.env.local` (see `acme-ui/README.md` for details).
+The UI provides a web interface for managing books. It communicates with the backend APIs (MVC or WebFlux) and automatically includes the subject and issuer DN auth headers for authentication (header names are configurable; see `acme-ui/README.md`). For local development, configure the DNs in `acme-ui/.env.local`.
 
 ### Local Development Environment Variables
 
@@ -248,7 +249,7 @@ The authentication service is available in **two interchangeable variants**, bot
 
 The security layer handles authentication mechanics:
 
-- Extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from HTTP requests
+- Extracts subject and issuer DN headers from HTTP requests (header names configurable via `acme.security.headers.subject-dn` / `issuer-dn`; default: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`)
 - **Calls auth service via REST** using `AuthServiceClient` to look up user by DN
 - Creates `UserInformation` (derivative) from `UserInfo` returned by auth service
 - Missing header returns `401 Unauthorized`
@@ -270,7 +271,7 @@ The security layer handles authentication mechanics:
 
 ### MVC Security
 
-- `RequestHeaderAuthenticationFilter` extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
+- `RequestHeaderAuthenticationFilter` extracts subject and issuer DN headers (configurable; see SecurityConstants)
 - Custom `AuthenticationManager` calls `AuthServiceClient` to lookup user by DN
 - Creates `UserInformation` from `UserInfo` returned by auth service
 - `SecurityContextHolder` for accessing principal (thread-local)
@@ -298,7 +299,7 @@ The security layer handles authentication mechanics:
 
 ### WebFlux Security
 
-- Custom `ServerHttpAuthenticationConverter` extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers
+- Custom `ServerHttpAuthenticationConverter` extracts subject and issuer DN headers (configurable; see SecurityConstants)
 - Reactive `AuthenticationManager` calls `AuthServiceClient` to lookup user by DN
 - Creates `UserInformation` from `UserInfo` returned by auth service
 - `ReactiveSecurityContextHolder` or `@AuthenticationPrincipal` for accessing principal
@@ -319,7 +320,7 @@ The security layer handles authentication mechanics:
 
 ## How They Are The Same
 
-- **Same Security Mechanism**: Both use `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication
+- **Same Security Mechanism**: Both use configurable subject and issuer DN headers for authentication (default header names: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`)
 - **Same Authentication Flow**: Both call auth service via REST to lookup users by DN
 - **Same User Principal**: Both create `UserInformation` (derivative) from `UserInfo` with roles from auth service
 - **Same Role-Based Access Control**: Both use `@PreAuthorize` annotations with database-backed roles
@@ -366,7 +367,7 @@ The security layer handles authentication mechanics:
 
 ### Header-Based Authentication
 
-Both implementations extract the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers (Subject and Issuer Distinguished Names from X509 certificate) from HTTP requests. The flow is:
+Both implementations extract the subject and issuer DN headers (Subject and Issuer Distinguished Names from X509 certificate) from HTTP requests. Header names are configurable via `acme.security.headers.subject-dn` and `acme.security.headers.issuer-dn` (defaults: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`). The flow is:
 
 1. Security layer extracts DN from header
 2. Security layer calls `CachedUserLookupService` which checks cache first
@@ -380,7 +381,7 @@ Both implementations extract the `ssl-client-subject-dn` and `ssl-client-issuer-
 
 ### Missing Header
 
-If the `ssl-client-subject-dn` or `ssl-client-issuer-dn` headers are missing or empty, both implementations return `401 Unauthorized`.
+If the subject or issuer DN headers are missing or empty, both implementations return `401 Unauthorized`.
 
 ### User Lookup
 
@@ -443,20 +444,22 @@ Service methods are protected with `@PreAuthorize` annotations:
 
 ### Deployment Context
 
-Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ingress layer above, which forwards headers (including `ssl-client-subject-dn` and `ssl-client-issuer-dn`) to the applications.
+Applications run in HTTP (no SSL/TLS). SSL/TLS termination is handled by the ingress layer above, which forwards headers (including the configured subject and issuer DN headers) to the applications.
 
 ## Testing the APIs
+
+**Note:** Header names are configurable. The examples below use the default names (`x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`). The test scripts use the same defaults. If you configure different header names via `acme.security.headers.subject-dn` / `issuer-dn`, use those names in curl.
 
 ### Example Request (MVC)
 
 ```bash
-curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" http://localhost:8080/api/v1/books
+curl -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" http://localhost:8080/api/v1/books
 ```
 
 ### Example Request (WebFlux)
 
 ```bash
-curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" http://localhost:8081/api/v1/books
+curl -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" http://localhost:8081/api/v1/books
 ```
 
 **Available test users:**
@@ -481,8 +484,8 @@ curl http://localhost:8080/api/v1/books  # Returns 401 Unauthorized
 
 ```bash
 curl -X POST \
-     -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" \
      -H "Content-Type: application/json" \
      -d '{"title":"Test Book","author":"Test Author","isbn":"123-456-789","publicationYear":2024}' \
      http://localhost:8080/api/v1/books
@@ -493,16 +496,16 @@ curl -X POST \
 **Get All Books (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
-curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+curl -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" \
      http://localhost:8080/api/v1/books
 ```
 
 **Get Book by ID (requires READ_ONLY or READ_WRITE role):**
 
 ```bash
-curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+curl -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" \
      http://localhost:8080/api/v1/books/1
 ```
 
@@ -510,8 +513,8 @@ curl -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
 
 ```bash
 curl -X PUT \
-     -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" \
      -H "Content-Type: application/json" \
      -d '{"title":"Updated Title","author":"Updated Author"}' \
      http://localhost:8080/api/v1/books/1
@@ -521,8 +524,8 @@ curl -X PUT \
 
 ```bash
 curl -X DELETE \
-     -H "ssl-client-subject-dn: ${SSL_CLIENT_SUBJECT_DN}" \
-     -H "ssl-client-issuer-dn: ${SSL_CLIENT_ISSUER_DN}" \
+     -H "x-amzn-mtls-clientcert-subject: ${SSL_CLIENT_SUBJECT_DN}" \
+     -H "x-amzn-mtls-clientcert-issuer: ${SSL_CLIENT_ISSUER_DN}" \
      http://localhost:8080/api/v1/books/1
 ```
 
@@ -694,6 +697,7 @@ make docker-run-webflux
 
 - **acme-pom**: Dependency management (BOM and parent POM)
 - **acme-auth-client**: REST client wrapper for calling auth service
+- **acme-auth-utils**: Shared utility classes for DN parsing, normalization, and LDAP operations
 - **acme-auth-service-db**: Authentication service with PostgreSQL backend
 - **acme-auth-service-ldap**: Authentication service with LDAP backend
 - **acme-security**: Security layer with core logic and framework-specific configs
@@ -709,9 +713,12 @@ make docker-run-webflux
 
 - `acme-api-mvc` depends on `acme-security-webmvc` and `acme-persistence-jpa`
 - `acme-api-webflux` depends on `acme-security-webflux` and `acme-persistence-r2dbc`
-- `acme-security-core` depends on `acme-auth-client` which provides `AuthServiceClient`
+- `acme-security-core` depends on `acme-auth-client` (provides `AuthServiceClient`) and `acme-auth-utils` (DN utilities)
+- `acme-auth-service-ldap` depends on `acme-auth-utils` (DN utilities for LDAP operations)
 - `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean
-- `acme-auth-service-db` and `acme-auth-service-ldap` are standalone Spring Boot applications (no dependencies on other modules)
+- `acme-auth-utils` provides shared DN parsing and normalization utilities (`DnUtil`, `LdapDnUtil`)
+- `acme-security-core` contains security-specific constants (`SecurityConstants` with `ACME_GROUP_PREFIX`)
+- `acme-auth-service-db` and `acme-auth-service-ldap` are standalone Spring Boot applications
 - All modules inherit from `acme-starter-parent` which inherits from `acme-dependencies`
 
 ### Architecture Flow
@@ -722,7 +729,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
          UserInformation (principal)                                    Cache (on miss)
 ```
 
-1. Security extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers (Subject and Issuer Distinguished Names from X509 certificate)
+1. Security extracts subject and issuer DN headers (names from `acme.security.headers` or SecurityConstants defaults)
 2. Security calls `CachedUserLookupService.lookupUser(dn)` (cached)
 3. Cache is checked first - if hit, returns cached `UserInfo`
 4. On cache miss, `CachedUserLookupService` calls `AuthServiceClient.lookupUser(dn)`
@@ -771,8 +778,8 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 - `AuthServiceClient`: REST client for calling auth service to lookup users by DN
 - `AuthenticationService`: Creates authenticated `Authentication` from DN (uses `CachedUserLookupService`)
 - `SslConfig`: SSL/TLS configuration for auth service client communication (mTLS)
-- `WebMvcSecurityConfig`: MVC security configuration (extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers)
-- `WebFluxSecurityConfig`: WebFlux security configuration (extracts `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers)
+- `WebMvcSecurityConfig`: MVC security configuration (extracts subject/issuer DN headers; names configurable)
+- `WebFluxSecurityConfig`: WebFlux security configuration (extracts subject/issuer DN headers; names configurable)
 - `RequestResponseLoggingFilter`: MVC filter that logs request and response headers (DEBUG level)
 - `RequestResponseLoggingWebFilter`: WebFlux filter that logs request and response headers (DEBUG level)
 
@@ -804,7 +811,7 @@ Request → Security Layer → CachedUserLookupService → [Cache Check] → Aut
 
 - **Next.js Application**: Web UI for book management built with Next.js 16.1 and React 19.2
 - **Features**: Book listing, create, edit, and delete operations with alphabetical sorting (ignoring leading articles)
-- **Authentication**: Automatically includes `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers from `SSL_CLIENT_SUBJECT_DN` and `SSL_CLIENT_ISSUER_DN` environment variables for backend API requests
+- **Authentication**: Automatically includes subject and issuer DN auth headers (names configurable via `ACME_HEADER_SUBJECT_DN` / `ACME_HEADER_ISSUER_DN` in UI; DN values from `SSL_CLIENT_SUBJECT_DN` / `SSL_CLIENT_ISSUER_DN`) for backend API requests
 - **Port**: Runs on port 3001 (development server)
 - **Technology Stack**: Next.js, React, TypeScript, Tailwind CSS, pnpm
 - **See `acme-ui/README.md` for detailed documentation**

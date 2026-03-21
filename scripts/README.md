@@ -62,7 +62,7 @@ Both scripts support the same operations:
 
 ## Authentication
 
-Both scripts use the `ssl-client-subject-dn` and `ssl-client-issuer-dn` headers for authentication. The Subject Distinguished Name (DN) is looked up in the database, and the user's roles determine what operations they can perform.
+Both scripts use configurable subject and issuer DN headers for authentication (default header names: `x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`). The Subject Distinguished Name (DN) is looked up in the database, and the user's roles determine what operations they can perform.
 
 ### Available Users
 

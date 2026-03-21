@@ -6,6 +6,21 @@ This document outlines the plan for migrating the Acme application from Docker C
 <!-- omit in toc -->
 ## Table of Contents
 
+- [Getting Started](#getting-started)
+  - [Quick Start (From Scratch)](#quick-start-from-scratch)
+  - [After Docker System Prune](#after-docker-system-prune)
+    - [State 1: Cluster is healthy but images are missing](#state-1-cluster-is-healthy-but-images-are-missing)
+    - [State 2: Cluster is corrupted (kubelet/apiserver stopped)](#state-2-cluster-is-corrupted-kubeletapiserver-stopped)
+  - [Common Operations](#common-operations)
+    - [Start the Cluster](#start-the-cluster)
+    - [Stop the Cluster](#stop-the-cluster)
+    - [Redeploy All Services](#redeploy-all-services)
+    - [Redeploy a Specific Pod](#redeploy-a-specific-pod)
+    - [Switching Between MVC and WebFlux APIs](#switching-between-mvc-and-webflux-apis)
+    - [Direct API Access](#direct-api-access)
+    - [View Logs](#view-logs)
+  - [Available Make Targets](#available-make-targets)
+  - [Troubleshooting](#troubleshooting)
 - [Overview](#overview)
 - [Goals](#goals)
 - [Architecture Overview](#architecture-overview)
@@ -28,6 +43,7 @@ This document outlines the plan for migrating the Acme application from Docker C
   - [Database Services](#database-services)
   - [LDAP Service](#ldap-service)
   - [Auth Services](#auth-services)
+    - [Switching Between Auth Services](#switching-between-auth-services)
   - [API Services](#api-services)
   - [UI Service](#ui-service)
   - [Monitoring Services](#monitoring-services)
@@ -84,6 +100,238 @@ This document outlines the plan for migrating the Acme application from Docker C
   - [Short-term](#short-term)
   - [Long-term](#long-term)
 
+## Getting Started
+
+This section covers how to get the Kubernetes cluster running locally using Minikube. All commands use `make` targets defined in the root [Makefile](../Makefile).
+
+### Quick Start (From Scratch)
+
+Run the following commands to set up the entire cluster from scratch:
+
+```bash
+# 1. Start Minikube
+make k8s-start
+
+# 2. Run the initial setup (creates namespaces, secrets, and ingress)
+make k8s-setup
+
+# 3. Generate certificates (if not already done)
+./acme-infrastructure/scripts/certs/setup-all-certs.sh
+
+# 4. Build and deploy all services
+make k8s-deploy
+
+# 5. Start port forwarding to access the cluster
+make k8s-port-forward
+```
+
+After setup, add `acme.local` to your `/etc/hosts` (if not already present):
+
+```bash
+echo "127.0.0.1 acme.local" | sudo tee -a /etc/hosts
+```
+
+Access the application at `https://acme.local:8443/`.
+
+### After Docker System Prune
+
+If you ran `docker system prune` and lost your Docker images, the cluster may be in one of two states:
+
+#### State 1: Cluster is healthy but images are missing
+
+Pods will be in `ImagePullBackOff` or `ErrImagePull` state. To recover:
+
+```bash
+# 1. Check cluster status
+make k8s-status
+
+# 2. If Minikube is running with healthy kubelet/apiserver, just redeploy
+eval $(minikube docker-env)
+make k8s-deploy
+make k8s-pods
+make k8s-port-forward
+```
+
+#### State 2: Cluster is corrupted (kubelet/apiserver stopped)
+
+If `make k8s-status` shows `kubelet: Stopped` or `apiserver: Stopped`, the cluster needs to be recreated:
+
+```bash
+# 1. Delete and recreate the cluster
+minikube delete && minikube start
+
+# 2. Run full setup (includes enabling ingress addon)
+make k8s-setup
+
+# 3. Deploy services
+eval $(minikube docker-env)
+make k8s-deploy
+
+# 4. Start port forwarding
+make k8s-port-forward
+```
+
+The `k8s-deploy` target rebuilds all Docker images inside Minikube's Docker environment and restarts the deployments.
+
+### Common Operations
+
+#### Start the Cluster
+
+```bash
+make k8s-start
+make k8s-port-forward  # In a separate terminal or backgrounded
+```
+
+#### Stop the Cluster
+
+```bash
+make k8s-stop
+```
+
+#### Redeploy All Services
+
+After making code changes:
+
+```bash
+eval $(minikube docker-env)
+make k8s-deploy
+```
+
+#### Redeploy a Specific Pod
+
+To rebuild and redeploy a single service after code changes:
+
+```bash
+# 1. Point Docker to Minikube's Docker daemon
+eval $(minikube docker-env)
+
+# 2. Rebuild the image
+docker build -f <Dockerfile> -t <image-name>:latest .
+
+# 3. Restart the deployment to pick up the new image
+kubectl rollout restart deployment/<deployment-name> -n acme-apps
+```
+
+**Service reference table:**
+
+| Service     | Dockerfile                       | Image Name                    | Deployment Name            |
+|-------------|----------------------------------|-------------------------------|----------------------------|
+| UI          | `acme-ui/Dockerfile`             | `acme-ui:latest`              | `ui`                       |
+| MVC API     | `acme-api-mvc/Dockerfile`        | `acme-api-mvc:latest`.        | `api-mvc`                  |
+| WebFlux API | `acme-api-webflux/Dockerfile`    | `acme-api-webflux:latest`     | `api-webflux`              |
+| Auth (DB)   | `acme-auth-service-db/Dockerfile`| `acme-auth-service-db:latest` | `auth-service-db`          |
+
+**Examples:**
+
+```bash
+# Rebuild and deploy the UI
+eval $(minikube docker-env)
+docker build -f acme-ui/Dockerfile -t acme-ui:latest acme-ui
+kubectl rollout restart deployment/ui -n acme-apps
+
+# Rebuild and deploy the MVC API
+eval $(minikube docker-env)
+docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .
+kubectl rollout restart deployment/api-mvc -n acme-apps
+
+# Rebuild and deploy the WebFlux API
+eval $(minikube docker-env)
+docker build -f acme-api-webflux/Dockerfile -t acme-api-webflux:latest .
+kubectl rollout restart deployment/api-webflux -n acme-apps
+```
+
+#### Switching Between MVC and WebFlux APIs
+
+The UI uses the `NEXT_PUBLIC_API_TYPE` environment variable to determine which backend API to call internally. Valid values are `mvc` (default) or `webflux`.
+
+**To switch the UI to use a different backend:**
+
+1. Edit [acme-infrastructure/deployments/ui.yaml](../acme-infrastructure/deployments/ui.yaml) and change `NEXT_PUBLIC_API_TYPE`:
+
+   ```yaml
+   env:
+   - name: NEXT_PUBLIC_API_TYPE
+     value: "mvc"  # Change to "webflux" to use WebFlux API
+   ```
+
+2. Apply the updated deployment and restart the pod:
+
+   ```bash
+   kubectl apply -f acme-infrastructure/deployments/ui.yaml
+   kubectl rollout restart deployment/ui -n acme-apps
+   ```
+
+3. Verify the pod restarted with the new configuration:
+
+   ```bash
+   kubectl get pods -n acme-apps -l app=ui
+   ```
+
+**Note:** This only affects which backend the UI calls internally. Both APIs remain running and accessible. You can also access either API directly via the browser (see [Direct API Access](#direct-api-access) below).
+
+#### Direct API Access
+
+Both MVC and WebFlux APIs can be accessed directly in the browser (with a valid client certificate):
+
+| API     | URL Pattern                                | Example                                          |
+|---------|--------------------------------------------|--------------------------------------------------|
+| MVC     | `https://acme.local:8443/api/mvc/v1/*`     | `https://acme.local:8443/api/mvc/v1/books`       |
+| WebFlux | `https://acme.local:8443/api/webflux/v1/*` | `https://acme.local:8443/api/webflux/v1/books`.  |
+
+The ingress rewrites these paths to `/api/v1/*` on the respective backend services. This pattern is extensible—to add a new API backend, just add another path entry to the `acme-ingress-api` resource in [ingress.yaml](../acme-infrastructure/infrastructure/ingress.yaml):
+
+```yaml
+# Example: Adding a new "graphql" API backend
+- path: /api/graphql(/v1/(.*))?
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: api-graphql
+      port:
+        number: 8082
+```
+
+#### View Logs
+
+```bash
+# List pods to get names
+make k8s-pods
+
+# View logs for a specific pod
+make k8s-logs POD=ui-xxxxx-xxxxx
+
+# Or directly with kubectl
+kubectl logs -f deployment/ui -n acme-apps
+kubectl logs -f deployment/api-mvc -n acme-apps
+kubectl logs -f deployment/api-webflux -n acme-apps
+```
+
+### Available Make Targets
+
+| Target                         | Description                                  |
+|--------------------------------|----------------------------------------------|
+| `make k8s-start`               | Start Minikube cluster                       |
+| `make k8s-stop`                | Stop Minikube cluster                        |
+| `make k8s-status`              | Show Minikube and Kubernetes status          |
+| `make k8s-setup`               | Initial setup (namespaces, secrets, ingress) |
+| `make k8s-deploy`              | Build images and deploy all services         |
+| `make k8s-redeploy`            | Rebuild and redeploy all services            |
+| `make k8s-delete`              | Delete all deployments                       |
+| `make k8s-pods`                | List all pods in acme-apps namespace         |
+| `make k8s-logs POD=<name>`     | View logs for a specific pod                 |
+| `make k8s-describe POD=<name>` | Describe a specific pod                      |
+| `make k8s-port-forward`        | Port-forward Ingress to localhost:8443       |
+
+### Troubleshooting
+
+- **Pods stuck in ImagePullBackOff**: Run `eval $(minikube docker-env)` before building images
+- **Pods stuck in CrashLoopBackOff**: Check logs with `make k8s-logs POD=<pod-name>`
+- **Force recreation of all pods**: `kubectl delete pods --all -n acme-apps`
+- **Check pod status**: `make k8s-describe POD=<pod-name>`
+- **403 Forbidden from Ingress**: Make sure your client certificate is loaded in the browser
+- **TLS certificate errors**: Recreate secrets with `make k8s-setup`
+- See [TROUBLESHOOTING.md](../acme-infrastructure/TROUBLESHOOTING.md) for more help
+
 ## Overview
 
 This migration will move the Acme application from a Docker Compose-based deployment to a Kubernetes cluster. The key enhancement is implementing X509 certificate-based authentication where:
@@ -92,8 +340,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 2. Users import certificates into their browsers
 3. NGINX Ingress requires client certificates (mTLS)
 4. NGINX extracts the user's DN from the certificate
-5. NGINX forwards the Subject DN as `ssl-client-subject-dn` header and Issuer DN as `ssl-client-issuer-dn` header to backend services
-6. Backend services use the `ssl-client-subject-dn` header for authentication
+5. NGINX forwards the Subject DN and Issuer DN to backend services using the default header names (`x-amzn-mtls-clientcert-subject`, `x-amzn-mtls-clientcert-issuer`); backend header names are configurable via `acme.security.headers.subject-dn` / `issuer-dn` if needed.
+6. Backend services use the configured subject DN header for authentication
 
 ## Goals
 
@@ -119,8 +367,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 │  - Validates client certificate                             │
 │  - Extracts DN from certificate Subject/SAN                 │
 │  - Adds headers:                                            │
-│    - ssl-client-subject-dn                                  │
-│    - ssl-client-issuer-dn headers                           │
+│    - x-amzn-mtls-clientcert-subject                         │
+│    - x-amzn-mtls-clientcert-issuer                          │
 └──────────────────────┬──────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┐
@@ -159,14 +407,14 @@ This migration will move the Acme application from a Docker Compose-based deploy
 
    ```bash
    # Create CA directory structure
-   mkdir -p k8s/certs/ca/{root,intermediate}
+   mkdir -p acme-infrastructure/certs/ca/{root,intermediate}
    
    # Generate root CA private key
-   openssl genrsa -out k8s/certs/ca/root/ca-root.key 4096
+   openssl genrsa -out acme-infrastructure/certs/ca/root/ca-root.key 4096
    
    # Generate root CA certificate (valid for 10 years)
-   openssl req -new -x509 -days 3650 -key k8s/certs/ca/root/ca-root.key \
-     -out k8s/certs/ca/root/ca-root.crt \
+   openssl req -new -x509 -days 3650 -key acme-infrastructure/certs/ca/root/ca-root.key \
+     -out acme-infrastructure/certs/ca/root/ca-root.crt \
      -subj "/CN=Acme Root CA/O=Acme Corp/C=US"
    ```
 
@@ -174,20 +422,20 @@ This migration will move the Acme application from a Docker Compose-based deploy
 
    ```bash
    # Generate intermediate CA private key
-   openssl genrsa -out k8s/certs/ca/intermediate/ca-intermediate.key 4096
+   openssl genrsa -out acme-infrastructure/certs/ca/intermediate/ca-intermediate.key 4096
    
    # Generate intermediate CA CSR
-   openssl req -new -key k8s/certs/ca/intermediate/ca-intermediate.key \
-     -out k8s/certs/ca/intermediate/ca-intermediate.csr \
+   openssl req -new -key acme-infrastructure/certs/ca/intermediate/ca-intermediate.key \
+     -out acme-infrastructure/certs/ca/intermediate/ca-intermediate.csr \
      -subj "/CN=Acme Intermediate CA/O=Acme Corp/C=US"
    
    # Sign intermediate CA with root CA (valid for 5 years)
    openssl x509 -req -days 1825 \
-     -in k8s/certs/ca/intermediate/ca-intermediate.csr \
-     -CA k8s/certs/ca/root/ca-root.crt \
-     -CAkey k8s/certs/ca/root/ca-root.key \
+     -in acme-infrastructure/certs/ca/intermediate/ca-intermediate.csr \
+     -CA acme-infrastructure/certs/ca/root/ca-root.crt \
+     -CAkey acme-infrastructure/certs/ca/root/ca-root.key \
      -CAcreateserial \
-     -out k8s/certs/ca/intermediate/ca-intermediate.crt \
+     -out acme-infrastructure/certs/ca/intermediate/ca-intermediate.crt \
      -extensions v3_intermediate_ca \
      -extfile <(cat <<EOF
      [v3_intermediate_ca]
@@ -201,8 +449,8 @@ This migration will move the Acme application from a Docker Compose-based deploy
 
    ```bash
    # Combine root and intermediate for full chain
-   cat k8s/certs/ca/intermediate/ca-intermediate.crt \
-       k8s/certs/ca/root/ca-root.crt > k8s/certs/ca/ca-chain.crt
+   cat acme-infrastructure/certs/ca/intermediate/ca-intermediate.crt \
+       acme-infrastructure/certs/ca/root/ca-root.crt > acme-infrastructure/certs/ca/ca-chain.crt
    ```
 
 ### User Certificate Generation
@@ -217,7 +465,7 @@ This migration will move the Acme application from a Docker Compose-based deploy
 - **Extended Key Usage**: `clientAuth`
 - **Validity**: 1 year (renewable)
 
-**Script**: `scripts/certs/generate-user-cert.sh`
+**Script**: `acme-infrastructure/scripts/certs/generate-user-cert.sh`
 
 ```bash
 #!/bin/bash
@@ -232,7 +480,7 @@ if [ -z "$USER_DN" ] || [ -z "$USER_ID" ]; then
   exit 1
 fi
 
-CERT_DIR="k8s/certs/users"
+CERT_DIR="acme-infrastructure/certs/users"
 mkdir -p "$CERT_DIR"
 
 # Generate user private key
@@ -266,8 +514,8 @@ openssl req -new -key "$CERT_DIR/${USER_ID}.key" \
 # Sign certificate with intermediate CA (valid for 1 year)
 openssl x509 -req -days 365 \
   -in "$CERT_DIR/${USER_ID}.csr" \
-  -CA k8s/certs/ca/intermediate/ca-intermediate.crt \
-  -CAkey k8s/certs/ca/intermediate/ca-intermediate.key \
+  -CA acme-infrastructure/certs/ca/intermediate/ca-intermediate.crt \
+  -CAkey acme-infrastructure/certs/ca/intermediate/ca-intermediate.key \
   -CAcreateserial \
   -out "$CERT_DIR/${USER_ID}.crt" \
   -extensions v3_req \
@@ -278,14 +526,14 @@ openssl pkcs12 -export \
   -out "$CERT_DIR/${USER_ID}.p12" \
   -inkey "$CERT_DIR/${USER_ID}.key" \
   -in "$CERT_DIR/${USER_ID}.crt" \
-  -certfile k8s/certs/ca/ca-chain.crt \
+  -certfile acme-infrastructure/certs/ca/ca-chain.crt \
   -passout pass:  # No password for easier import
 
 echo "Certificate generated: $CERT_DIR/${USER_ID}.p12"
 echo "Import this file into your browser's certificate store"
 ```
 
-**Batch Generation Script**: `scripts/certs/generate-all-user-certs.sh`
+**Batch Generation Script**: `acme-infrastructure/scripts/certs/generate-all-user-certs.sh`
 
 ```bash
 #!/bin/bash
@@ -306,7 +554,7 @@ ldapsearch -x -H ldap://localhost:389 \
     elif [[ $line == uid:* ]]; then
       USER_ID="${line#uid: }"
       echo "Generating certificate for $USER_ID..."
-      ./scripts/certs/generate-user-cert.sh "$USER_DN" "$USER_ID"
+      ./acme-infrastructure/scripts/certs/generate-user-cert.sh "$USER_DN" "$USER_ID"
     fi
   done
 ```
@@ -547,8 +795,8 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
     nginx.ingress.kubernetes.io/auth-tls-secret: "acme-ingress/ca-chain-secret"
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "ssl-client-subject-dn: $ssl_client_s_dn";
-      more_set_headers "ssl-client-issuer-dn: $ssl_client_i_dn";
+      more_set_headers "x-amzn-mtls-clientcert-subject: $ssl_client_s_dn";
+      more_set_headers "x-amzn-mtls-clientcert-issuer: $ssl_client_i_dn";
 spec:
   ingressClassName: nginx
   tls:
@@ -779,6 +1027,60 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 5
 ```
+
+#### Switching Between Auth Services
+
+The application supports two interchangeable auth services:
+
+- **`auth-service-ldap`**: LDAP-based authentication (requires LDAP server)
+- **`auth-service-db`**: PostgreSQL-based authentication (simpler setup)
+
+Both services provide the same REST API contract and can be swapped without code changes.
+
+**Quick Switch Using Script:**
+
+```bash
+# Switch to database auth service (default)
+./acme-infrastructure/scripts/switch-auth-service.sh db
+
+# Switch to LDAP auth service
+./acme-infrastructure/scripts/switch-auth-service.sh ldap
+```
+
+**Manual Switch:**
+
+1. Update API service environment variables:
+
+   ```bash
+   kubectl set env deployment/api-mvc -n acme-apps \
+       AUTH_SERVICE_BASE_URL="https://auth-service-db:8082"
+   ```
+
+2. Scale down the old auth service:
+
+   ```bash
+   kubectl scale deployment/auth-service-ldap -n acme-apps --replicas=0
+   ```
+
+3. Scale up the new auth service:
+
+   ```bash
+   kubectl scale deployment/auth-service-db -n acme-apps --replicas=1
+   ```
+
+4. Restart API services to pick up the change:
+
+   ```bash
+   kubectl rollout restart deployment/api-mvc -n acme-apps
+   ```
+
+**Deployment Files:**
+
+- `acme-infrastructure/deployments/auth-service-ldap.yaml` - LDAP auth service
+- `acme-infrastructure/deployments/auth-service-db.yaml` - Database auth service
+- `acme-infrastructure/deployments/postgres-auth.yaml` - PostgreSQL for DB auth service
+
+**Note:** The DB auth service requires a separate PostgreSQL instance (`postgres-auth`) with the `acme_auth` database. Flyway migrations will automatically create the schema on first startup.
 
 ### API Services
 
@@ -1241,7 +1543,7 @@ spec:
 
 - User certificate import
 - Browser authentication flow
-- API calls with ssl-client-subject-dn and ssl-client-issuer-dn headers
+- API calls with subject and issuer DN auth headers (names must match backend/ingress config)
 - UI functionality
 
 ### Load Tests

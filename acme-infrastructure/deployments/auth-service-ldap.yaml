@@ -1,0 +1,67 @@
+# Auth Service (LDAP) Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-ldap
+  namespace: acme-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service-ldap
+  template:
+    metadata:
+      labels:
+        app: auth-service-ldap
+    spec:
+      containers:
+      - name: auth-service-ldap
+        image: acme-auth-service-ldap:latest
+        imagePullPolicy: Never  # Use local image (built with minikube docker-env)
+        ports:
+        - containerPort: 8082
+          name: http
+        env:
+        - name: SPRING_LDAP_URLS
+          value: "ldap://ldap:389"
+        - name: SPRING_LDAP_BASE
+          value: "dc=corp,dc=acme,dc=org"
+        - name: SPRING_LDAP_USERNAME
+          value: "cn=admin,dc=corp,dc=acme,dc=org"
+        - name: SPRING_LDAP_PASSWORD
+          value: "admin"
+        - name: LOG_DIR
+          value: "/tmp/logs"
+        # Create logs directory before starting
+        command: ["/bin/sh", "-c", "mkdir -p /tmp/logs && exec java -jar app.jar"]
+        livenessProbe:
+          # Use TCP socket probe since HTTP probe can't provide client cert for mTLS
+          tcpSocket:
+            port: 8082
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          # Use TCP socket probe since HTTP probe can't provide client cert for mTLS
+          # This verifies the service is listening on port 8082
+          tcpSocket:
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+---
+# Auth Service (LDAP) Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service-ldap
+  namespace: acme-apps
+spec:
+  selector:
+    app: auth-service-ldap
+  ports:
+  - port: 8082
+    targetPort: 8082
+    name: http
