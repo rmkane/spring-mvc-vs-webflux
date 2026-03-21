@@ -1,8 +1,5 @@
-package org.acme.security.webflux;
+package org.acme.security.webflux.config;
 
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -22,6 +19,7 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import org.acme.security.core.config.properties.HeadersProperties;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.service.AuthenticationService;
@@ -33,16 +31,13 @@ import org.acme.security.core.service.AuthenticationService;
 public class WebFluxSecurityConfig {
 
     private final AuthenticationService authenticationService;
-    private final String subjectDnHeader;
-    private final String issuerDnHeader;
+    private final HeadersProperties headersProperties;
 
     public WebFluxSecurityConfig(
             AuthenticationService authenticationService,
-            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader,
-            @Value("${acme.security.headers.issuer-dn:#{null}}") String issuerDnHeader) {
+            HeadersProperties headersProperties) {
         this.authenticationService = authenticationService;
-        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
-        this.issuerDnHeader = Objects.requireNonNullElse(issuerDnHeader, SecurityConstants.SSL_CLIENT_ISSUER_HEADER);
+        this.headersProperties = headersProperties;
     }
 
     @Bean
@@ -81,8 +76,7 @@ public class WebFluxSecurityConfig {
             }
 
             // Wrap blocking authentication in Mono.fromCallable() to run on blocking
-            // scheduler
-            // This prevents blocking the reactive event loop thread
+            // scheduler. This prevents blocking the reactive event loop thread.
             return Mono.fromCallable(() -> {
                 try {
                     // Pass DN to auth service, which will:
@@ -113,23 +107,23 @@ public class WebFluxSecurityConfig {
             }
 
             // Validate Subject DN header
-            String dnValue = exchange.getRequest().getHeaders().getFirst(subjectDnHeader);
+            String dnValue = exchange.getRequest().getHeaders().getFirst(headersProperties.subjectDn());
             if (dnValue == null || dnValue.trim().isEmpty()) {
                 return Mono.error(new BadCredentialsException(
-                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, subjectDnHeader)));
+                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.subjectDn())));
             }
             String dn = dnValue.trim();
 
             // Validate Issuer DN header (required)
-            String issuerDnValue = exchange.getRequest().getHeaders().getFirst(issuerDnHeader);
+            String issuerDnValue = exchange.getRequest().getHeaders().getFirst(headersProperties.issuerDn());
             if (issuerDnValue == null || issuerDnValue.trim().isEmpty()) {
                 return Mono.error(new BadCredentialsException(
-                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, issuerDnHeader)));
+                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.issuerDn())));
             }
 
-            // Both headers are present, pass DN as String principal
-            // Will be converted to UserInformation by AuthenticationService after looking
-            // up UserInfo from auth service
+            // Both headers are present, pass DN as String principal. Will be converted to
+            // UserInformation by AuthenticationService after looking up UserInfo from auth
+            // service.
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
                     dn,
                     null));

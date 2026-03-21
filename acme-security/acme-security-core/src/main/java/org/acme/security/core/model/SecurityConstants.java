@@ -34,4 +34,17 @@ public final class SecurityConstants {
             "/swagger-ui/**",
             "/v3/api-docs/**",
     };
+
+    /**
+     * Paths for which request/response header DEBUG logging is skipped in addition
+     * to {@link #PUBLIC_ENDPOINTS} (health, metrics, common probe paths).
+     */
+    public static final String[] DEFAULT_LOGGING_SKIP_PATHS = {
+            "/actuator/health",
+            "/actuator/health/**",
+            "/actuator/prometheus",
+            "/health",
+            "/readyz",
+            "/livez",
+    };
 }

@@ -41,13 +41,22 @@ auth:
         password: changeit
         type: JKS
 
-# acme:
-#   security:
-#     headers:
-#       subject-dn: ssl-client-subject-dn
-#       issuer-dn: ssl-client-issuer-dn
+acme:
+  security:
+    headers:
+      subject-dn: x-amzn-mtls-clientcert-subject
+      issuer-dn: x-amzn-mtls-clientcert-issuer
+    header-filter:
+      disabled: false
+      # Match scripts/simulator/simulate-traffic.sh probe User-Agents
+      ignore-headers: '{"user-agent":["ELB-HealthChecker/*","HealthChecker/*","kube-probe/*"]}'
+      skip-logging-paths: []
 
 management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
   endpoints:
     web:
       exposure:

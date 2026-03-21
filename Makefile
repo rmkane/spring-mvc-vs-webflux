@@ -11,6 +11,8 @@
 		build clean test format lint clean-logs \
 		run-api-mvc run-api-webflux run-auth-ldap run-auth-db run-ui \
 		stop-api-mvc stop-api-webflux stop-auth stop-ui stop-all \
+		sim-request-mvc sim-request-webflux \
+		sim-traffic-mvc sim-traffic-webflux sim-traffic-start \
 		docker-build-api-mvc docker-build-api-webflux docker-build-auth-ldap docker-build-auth-db \
 		docker-run-api-mvc docker-run-api-webflux docker-run-auth-ldap docker-run-auth-db \
 		k8s-pods k8s-logs k8s-describe k8s-deploy k8s-redeploy k8s-delete k8s-stop k8s-start k8s-status k8s-setup k8s-port-forward
@@ -74,6 +76,13 @@ help:
 	@echo "  stop-auth      - Stop Auth Service (either variant)"
 	@echo "  stop-ui        - Stop Next.js UI"
 	@echo "  stop-all       - Stop all APIs and UI"
+	@echo ""
+	@echo "Traffic simulator (probe-style curls; see scripts/simulator/README.md):"
+	@echo "  sim-request-mvc           - Manual single request to MVC API (8080)"
+	@echo "  sim-request-webflux       - Manual single request to WebFlux API (8081)"
+	@echo "  sim-traffic-mvc           - Run foreground traffic loop against MVC API (8080)"
+	@echo "  sim-traffic-webflux       - Run foreground traffic loop against WebFlux API (8081)"
+	@echo "  sim-traffic-start         - Run one foreground loop against MVC + WebFlux"
 	@echo ""
 	@echo "Docker Operations:"
 	@echo "  docker-build-api-mvc    - Build Docker image for MVC API"
@@ -326,6 +335,24 @@ stop-ui:
 	@pkill -f "next dev" || pkill -f "next-server" || echo "UI is not running"
 
 stop-all: stop-api-mvc stop-api-webflux stop-auth stop-ui
+
+SIMULATOR_SCRIPT := $(CURDIR)/scripts/simulator/simulate-traffic.sh
+SIMULATE_REQUEST_SCRIPT := $(CURDIR)/scripts/simulator/simulate-request.sh
+
+sim-request-mvc:
+	@$(SIMULATE_REQUEST_SCRIPT) mvc
+
+sim-request-webflux:
+	@$(SIMULATE_REQUEST_SCRIPT) webflux
+
+sim-traffic-mvc:
+	@$(SIMULATOR_SCRIPT) mvc
+
+sim-traffic-webflux:
+	@$(SIMULATOR_SCRIPT) webflux
+
+sim-traffic-start:
+	@$(SIMULATOR_SCRIPT) all
 
 docker-build-api-mvc:
 	docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .

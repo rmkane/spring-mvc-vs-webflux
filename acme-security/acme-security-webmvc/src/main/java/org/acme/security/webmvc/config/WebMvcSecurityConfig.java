@@ -1,12 +1,10 @@
-package org.acme.security.webmvc;
+package org.acme.security.webmvc.config;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -22,9 +20,13 @@ import org.springframework.security.web.authentication.preauth.RequestHeaderAuth
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.acme.security.core.config.properties.HeadersProperties;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.service.AuthenticationService;
+import org.acme.security.webmvc.filter.DnValidationFilter;
+import org.acme.security.webmvc.filter.RequestResponseLoggingFilter;
+import org.acme.security.webmvc.model.ErrorResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -32,16 +34,16 @@ import org.acme.security.core.service.AuthenticationService;
 public class WebMvcSecurityConfig {
 
     private final AuthenticationService authenticationService;
+    private final HeadersProperties headersProperties;
     private final ObjectMapper objectMapper;
-    private final String subjectDnHeader;
 
     public WebMvcSecurityConfig(
             AuthenticationService authenticationService,
-            ObjectMapper objectMapper,
-            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader) {
+            HeadersProperties headersProperties,
+            ObjectMapper objectMapper) {
         this.authenticationService = authenticationService;
+        this.headersProperties = headersProperties;
         this.objectMapper = objectMapper;
-        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
     }
 
     @Bean
@@ -68,7 +70,7 @@ public class WebMvcSecurityConfig {
     @Bean
     public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() {
         RequestHeaderAuthenticationFilter filter = new RequestHeaderAuthenticationFilter();
-        filter.setPrincipalRequestHeader(subjectDnHeader);
+        filter.setPrincipalRequestHeader(headersProperties.subjectDn());
         filter.setExceptionIfHeaderMissing(false);
         filter.setAuthenticationManager(authenticationManager());
         return filter;
@@ -90,8 +92,7 @@ public class WebMvcSecurityConfig {
             }
 
             // Note: Both Subject and Issuer DN validation is done in the filter before
-            // reaching here
-            // Pass DN to auth service, which will:
+            // reaching here. Pass DN to auth service, which will:
             // 1. Look up UserInfo from auth service by DN
             // 2. Create UserInformation (derivative) from UserInfo
             // 3. Return authenticated Authentication with UserInformation as principal

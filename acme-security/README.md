@@ -29,4 +29,20 @@ This module provides a multi-module security layer that implements header-based 
 
 ## Configuration
 
-For a Spring configuration reference (header names, etc.), see `acme-security-core/src/test/resources/sample-application.yml`.
+For a Spring configuration reference (header names, header logging, etc.), see `acme-security-core/src/test/resources/sample-application.yml`.
+
+### Properties (records in `acme-security-core`)
+
+| Prefix | Record | Purpose |
+|--------|--------|---------|
+| `acme.security.headers` | `HeadersProperties` | Subject/issuer header names (binds `subject-dn`, `issuer-dn` from YAML). Used by MVC/WebFlux security, DN validation, and request/response header logging (values redacted as `***`). |
+| `acme.security.header-filter` | `HeaderFilterProperties` | Optional DEBUG header logging: `disabled`, JSON `ignore-headers` (e.g. `user-agent` patterns such as `kube-probe/*`, `HealthChecker/*`, `ELB-HealthChecker/*` — see `scripts/simulator/simulate-traffic.sh`), and `skip-logging-paths` for extra paths. Health/metrics/probes are also skipped via defaults in `SecurityConstants.DEFAULT_LOGGING_SKIP_PATHS` and public endpoint patterns. |
+
+`@EnableConfigurationProperties` is registered on `AcmeSecurityPropertiesConfiguration`.
+
+### Startup listeners
+
+- **MVC:** `WebMvcSecurityStartupListener` — logs a policy snapshot at `ApplicationReadyEvent`.
+- **WebFlux:** `WebFluxSecurityStartupListener` — same for reactive apps.
+
+Shared logic: `AbstractAcmeSecurityStartupListener` in core.

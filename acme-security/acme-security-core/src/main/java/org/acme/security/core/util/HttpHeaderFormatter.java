@@ -1,7 +1,11 @@
 package org.acme.security.core.util;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import lombok.AccessLevel;
@@ -17,6 +21,18 @@ public final class HttpHeaderFormatter {
     private static final String REQUEST_PREFIX = "> ";
     private static final String RESPONSE_PREFIX = "< ";
     private static final String HTTP_VERSION = "HTTP/1.1";
+    private static final Set<String> SENSITIVE_HEADER_NAMES = Set.of(
+            "authorization",
+            "proxy-authorization",
+            "cookie",
+            "set-cookie",
+            "x-api-key",
+            "api-key",
+            "x-auth-token",
+            "x-access-token",
+            "x-refresh-token",
+            "x-csrf-token",
+            "x-xsrf-token");
 
     /**
      * Formats an HTTP request line in cURL style.
@@ -86,5 +102,29 @@ public final class HttpHeaderFormatter {
                         entry.getKey(),
                         String.join(", ", entry.getValue())))
                 .collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Returns a copy of headers with values for sensitive security headers replaced
+     * by {@code ***} (case-insensitive name match).
+     */
+    public static MultiValueMap<String, String> redactSensitiveHeaders(MultiValueMap<String, String> headers) {
+        MultiValueMap<String, String> out = new LinkedMultiValueMap<>();
+        headers.forEach((name, values) -> {
+            if (isSensitiveHeaderName(name)) {
+                out.put(name, new ArrayList<>(List.of("***")));
+            } else {
+                out.put(name, new ArrayList<>(values));
+            }
+        });
+        return out;
+    }
+
+    private static boolean isSensitiveHeaderName(String headerName) {
+        String normalized = headerName.toLowerCase();
+        return SENSITIVE_HEADER_NAMES.contains(normalized)
+                || normalized.contains("token")
+                || normalized.contains("secret")
+                || normalized.endsWith("api-key");
     }
 }

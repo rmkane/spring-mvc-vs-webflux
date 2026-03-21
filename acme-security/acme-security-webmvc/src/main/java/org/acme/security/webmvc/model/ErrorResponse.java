@@ -1,4 +1,4 @@
-package org.acme.security.webmvc;
+package org.acme.security.webmvc.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

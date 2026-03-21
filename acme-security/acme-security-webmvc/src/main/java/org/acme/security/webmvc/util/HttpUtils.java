@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,6 +16,8 @@ import org.springframework.util.MultiValueMap;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+
+import org.acme.security.core.policy.AcmeHeaderLoggingPolicy;
 
 /**
  * Utility class for HTTP operations in the WebMVC context.
@@ -48,5 +53,16 @@ public final class HttpUtils {
         Collection<String> headerNames = response.getHeaderNames();
         headerNames.forEach(headerName -> headers.put(headerName, new ArrayList<>(response.getHeaders(headerName))));
         return headers;
+    }
+
+    /**
+     * Header map with lowercase keys for
+     * {@link AcmeHeaderLoggingPolicy#shouldLog(boolean, String, Map)}.
+     */
+    public static Map<String, List<String>> collectNormalizedHeadersForLoggingPolicy(HttpServletRequest request) {
+        Map<String, List<String>> raw = new LinkedHashMap<>();
+        Collections.list(request.getHeaderNames())
+                .forEach(name -> raw.put(name, Collections.list(request.getHeaders(name))));
+        return AcmeHeaderLoggingPolicy.normalizeHeaderMap(raw);
     }
 }

@@ -1,4 +1,7 @@
-package org.acme.security.webflux;
+package org.acme.security.webflux.filter;
+
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.core.annotation.Order;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -6,30 +9,33 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import reactor.core.publisher.Mono;
 
+import org.acme.security.core.policy.AcmeHeaderLoggingPolicy;
 import org.acme.security.core.util.HttpHeaderFormatter;
-import org.acme.security.core.util.PathMatcherUtil;
 import org.acme.security.webflux.util.HttpUtils;
 
 /**
- * WebFilter that logs request and response headers for debugging and monitoring
- * purposes. This filter intercepts all requests and logs headers from both the
- * incoming request and the outgoing response in separate log statements in a
- * reactive, non-blocking manner.
+ * WebFilter that logs request and response headers for debugging. Controlled by
+ * {@code acme.security.header-filter}.
  */
 @Slf4j
 @Component
 @Order(1)
+@RequiredArgsConstructor
 public class RequestResponseLoggingWebFilter implements WebFilter {
 
     private static final String ALREADY_LOGGED_KEY = RequestResponseLoggingWebFilter.class.getName();
+
+    private final AcmeHeaderLoggingPolicy headerLoggingPolicy;
 
     @Override
     @NonNull
@@ -37,54 +43,47 @@ public class RequestResponseLoggingWebFilter implements WebFilter {
             @NonNull ServerWebExchange exchange,
             @NonNull WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-        ServerHttpResponse response = exchange.getResponse();
-
-        if (!log.isDebugEnabled()) {
-            return chain.filter(exchange);
-        }
-
-        // Skip logging for public endpoints (e.g., actuator endpoints, swagger, etc.)
         String path = request.getURI().getPath();
-        if (PathMatcherUtil.isPublicEndpoint(path)) {
+        Map<String, List<String>> normalizedHeaders = HttpUtils.collectNormalizedHeadersForLoggingPolicy(request);
+
+        if (!headerLoggingPolicy.shouldLog(log.isDebugEnabled(), path, normalizedHeaders)) {
             return chain.filter(exchange);
         }
 
-        // Ensure we only log once per request, even if this filter is called multiple
-        // times (e.g., if multiple SecurityWebFilterChains are evaluated)
         Boolean alreadyLogged = exchange.getAttribute(ALREADY_LOGGED_KEY);
         if (Boolean.TRUE.equals(alreadyLogged)) {
             return chain.filter(exchange);
         }
-
-        // Mark as logged for this exchange
         exchange.getAttributes().put(ALREADY_LOGGED_KEY, Boolean.TRUE);
 
-        // Log request headers
-        log.debug(formatRequestHeaders(request));
+        ServerHttpResponse response = exchange.getResponse();
+        MultiValueMap<String, String> reqHeaders = HttpHeaderFormatter.redactSensitiveHeaders(
+                HttpUtils.getHeaders(request));
+        log.debug(formatRequestHeaders(request, reqHeaders));
 
-        // Wrap response to capture headers
         ServerHttpResponseDecorator responseDecorator = new ServerHttpResponseDecorator(response);
 
         return chain.filter(exchange.mutate().response(responseDecorator).build())
                 .doFinally(signalType -> {
-                    // Log response headers
-                    log.debug(formatResponseHeaders(responseDecorator));
+                    MultiValueMap<String, String> respHeaders = HttpHeaderFormatter.redactSensitiveHeaders(
+                            HttpUtils.getHeaders(responseDecorator));
+                    log.debug(formatResponseHeaders(responseDecorator, respHeaders));
                 });
     }
 
-    private String formatRequestHeaders(ServerHttpRequest request) {
+    private String formatRequestHeaders(ServerHttpRequest request, MultiValueMap<String, String> headers) {
         return HttpHeaderFormatter.formatRequest(
                 "Dumping request info:",
                 request.getMethod().name(),
                 request.getURI().getPath(),
                 request.getURI().getRawQuery(),
-                HttpUtils.getHeaders(request));
+                headers);
     }
 
-    private String formatResponseHeaders(ServerHttpResponse response) {
+    private String formatResponseHeaders(ServerHttpResponse response, MultiValueMap<String, String> headers) {
         return HttpHeaderFormatter.formatResponse(
                 "Dumping response info:",
                 response.getStatusCode().toString(),
-                HttpUtils.getHeaders(response));
+                headers);
     }
 }
