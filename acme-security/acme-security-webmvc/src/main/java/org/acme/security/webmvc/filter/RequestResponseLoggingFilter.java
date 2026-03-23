@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.acme.security.core.policy.AcmeHeaderLoggingPolicy;
 import org.acme.security.core.util.HttpHeaderFormatter;
+import org.acme.security.webmvc.util.AcmeHeaderLoggingRequestAttributes;
 import org.acme.security.webmvc.util.HttpUtils;
 
 /**
@@ -42,10 +43,13 @@ public class RequestResponseLoggingFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
         Map<String, List<String>> normalizedHeaders = HttpUtils.collectNormalizedHeadersForLoggingPolicy(request);
 
-        if (!headerLoggingPolicy.shouldLog(log.isDebugEnabled(), path, normalizedHeaders)) {
+        if (headerLoggingPolicy.matchesIgnoreRules(normalizedHeaders)) {
+            AcmeHeaderLoggingRequestAttributes.put(request, true);
+        }
+
+        if (!headerLoggingPolicy.shouldLog(log.isDebugEnabled(), normalizedHeaders)) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -36,7 +36,7 @@ For a Spring configuration reference (header names, header logging, etc.), see `
 | Prefix | Record | Purpose |
 |--------|--------|---------|
 | `acme.security.headers` | `HeadersProperties` | Subject/issuer header names (binds `subject-dn`, `issuer-dn` from YAML). Used by MVC/WebFlux security, DN validation, and request/response header logging (values redacted as `***`). |
-| `acme.security.header-filter` | `HeaderFilterProperties` | Optional DEBUG header logging: `disabled`, JSON `ignore-headers` (e.g. `user-agent` patterns such as `kube-probe/*`, `HealthChecker/*`, `ELB-HealthChecker/*` — see `scripts/simulator/simulate-traffic.sh`), and `skip-logging-paths` for extra paths. Health/metrics/probes are also skipped via defaults in `SecurityConstants.DEFAULT_LOGGING_SKIP_PATHS` and public endpoint patterns. |
+| `acme.security.header-filter` | `HeaderFilterProperties` | Optional DEBUG header logging: `disabled`, JSON `ignore-headers` (e.g. `user-agent` patterns such as `kube-probe/*`, `HealthChecker/*`, `ELB-HealthChecker/*` — see `scripts/simulator/simulate-traffic.sh`). Suppression is header-driven only; when rules match, attribute `AcmeHeaderLoggingAttributes.ATTRIBUTE_NAME` (`acme.security.header-filter.suppressed`) is set. Use `AcmeHeaderLoggingRequestAttributes` / `AcmeHeaderLoggingExchangeAttributes` to put, clear, or read it. |
 
 `@EnableConfigurationProperties` is registered on `AcmeSecurityPropertiesConfiguration`.
 

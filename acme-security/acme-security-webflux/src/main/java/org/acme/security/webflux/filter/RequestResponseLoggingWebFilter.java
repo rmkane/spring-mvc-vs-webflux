@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 
 import org.acme.security.core.policy.AcmeHeaderLoggingPolicy;
 import org.acme.security.core.util.HttpHeaderFormatter;
+import org.acme.security.webflux.util.AcmeHeaderLoggingExchangeAttributes;
 import org.acme.security.webflux.util.HttpUtils;
 
 /**
@@ -43,10 +44,13 @@ public class RequestResponseLoggingWebFilter implements WebFilter {
             @NonNull ServerWebExchange exchange,
             @NonNull WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-        String path = request.getURI().getPath();
         Map<String, List<String>> normalizedHeaders = HttpUtils.collectNormalizedHeadersForLoggingPolicy(request);
 
-        if (!headerLoggingPolicy.shouldLog(log.isDebugEnabled(), path, normalizedHeaders)) {
+        if (headerLoggingPolicy.matchesIgnoreRules(normalizedHeaders)) {
+            AcmeHeaderLoggingExchangeAttributes.put(exchange, true);
+        }
+
+        if (!headerLoggingPolicy.shouldLog(log.isDebugEnabled(), normalizedHeaders)) {
             return chain.filter(exchange);
         }
 

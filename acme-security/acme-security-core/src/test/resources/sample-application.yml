@@ -8,5 +8,3 @@ acme:
       # JSON: header name (lowercase) -> list of exact or * wildcard patterns; matching requests skip DEBUG header logging
       # Example: probe User-Agents (see scripts/simulator/simulate-traffic.sh)
       ignore-headers: '{"user-agent":["ELB-HealthChecker/*","HealthChecker/*","kube-probe/*"]}'
-      # Extra path patterns to skip header logging (health/metrics/probes are also skipped by default)
-      skip-logging-paths: []

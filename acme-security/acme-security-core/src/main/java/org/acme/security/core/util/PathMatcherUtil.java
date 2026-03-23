@@ -1,7 +1,6 @@
 package org.acme.security.core.util;
 
 import java.util.Arrays;
-import java.util.List;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -30,28 +29,6 @@ public final class PathMatcherUtil {
      */
     public static boolean isPublicEndpoint(String path) {
         return matchesAnyPattern(path, SecurityConstants.PUBLIC_ENDPOINTS);
-    }
-
-    /**
-     * Whether header DEBUG logging should be skipped for this path (public
-     * endpoints, default health/metrics/probe paths, and optional extra patterns
-     * from configuration).
-     *
-     * @param path          request path (no query string)
-     * @param extraPatterns additional patterns from
-     *                      {@code acme.security.header-filter.skip-logging-paths}
-     */
-    public static boolean shouldSkipHeaderLogging(String path, List<String> extraPatterns) {
-        if (isPublicEndpoint(path)) {
-            return true;
-        }
-        if (matchesAnyPattern(path, SecurityConstants.DEFAULT_LOGGING_SKIP_PATHS)) {
-            return true;
-        }
-        if (extraPatterns != null && !extraPatterns.isEmpty()) {
-            return matchesAnyPattern(path, extraPatterns.toArray(String[]::new));
-        }
-        return false;
     }
 
     /**

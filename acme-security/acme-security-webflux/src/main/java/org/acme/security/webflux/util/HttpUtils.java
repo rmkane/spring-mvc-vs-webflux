@@ -47,7 +47,7 @@ public final class HttpUtils {
 
     /**
      * Header map with lowercase keys for
-     * {@link AcmeHeaderLoggingPolicy#shouldLog(boolean, String, Map)}.
+     * {@link AcmeHeaderLoggingPolicy#shouldLog(boolean, Map)}.
      */
     public static Map<String, List<String>> collectNormalizedHeadersForLoggingPolicy(ServerHttpRequest request) {
         Map<String, List<String>> raw = new LinkedHashMap<>();

@@ -50,7 +50,6 @@ acme:
       disabled: false
       # Match scripts/simulator/simulate-traffic.sh probe User-Agents
       ignore-headers: '{"user-agent":["ELB-HealthChecker/*","HealthChecker/*","kube-probe/*"]}'
-      skip-logging-paths: []
 
 management:
   endpoint:

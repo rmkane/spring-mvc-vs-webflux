@@ -45,7 +45,6 @@ acme:
       disabled: false
       # Skip DEBUG header dumps for typical probe User-Agents (see scripts/simulator/simulate-traffic.sh)
       ignore-headers: '{"user-agent":["ELB-HealthChecker/*","HealthChecker/*","kube-probe/*"]}'
-      skip-logging-paths: []
 
 auth:
   service:

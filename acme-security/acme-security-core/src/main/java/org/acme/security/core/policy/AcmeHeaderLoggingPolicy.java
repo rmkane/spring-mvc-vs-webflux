@@ -14,22 +14,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.acme.security.core.config.properties.HeaderFilterProperties;
 import org.acme.security.core.util.HeaderFilterConfigParser;
 import org.acme.security.core.util.HeaderValuePatternMatcher;
-import org.acme.security.core.util.PathMatcherUtil;
 
 /**
  * Decides whether DEBUG request/response header logging should run, based on
- * {@link HeaderFilterProperties} and path rules.
+ * {@link HeaderFilterProperties#ignoreHeaders()} only (no path-based skipping).
  */
 @Component
 public class AcmeHeaderLoggingPolicy {
 
     private final boolean disabled;
-    private final List<String> skipLoggingPaths;
     private final Map<String, List<HeaderValuePatternMatcher>> ignoredHeaderMatchers;
 
     public AcmeHeaderLoggingPolicy(HeaderFilterProperties properties, ObjectMapper objectMapper) {
         this.disabled = properties.disabled();
-        this.skipLoggingPaths = properties.skipLoggingPaths();
         this.ignoredHeaderMatchers = compileIgnoredHeaders(
                 HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, properties.ignoreHeaders()));
     }
@@ -38,11 +35,8 @@ public class AcmeHeaderLoggingPolicy {
      * @param headers header map with lowercase keys (see
      *                {@link #normalizeHeaderMap(Map)})
      */
-    public boolean shouldLog(boolean debugEnabled, String path, Map<String, List<String>> headers) {
+    public boolean shouldLog(boolean debugEnabled, Map<String, List<String>> headers) {
         if (disabled || !debugEnabled) {
-            return false;
-        }
-        if (PathMatcherUtil.shouldSkipHeaderLogging(path, skipLoggingPaths)) {
             return false;
         }
         return !matchesIgnoreRules(headers);
@@ -74,8 +68,7 @@ public class AcmeHeaderLoggingPolicy {
     }
 
     /**
-     * Normalizes keys to lowercase for use with
-     * {@link #shouldLog(boolean, String, Map)}.
+     * Normalizes keys to lowercase for use with {@link #shouldLog(boolean, Map)}.
      */
     public static Map<String, List<String>> normalizeHeaderMap(Map<String, List<String>> headers) {
         if (headers == null || headers.isEmpty()) {
