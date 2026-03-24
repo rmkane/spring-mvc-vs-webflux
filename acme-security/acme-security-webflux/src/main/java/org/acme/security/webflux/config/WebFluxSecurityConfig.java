@@ -16,6 +16,8 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 
+import lombok.extern.slf4j.Slf4j;
+
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -29,6 +31,7 @@ import org.acme.security.core.service.AuthenticationService;
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 @Order(2)
+@Slf4j
 public class WebFluxSecurityConfig {
 
     private final AuthenticationService authenticationService;
@@ -106,6 +109,7 @@ public class WebFluxSecurityConfig {
             // Validate Subject DN header
             String dnValue = exchange.getRequest().getHeaders().getFirst(headersProperties.subjectDn());
             if (dnValue == null || dnValue.trim().isEmpty()) {
+                log.warn("Missing subject DN header");
                 return Mono.error(new BadCredentialsException(
                         String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.subjectDn())));
             }
@@ -114,6 +118,7 @@ public class WebFluxSecurityConfig {
             // Validate Issuer DN header (required)
             String issuerDnValue = exchange.getRequest().getHeaders().getFirst(headersProperties.issuerDn());
             if (issuerDnValue == null || issuerDnValue.trim().isEmpty()) {
+                log.warn("Missing issuer DN header");
                 return Mono.error(new BadCredentialsException(
                         String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.issuerDn())));
             }
