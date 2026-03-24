@@ -21,10 +21,12 @@ import org.springframework.security.web.authentication.preauth.RequestHeaderAuth
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.acme.security.core.config.properties.HeadersProperties;
+import org.acme.security.core.model.HeaderCertificatePrincipal;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.service.AuthenticationService;
 import org.acme.security.webmvc.filter.DnValidationFilter;
+import org.acme.security.webmvc.filter.HeaderCertificatePreAuthenticatedProcessingFilter;
 import org.acme.security.webmvc.filter.RequestResponseLoggingFilter;
 import org.acme.security.webmvc.model.ErrorResponse;
 
@@ -50,13 +52,16 @@ public class WebMvcSecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             RequestResponseLoggingFilter requestResponseLoggingFilter,
-            DnValidationFilter dnValidationFilter) throws Exception {
+            DnValidationFilter dnValidationFilter,
+            HeaderCertificatePreAuthenticatedProcessingFilter headerCertificatePreAuthenticatedProcessingFilter)
+            throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(dnValidationFilter, RequestHeaderAuthenticationFilter.class)
                 .addFilterBefore(requestResponseLoggingFilter, RequestHeaderAuthenticationFilter.class)
-                .addFilterBefore(requestHeaderAuthenticationFilter(), RequestHeaderAuthenticationFilter.class)
+                .addFilterBefore(headerCertificatePreAuthenticatedProcessingFilter,
+                        RequestHeaderAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(SecurityConstants.PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
@@ -68,11 +73,11 @@ public class WebMvcSecurityConfig {
     }
 
     @Bean
-    public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() {
-        RequestHeaderAuthenticationFilter filter = new RequestHeaderAuthenticationFilter();
-        filter.setPrincipalRequestHeader(headersProperties.subjectDn());
-        filter.setExceptionIfHeaderMissing(false);
-        filter.setAuthenticationManager(authenticationManager());
+    public HeaderCertificatePreAuthenticatedProcessingFilter headerCertificatePreAuthenticatedProcessingFilter(
+            AuthenticationManager authenticationManager) {
+        HeaderCertificatePreAuthenticatedProcessingFilter filter = new HeaderCertificatePreAuthenticatedProcessingFilter(
+                headersProperties);
+        filter.setAuthenticationManager(authenticationManager);
         return filter;
     }
 
@@ -81,22 +86,17 @@ public class WebMvcSecurityConfig {
         return (authentication) -> {
             // Extract DN from principal (should be String from header)
             Object principal = authentication.getPrincipal();
-            String dn;
 
-            if (principal instanceof String principalString) {
-                dn = principalString;
-            } else if (principal instanceof UserInformation userInfo) {
-                dn = userInfo.getSubjectDn();
-            } else {
-                throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
+            if (principal instanceof HeaderCertificatePrincipal headerPrincipal) {
+                return authenticationService.createAuthenticatedAuthentication(headerPrincipal);
             }
-
-            // Note: Both Subject and Issuer DN validation is done in the filter before
-            // reaching here. Pass DN to auth service, which will:
-            // 1. Look up UserInfo from auth service by DN
-            // 2. Create UserInformation (derivative) from UserInfo
-            // 3. Return authenticated Authentication with UserInformation as principal
-            return authenticationService.createAuthenticatedAuthentication(dn);
+            if (principal instanceof String principalString) {
+                return authenticationService.createAuthenticatedAuthentication(principalString);
+            }
+            if (principal instanceof UserInformation userInfo) {
+                return authenticationService.createAuthenticatedAuthentication(userInfo.getSubjectDn());
+            }
+            throw new BadCredentialsException("Invalid principal type: " + principal.getClass().getName());
         };
     }
 

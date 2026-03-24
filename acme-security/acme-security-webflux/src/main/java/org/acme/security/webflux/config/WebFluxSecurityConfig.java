@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import org.acme.security.core.config.properties.HeadersProperties;
+import org.acme.security.core.model.HeaderCertificatePrincipal;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.service.AuthenticationService;
@@ -64,26 +65,22 @@ public class WebFluxSecurityConfig {
         return authentication -> {
             // Extract DN from principal (should be String from header)
             Object principal = authentication.getPrincipal();
-            String dn;
-
-            if (principal instanceof String principalString) {
-                dn = principalString;
-            } else if (principal instanceof UserInformation userInfo) {
-                dn = userInfo.getSubjectDn();
-            } else {
-                return Mono.error(new BadCredentialsException(
-                        "Invalid principal type: " + principal.getClass().getName()));
-            }
 
             // Wrap blocking authentication in Mono.fromCallable() to run on blocking
             // scheduler. This prevents blocking the reactive event loop thread.
             return Mono.fromCallable(() -> {
                 try {
-                    // Pass DN to auth service, which will:
-                    // 1. Look up UserInfo from auth service by DN
-                    // 2. Create UserInformation (derivative) from UserInfo
-                    // 3. Return authenticated Authentication with UserInformation as principal
-                    return authenticationService.createAuthenticatedAuthentication(dn);
+                    if (principal instanceof HeaderCertificatePrincipal headerPrincipal) {
+                        return authenticationService.createAuthenticatedAuthentication(headerPrincipal);
+                    }
+                    if (principal instanceof String principalString) {
+                        return authenticationService.createAuthenticatedAuthentication(principalString);
+                    }
+                    if (principal instanceof UserInformation userInfo) {
+                        return authenticationService.createAuthenticatedAuthentication(userInfo.getSubjectDn());
+                    }
+                    throw new BadCredentialsException(
+                            "Invalid principal type: " + principal.getClass().getName());
                 } catch (BadCredentialsException e) {
                     throw e;
                 }
@@ -121,11 +118,9 @@ public class WebFluxSecurityConfig {
                         String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.issuerDn())));
             }
 
-            // Both headers are present, pass DN as String principal. Will be converted to
-            // UserInformation by AuthenticationService after looking up UserInfo from auth
-            // service.
+            String issuerDn = issuerDnValue.trim();
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
-                    dn,
+                    new HeaderCertificatePrincipal(dn, issuerDn),
                     null));
         };
     }

@@ -22,8 +22,9 @@ import org.acme.security.webmvc.model.ErrorResponse;
 
 /**
  * Filter to validate that both the client certificate subject and issuer
- * headers are present. This runs before the RequestHeaderAuthenticationFilter
- * to ensure both headers are required.
+ * headers are present. This runs before
+ * {@link HeaderCertificatePreAuthenticatedProcessingFilter} so both headers are
+ * required on protected paths.
  */
 @Component
 @Order(2)

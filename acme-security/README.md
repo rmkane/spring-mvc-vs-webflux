@@ -29,6 +29,8 @@ This module provides a multi-module security layer that implements header-based 
 
 ## Configuration
 
+On protected requests, the **pre-authentication** principal is `HeaderCertificatePrincipal` (subject + issuer from headers), built in `HeaderCertificatePreAuthenticatedProcessingFilter` (MVC) and in the WebFlux `ServerAuthenticationConverter`. After a successful lookup, the authenticated principal is still `UserInformation`. If the auth service returns an issuer DN for the user, it must match the request issuer (after `DnUtil` normalization).
+
 For a Spring configuration reference (header names, header logging, etc.), see `acme-security-core/src/test/resources/sample-application.yml`.
 
 For architecture, policy semantics, filter ordering, and a **porting checklist** for other projects, see **[FILTER.md](FILTER.md)**.

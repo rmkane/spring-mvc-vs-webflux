@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.acme.auth.client.UserInfo;
 import org.acme.auth.utils.DnUtil;
+import org.acme.security.core.model.HeaderCertificatePrincipal;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.util.UserInformationUtil;
@@ -47,6 +48,16 @@ public class AuthenticationService {
             return userInfo;
         }
 
+        if (principal instanceof HeaderCertificatePrincipal hcp) {
+            if (!StringUtils.hasText(hcp.subjectDn())) {
+                throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
+            }
+            return UserInformation.builder()
+                    .subjectDn(hcp.subjectDn())
+                    .issuerDn(hcp.issuerDn())
+                    .build();
+        }
+
         // Fallback for String (backward compatibility)
         if (principal instanceof String dn) {
             return UserInformationUtil.fromDn(dn);
@@ -56,16 +67,32 @@ public class AuthenticationService {
     }
 
     /**
-     * Creates an authenticated Authentication object from a DN string. This is the
-     * core authentication logic shared between MVC and WebFlux.
-     * <p>
-     * The flow is: 1. Look up the user in the auth service by DN to get UserInfo
-     * (with roles) - cached to reduce calls to auth service 2. Create
-     * UserInformation (derivative) from UserInfo 3. Use UserInformation as the
-     * principal with roles from UserInfo
+     * Authenticates using subject and issuer from headers (see
+     * {@link HeaderCertificatePrincipal}). When the auth service returns an issuer
+     * for the user, it must match the request issuer (after DN normalization).
+     */
+    public Authentication createAuthenticatedAuthentication(HeaderCertificatePrincipal clientPrincipal) {
+        if (!StringUtils.hasText(clientPrincipal.subjectDn())) {
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
+        }
+
+        String normalizedDn = DnUtil.normalize(clientPrincipal.subjectDn());
+        if (normalizedDn == null) {
+            throw new BadCredentialsException(SecurityConstants.MISSING_SUBJECT_MESSAGE);
+        }
+
+        UserInfo userInfo = cachedUserLookupService.lookupUser(normalizedDn);
+        assertIssuerMatchesRequest(clientPrincipal.issuerDn(), userInfo);
+
+        return buildAuthenticatedToken(userInfo);
+    }
+
+    /**
+     * Creates an authenticated {@link Authentication} from a subject DN string.
+     * Prefer {@link #createAuthenticatedAuthentication(HeaderCertificatePrincipal)}
+     * when the request issuer is available.
      *
      * @param dn the Distinguished Name from the request header
-     * @return an authenticated Authentication object
      */
     public Authentication createAuthenticatedAuthentication(String dn) {
         if (!StringUtils.hasText(dn)) {
@@ -81,6 +108,10 @@ public class AuthenticationService {
         // Look up user from auth service by DN to get UserInfo with roles (cached)
         UserInfo userInfo = cachedUserLookupService.lookupUser(normalizedDn);
 
+        return buildAuthenticatedToken(userInfo);
+    }
+
+    private Authentication buildAuthenticatedToken(UserInfo userInfo) {
         // Create UserInformation (derivative) from UserInfo
         UserInformation userInformation = UserInformationUtil.fromUserInfo(userInfo);
 
@@ -101,5 +132,18 @@ public class AuthenticationService {
                 userInformation,
                 null,
                 filteredAuthorities);
+    }
+
+    private static void assertIssuerMatchesRequest(String headerIssuerDn, UserInfo userInfo) {
+        if (!StringUtils.hasText(userInfo.getIssuerDn())) {
+            return;
+        }
+        String normalizedExpected = DnUtil.normalize(userInfo.getIssuerDn());
+        String normalizedActual = DnUtil.normalize(headerIssuerDn);
+        if (normalizedExpected == null
+                || normalizedActual == null
+                || !normalizedExpected.equals(normalizedActual)) {
+            throw new BadCredentialsException("Issuer DN does not match the registered certificate issuer");
+        }
     }
 }
