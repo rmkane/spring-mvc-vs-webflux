@@ -31,6 +31,8 @@ This module provides a multi-module security layer that implements header-based 
 
 For a Spring configuration reference (header names, header logging, etc.), see `acme-security-core/src/test/resources/sample-application.yml`.
 
+For architecture, policy semantics, filter ordering, and a **porting checklist** for other projects, see **[FILTER.md](FILTER.md)**.
+
 ### Properties (records in `acme-security-core`)
 
 | Prefix | Record | Purpose |
