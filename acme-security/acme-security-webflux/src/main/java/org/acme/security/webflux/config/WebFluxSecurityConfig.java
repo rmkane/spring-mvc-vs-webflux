@@ -16,6 +16,7 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import reactor.core.publisher.Mono;
@@ -31,18 +32,12 @@ import org.acme.security.core.service.AuthenticationService;
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 @Order(2)
+@RequiredArgsConstructor
 @Slf4j
 public class WebFluxSecurityConfig {
 
     private final AuthenticationService authenticationService;
     private final HeadersProperties headersProperties;
-
-    public WebFluxSecurityConfig(
-            AuthenticationService authenticationService,
-            HeadersProperties headersProperties) {
-        this.authenticationService = authenticationService;
-        this.headersProperties = headersProperties;
-    }
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {

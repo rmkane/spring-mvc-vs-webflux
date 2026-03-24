@@ -20,6 +20,8 @@ import org.springframework.security.web.authentication.preauth.RequestHeaderAuth
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.RequiredArgsConstructor;
+
 import org.acme.security.core.config.properties.HeadersProperties;
 import org.acme.security.core.model.HeaderCertificatePrincipal;
 import org.acme.security.core.model.SecurityConstants;
@@ -33,20 +35,12 @@ import org.acme.security.webmvc.model.ErrorResponse;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class WebMvcSecurityConfig {
 
     private final AuthenticationService authenticationService;
     private final HeadersProperties headersProperties;
     private final ObjectMapper objectMapper;
-
-    public WebMvcSecurityConfig(
-            AuthenticationService authenticationService,
-            HeadersProperties headersProperties,
-            ObjectMapper objectMapper) {
-        this.authenticationService = authenticationService;
-        this.headersProperties = headersProperties;
-        this.objectMapper = objectMapper;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(

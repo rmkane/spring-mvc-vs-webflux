@@ -10,16 +10,16 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import org.acme.security.core.policy.AcmeHeaderLoggingPolicy;
 
 /**
  * Utility class for HTTP operations in the WebFlux context.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HttpUtils {
-
-    private HttpUtils() {
-        // Utility class - prevent instantiation
-    }
 
     /**
      * Extracts all headers from a ServerHttpRequest into a MultiValueMap.
