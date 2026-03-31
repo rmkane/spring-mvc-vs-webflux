@@ -94,25 +94,23 @@ Both implementations provide the same functionality but use different execution 
 
 ```none
 spring-mvc-vs-webflux/
-├── pom.xml                          # Root aggregator
-├── acme-pom/                        # Dependency management
-│   ├── acme-dependencies/           # BOM for dependency versions
-│   └── acme-starter-parent/         # Parent POM with plugin management
-├── acme-auth-client/                # REST client wrapper for auth service
-├── acme-auth-utils/                 # Shared DN utility classes for authentication
-├── acme-auth-service-db/            # Authentication service (PostgreSQL-based)
-├── acme-auth-service-ldap/          # Authentication service (LDAP-based)
-├── acme-security/                   # Security layer
-│   ├── acme-security-core/          # Core security logic
-│   ├── acme-security-webmvc/        # MVC security configuration
-│   └── acme-security-webflux/       # WebFlux security configuration
-├── acme-persistence-jpa/            # JPA repositories and entities
-├── acme-persistence-r2dbc/          # R2DBC repositories and entities
-├── acme-api-mvc/                    # MVC REST API
-├── acme-api-webflux/                # WebFlux REST API
-├── acme-ui/                         # Next.js web UI for book management
-├── acme-test-integration-classic/   # Integration test framework (RestTemplate-based)
-└── acme-test-integration-reactive/  # Reactive integration test framework (WebClient-based)
+├── pom.xml                              # Root aggregator
+├── acme-framework/                      # Shared framework mono-repo
+│   ├── acme-pom/                        # Dependency management
+│   │   ├── acme-dependencies/           # BOM for dependency versions
+│   │   └── acme-starter-parent/         # Parent POM with plugin management
+│   ├── acme-security/                   # Security layer
+│   ├── acme-persistence-jpa/            # JPA repositories and entities
+│   ├── acme-persistence-r2dbc/          # R2DBC repositories and entities
+│   ├── acme-test-integration-classic/   # Integration test framework (RestTemplate-based)
+│   └── acme-test-integration-reactive/  # Reactive integration test framework (WebClient-based)
+├── acme-auth-client/                    # REST client wrapper for auth service
+├── acme-auth-utils/                     # Shared DN utility classes for authentication
+├── acme-auth-service-db/                # Authentication service (PostgreSQL-based)
+├── acme-auth-service-ldap/              # Authentication service (LDAP-based)
+├── acme-api-mvc/                        # MVC REST API
+├── acme-api-webflux/                    # WebFlux REST API
+└── acme-ui/                             # Next.js web UI for book management
 ```
 
 ## Getting Started
@@ -533,10 +531,10 @@ curl -X DELETE \
 
 ### Integration Testing
 
-Both APIs include integration tests using their respective test frameworks:
+Both APIs include integration tests using their respective test frameworks from `acme-framework`:
 
-- **MVC API**: Uses `acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
-- **WebFlux API**: Uses `acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
+- **MVC API**: Uses `acme-framework/acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
+- **WebFlux API**: Uses `acme-framework/acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
 
 Integration tests are tagged with `@Tag("integration")` and are excluded from regular test runs via Maven Surefire plugin configuration. To run integration tests explicitly:
 
@@ -548,7 +546,7 @@ cd acme-api-mvc && mvn test -Dgroups=integration
 cd acme-api-webflux && mvn test -Dgroups=integration
 ```
 
-See `acme-test-integration-classic/README.md` and `acme-test-integration-reactive/README.md` for detailed usage instructions.
+See `acme-framework/acme-test-integration-classic/README.md` and `acme-framework/acme-test-integration-reactive/README.md` for detailed usage instructions.
 
 ## Development Workflow
 
@@ -695,24 +693,24 @@ make docker-run-webflux
 
 ### Module Organization
 
-- **acme-pom**: Dependency management (BOM and parent POM)
+- **acme-framework/acme-pom**: Dependency management (BOM and parent POM)
 - **acme-auth-client**: REST client wrapper for calling auth service
 - **acme-auth-utils**: Shared utility classes for DN parsing, normalization, and LDAP operations
 - **acme-auth-service-db**: Authentication service with PostgreSQL backend
 - **acme-auth-service-ldap**: Authentication service with LDAP backend
-- **acme-security**: Security layer with core logic and framework-specific configs
-- **acme-persistence-jpa**: JPA data access layer
-- **acme-persistence-r2dbc**: R2DBC data access layer
+- **acme-framework/acme-security**: Security layer with core logic and framework-specific configs
+- **acme-framework/acme-persistence-jpa**: JPA data access layer
+- **acme-framework/acme-persistence-r2dbc**: R2DBC data access layer
 - **acme-api-mvc**: MVC REST API
 - **acme-api-webflux**: WebFlux REST API
 - **acme-ui**: Next.js web UI for book management
-- **acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
-- **acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
+- **acme-framework/acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
+- **acme-framework/acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
 
 ### Dependency Relationships
 
-- `acme-api-mvc` depends on `acme-security-webmvc` and `acme-persistence-jpa`
-- `acme-api-webflux` depends on `acme-security-webflux` and `acme-persistence-r2dbc`
+- `acme-api-mvc` depends on `acme-framework/acme-security-webmvc` and `acme-framework/acme-persistence-jpa`
+- `acme-api-webflux` depends on `acme-framework/acme-security-webflux` and `acme-framework/acme-persistence-r2dbc`
 - `acme-security-core` depends on `acme-auth-client` (provides `AuthServiceClient`) and `acme-auth-utils` (DN utilities)
 - `acme-auth-service-ldap` depends on `acme-auth-utils` (DN utilities for LDAP operations)
 - `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean

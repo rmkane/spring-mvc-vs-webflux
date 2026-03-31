@@ -9,7 +9,7 @@
 		<groupId>org.acme</groupId>
 		<artifactId>acme-starter-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
-		<relativePath>../acme-pom/acme-starter-parent</relativePath>
+		<relativePath>../acme-framework/acme-pom/acme-starter-parent</relativePath>
 	</parent>
 
 	<groupId>org.acme.auth</groupId>
@@ -19,11 +19,24 @@
 	<name>Acme Auth Service (LDAP)</name>
 	<description>Standalone authentication service with REST API using LDAP</description>
 
+	<properties>
+		<unboundid-ldapsdk.version>7.0.4</unboundid-ldapsdk.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.unboundid</groupId>
+				<artifactId>unboundid-ldapsdk</artifactId>
+				<version>${unboundid-ldapsdk.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.acme.auth</groupId>
 			<artifactId>acme-auth-utils</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -42,7 +55,6 @@
 		<dependency>
 			<groupId>com.unboundid</groupId>
 			<artifactId>unboundid-ldapsdk</artifactId>
-			<version>7.0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

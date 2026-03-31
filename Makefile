@@ -239,17 +239,13 @@ test:
 JAVA_MODULES_LIST = \
 	acme-api-mvc \
 	acme-api-webflux \
-	acme-auth-client \
-	acme-auth-utils \
-	acme-auth-service-ldap \
-	acme-auth-service-db \
-	acme-security/acme-security-core \
-	acme-security/acme-security-webmvc \
-	acme-security/acme-security-webflux \
-	acme-persistence-jpa \
-	acme-persistence-r2dbc \
-	acme-test-integration-classic \
-	acme-test-integration-reactive
+	acme-framework/acme-security/acme-security-core \
+	acme-framework/acme-security/acme-security-webmvc \
+	acme-framework/acme-security/acme-security-webflux \
+	acme-framework/acme-persistence-jpa \
+	acme-framework/acme-persistence-r2dbc \
+	acme-framework/acme-test-integration-classic \
+	acme-framework/acme-test-integration-reactive
 
 # Convert space-separated list to comma-separated
 JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))
@@ -293,7 +289,7 @@ run-api-webflux:
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth-ldap:
-	mvn compile -DskipTests -pl acme-auth-service-ldap -am \
+	mvn -f acme-auth-service-ldap/pom.xml compile -DskipTests \
 	&& cd acme-auth-service-ldap \
 	&& SERVER_PORT=8082 SERVER_SSL_ENABLED=true mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \
@@ -303,7 +299,7 @@ run-auth-ldap:
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth-db:
-	mvn compile -DskipTests -pl acme-auth-service-db -am \
+	mvn -f acme-auth-service-db/pom.xml compile -DskipTests \
 	&& cd acme-auth-service-db \
 	&& SERVER_PORT=8082 SERVER_SSL_ENABLED=true mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \

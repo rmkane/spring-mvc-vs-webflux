@@ -6,20 +6,19 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.acme</groupId>
-	<artifactId>acme</artifactId>
+	<artifactId>acme-framework</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>Acme Multi-Module Project</name>
-	<description>Multi-module Spring Boot application comparing MVC and WebFlux implementations</description>
+	<name>Acme Framework</name>
+	<description>Framework monorepo for shared platform and libraries</description>
 
 	<modules>
-		<!-- Shared libraries monorepo -->
-		<module>acme-framework</module>
-
-		<!-- APIs -->
-		<module>acme-api-mvc</module>
-		<module>acme-api-webflux</module>
+		<module>acme-pom</module>
+		<module>acme-security</module>
+		<module>acme-persistence-jpa</module>
+		<module>acme-persistence-r2dbc</module>
+		<module>acme-test-integration-classic</module>
+		<module>acme-test-integration-reactive</module>
 	</modules>
 </project>
-
