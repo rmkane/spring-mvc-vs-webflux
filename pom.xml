@@ -10,16 +10,7 @@
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>Acme Multi-Module Project</name>
-	<description>Multi-module Spring Boot application comparing MVC and WebFlux implementations</description>
-
-	<modules>
-		<!-- Shared libraries monorepo -->
-		<module>acme-framework</module>
-
-		<!-- APIs -->
-		<module>acme-api-mvc</module>
-		<module>acme-api-webflux</module>
-	</modules>
+	<name>Acme Workspace (non-reactor)</name>
+	<description>Git workspace only (not a Maven reactor). Each top-level pom is its own project; orchestrate with make build or mvn -f.</description>
 </project>
 

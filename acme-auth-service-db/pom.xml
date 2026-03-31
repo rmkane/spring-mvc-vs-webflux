@@ -9,7 +9,7 @@
 		<groupId>org.acme</groupId>
 		<artifactId>acme-starter-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
-		<relativePath>../acme-framework/acme-pom/acme-starter-parent</relativePath>
+		<relativePath>../acme-framework/acme-pom/acme-starter-parent/pom.xml</relativePath>
 	</parent>
 
 	<groupId>org.acme.auth</groupId>

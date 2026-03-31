@@ -2,7 +2,7 @@
 
 # Acme Multi-Module Spring Boot Application
 
-A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (reactive) implementations with LDAP-like DN-based authentication and role-based access control.
+A workspace of independent Maven projects comparing MVC (blocking) and WebFlux (reactive) implementations with LDAP-like DN-based authentication and role-based access control.
 
 <!-- omit in toc -->
 
@@ -94,9 +94,10 @@ Both implementations provide the same functionality but use different execution 
 
 ```none
 spring-mvc-vs-webflux/
-├── pom.xml                              # Root aggregator
+├── pom.xml                              # Workspace meta-POM (not a Maven reactor)
 ├── acme-framework/                      # Shared framework mono-repo
 │   ├── acme-pom/                        # Dependency management
+│   │   ├── formatter.xml                # Eclipse formatter (Spotless) for all Java projects
 │   │   ├── acme-dependencies/           # BOM for dependency versions
 │   │   └── acme-starter-parent/         # Parent POM with plugin management
 │   ├── acme-security/                   # Security layer
@@ -127,6 +128,21 @@ spring-mvc-vs-webflux/
 ```bash
 make build
 ```
+
+`make build` runs a simulated multi-repo build orchestrator (`scripts/build/build-simulated-repos.sh`) that invokes Maven separately on each repository’s POM, in dependency order:
+
+1. `acme-framework/acme-pom` (BOM + parent)
+2. auth repos (`acme-auth-*`)
+3. `acme-framework`
+4. APIs (`acme-api-*`)
+
+The root `pom.xml` is intentionally **not** a multi-module reactor: each top-level Java tree is built with `mvn -f some-project/pom.xml ...` (for example via `make build`). Running `mvn install` from the repo root only installs the minimal workspace POM.
+
+### Platform version
+
+Framework line: set **`<revision>`** in `acme-framework/acme-pom/pom.xml` (BOM, parents, and all `acme-framework` modules use `${revision}`). `make build`, Spotless, and Makefile `ACME_REVISION` read it via `scripts/build/read-revision.sh`; override with `REVISION=…` or `mvn -Drevision=…` when needed.
+
+Simulated **external** apps (`acme-api-*`, `acme-auth-*` outside `acme-framework`) keep a **literal** `<parent><version>…</version>` (e.g. `1.0.0-SNAPSHOT`) so they behave like real consumers pinning a released parent. When you bump the platform parent line, update that parent version in each external `pom.xml` to match.
 
 ### Starting Databases and LDAP
 
@@ -173,7 +189,7 @@ The auth service must be running before starting the API applications.
 **MVC API:**
 
 ```bash
-make run-mvc
+make run-api-mvc
 ```
 
 Runs on port 8080
@@ -181,7 +197,7 @@ Runs on port 8080
 **WebFlux API:**
 
 ```bash
-make run-webflux
+make run-api-webflux
 ```
 
 Runs on port 8081
@@ -609,8 +625,8 @@ See `acme-framework/acme-test-integration-classic/README.md` and `acme-framework
 ```bash
 make docker-build-auth-ldap  # Build Auth Service (LDAP variant)
 make docker-build-auth-db     # Build Auth Service (Database variant)
-make docker-build-mvc
-make docker-build-webflux
+make docker-build-api-mvc
+make docker-build-api-webflux
 ```
 
 ### Run in Docker
@@ -622,8 +638,8 @@ docker compose up -d
 # Or run individually:
 make docker-run-auth-ldap  # Run Auth Service (LDAP variant)
 make docker-run-auth-db    # Run Auth Service (Database variant)
-make docker-run-mvc
-make docker-run-webflux
+make docker-run-api-mvc
+make docker-run-api-webflux
 ```
 
 ## Makefile Commands
@@ -659,9 +675,9 @@ make docker-run-webflux
 
 ### Build Operations
 
-- `make build` - Build all Maven modules
-- `make clean` - Clean all Maven modules
-- `make test` - Run all tests (Java and UI)
+- `make build` - Build simulated repos in dependency order
+- `make clean` - Clean simulated repos in dependency order
+- `make test` - Run Java tests across simulated repos and UI tests
 - `make format` - Format all code (Java with Spotless, UI with Prettier and ESLint)
 - `make lint` - Check code formatting (does not modify files, includes UI linting)
 
@@ -669,12 +685,12 @@ make docker-run-webflux
 
 - `make run-auth-ldap` - Build and run Auth Service (LDAP variant) on port 8082
 - `make run-auth-db` - Build and run Auth Service (PostgreSQL variant) on port 8082
-- `make run-mvc` - Build and run MVC API
-- `make run-webflux` - Build and run WebFlux API
+- `make run-api-mvc` - Build and run MVC API
+- `make run-api-webflux` - Build and run WebFlux API
 - `make run-ui` - Start UI application on port 3001
 - `make stop-auth` - Stop Auth Service (either variant)
-- `make stop-mvc` - Stop MVC API
-- `make stop-webflux` - Stop WebFlux API
+- `make stop-api-mvc` - Stop MVC API
+- `make stop-api-webflux` - Stop WebFlux API
 - `make stop-ui` - Stop UI application
 - `make stop-all` - Stop all applications
 
@@ -682,17 +698,18 @@ make docker-run-webflux
 
 - `make docker-build-auth-ldap` - Build Docker image for Auth Service (LDAP variant)
 - `make docker-build-auth-db` - Build Docker image for Auth Service (PostgreSQL variant)
-- `make docker-build-mvc` - Build Docker image for MVC API
-- `make docker-build-webflux` - Build Docker image for WebFlux API
+- `make docker-build-api-mvc` - Build Docker image for MVC API
+- `make docker-build-api-webflux` - Build Docker image for WebFlux API
 - `make docker-run-auth-ldap` - Run Auth Service (LDAP) in Docker container
 - `make docker-run-auth-db` - Run Auth Service (PostgreSQL) in Docker container
-- `make docker-run-mvc` - Run MVC API in Docker container
-- `make docker-run-webflux` - Run WebFlux API in Docker container
+- `make docker-run-api-mvc` - Run MVC API in Docker container
+- `make docker-run-api-webflux` - Run WebFlux API in Docker container
 
 ## Project Structure Details
 
 ### Module Organization
 
+- **pom.xml** (repository root): Workspace coordinates only — not a Maven reactor
 - **acme-framework/acme-pom**: Dependency management (BOM and parent POM)
 - **acme-auth-client**: REST client wrapper for calling auth service
 - **acme-auth-utils**: Shared utility classes for DN parsing, normalization, and LDAP operations
