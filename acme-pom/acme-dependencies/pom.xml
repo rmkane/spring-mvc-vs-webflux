@@ -21,7 +21,10 @@
 	<properties>
 		<!-- Spring Boot -->
 		<spring-boot.version>3.5.11</spring-boot.version>
-		<lombok.version>1.18.40</lombok.version>
+		<lombok.version>1.18.42</lombok.version>
+		<!-- Spring dependency version overrides -->
+		<commons-lang3.version>3.18.0</commons-lang3.version>
+		<jackson-bom.version>2.18.6</jackson-bom.version>
 		<!-- SpringDoc OpenAPI -->
 		<springdoc-openapi-webmvc.version>2.8.14</springdoc-openapi-webmvc.version>
 		<springdoc-openapi-webflux.version>2.8.14</springdoc-openapi-webflux.version>
@@ -34,6 +37,20 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- Override Jackson (GHSA-72hv-8253-57qq) -->
+			<dependency>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<version>${jackson-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<!-- Override Commons Lang 3 (CVE-2025-48924) -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>${commons-lang3.version}</version>
+			</dependency>
 			<!-- Spring Boot BOM -->
 			<dependency>
 				<groupId>org.springframework.boot</groupId>

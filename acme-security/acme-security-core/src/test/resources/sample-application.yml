@@ -1,6 +1,10 @@
 acme:
   security:
-    # Override default header names (optional)
     headers:
       subject-dn: x-amzn-mtls-clientcert-subject
       issuer-dn: x-amzn-mtls-clientcert-issuer
+    header-filter:
+      disabled: false
+      # JSON: header name (lowercase) -> list of exact or * wildcard patterns; matching requests skip DEBUG header logging
+      # Example: probe User-Agents (see scripts/simulator/simulate-traffic.sh)
+      ignore-headers: '{"user-agent":["ELB-HealthChecker/*","HealthChecker/*","kube-probe/*"]}'

@@ -2,9 +2,7 @@ package org.acme.api.config;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,7 +13,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
-import org.acme.security.core.model.SecurityConstants;
+import org.acme.security.core.config.properties.HeadersProperties;
 
 @Configuration
 public class OpenApiConfig {
@@ -23,14 +21,11 @@ public class OpenApiConfig {
     private static final String SSL_CLIENT_SUBJECT_DN_ENV = "SSL_CLIENT_SUBJECT_DN";
     private static final String SSL_CLIENT_ISSUER_DN_ENV = "SSL_CLIENT_ISSUER_DN";
 
-    private final String subjectDnHeader;
-    private final String issuerDnHeader;
+    private final HeadersProperties headersProperties;
 
     public OpenApiConfig(
-            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader,
-            @Value("${acme.security.headers.issuer-dn:#{null}}") String issuerDnHeader) {
-        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
-        this.issuerDnHeader = Objects.requireNonNullElse(issuerDnHeader, SecurityConstants.SSL_CLIENT_ISSUER_HEADER);
+            HeadersProperties headersProperties) {
+        this.headersProperties = headersProperties;
     }
 
     @Bean
@@ -68,25 +63,25 @@ public class OpenApiConfig {
                         .title("Acme API - MVC")
                         .version("1.0.0")
                         .description("REST API for managing books using Spring MVC. " +
-                                "Use the 'Authorize' button above to set the " + subjectDnHeader + " and "
-                                + issuerDnHeader + " headers for authentication.")
+                                "Use the 'Authorize' button above to set the " + headersProperties.subjectDn() + " and "
+                                + headersProperties.issuerDn() + " headers for authentication.")
                         .contact(new Contact()
                                 .name("Acme Team")
                                 .email("api@acme.org")))
                 .addSecurityItem(new SecurityRequirement()
-                        .addList(subjectDnHeader)
-                        .addList(issuerDnHeader))
+                        .addList(headersProperties.subjectDn())
+                        .addList(headersProperties.issuerDn()))
                 .components(new Components()
-                        .addSecuritySchemes(subjectDnHeader, new SecurityScheme()
+                        .addSecuritySchemes(headersProperties.subjectDn(), new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name(subjectDnHeader)
+                                .name(headersProperties.subjectDn())
                                 .description(subjectDnDescription)
                                 .extensions(subjectDnExtensions))
-                        .addSecuritySchemes(issuerDnHeader, new SecurityScheme()
+                        .addSecuritySchemes(headersProperties.issuerDn(), new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name(issuerDnHeader)
+                                .name(headersProperties.issuerDn())
                                 .description(issuerDnDescription)
                                 .extensions(issuerDnExtensions)));
     }

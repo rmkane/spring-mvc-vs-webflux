@@ -1,8 +1,5 @@
-package org.acme.security.webflux;
+package org.acme.security.webflux.config;
 
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -19,9 +16,14 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import org.acme.security.core.config.properties.HeadersProperties;
+import org.acme.security.core.model.HeaderCertificatePrincipal;
 import org.acme.security.core.model.SecurityConstants;
 import org.acme.security.core.model.UserInformation;
 import org.acme.security.core.service.AuthenticationService;
@@ -30,20 +32,12 @@ import org.acme.security.core.service.AuthenticationService;
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 @Order(2)
+@RequiredArgsConstructor
+@Slf4j
 public class WebFluxSecurityConfig {
 
     private final AuthenticationService authenticationService;
-    private final String subjectDnHeader;
-    private final String issuerDnHeader;
-
-    public WebFluxSecurityConfig(
-            AuthenticationService authenticationService,
-            @Value("${acme.security.headers.subject-dn:#{null}}") String subjectDnHeader,
-            @Value("${acme.security.headers.issuer-dn:#{null}}") String issuerDnHeader) {
-        this.authenticationService = authenticationService;
-        this.subjectDnHeader = Objects.requireNonNullElse(subjectDnHeader, SecurityConstants.SSL_CLIENT_SUBJECT_HEADER);
-        this.issuerDnHeader = Objects.requireNonNullElse(issuerDnHeader, SecurityConstants.SSL_CLIENT_ISSUER_HEADER);
-    }
+    private final HeadersProperties headersProperties;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -69,27 +63,22 @@ public class WebFluxSecurityConfig {
         return authentication -> {
             // Extract DN from principal (should be String from header)
             Object principal = authentication.getPrincipal();
-            String dn;
-
-            if (principal instanceof String principalString) {
-                dn = principalString;
-            } else if (principal instanceof UserInformation userInfo) {
-                dn = userInfo.getSubjectDn();
-            } else {
-                return Mono.error(new BadCredentialsException(
-                        "Invalid principal type: " + principal.getClass().getName()));
-            }
 
             // Wrap blocking authentication in Mono.fromCallable() to run on blocking
-            // scheduler
-            // This prevents blocking the reactive event loop thread
+            // scheduler. This prevents blocking the reactive event loop thread.
             return Mono.fromCallable(() -> {
                 try {
-                    // Pass DN to auth service, which will:
-                    // 1. Look up UserInfo from auth service by DN
-                    // 2. Create UserInformation (derivative) from UserInfo
-                    // 3. Return authenticated Authentication with UserInformation as principal
-                    return authenticationService.createAuthenticatedAuthentication(dn);
+                    if (principal instanceof HeaderCertificatePrincipal headerPrincipal) {
+                        return authenticationService.createAuthenticatedAuthentication(headerPrincipal);
+                    }
+                    if (principal instanceof String principalString) {
+                        return authenticationService.createAuthenticatedAuthentication(principalString);
+                    }
+                    if (principal instanceof UserInformation userInfo) {
+                        return authenticationService.createAuthenticatedAuthentication(userInfo.getSubjectDn());
+                    }
+                    throw new BadCredentialsException(
+                            "Invalid principal type: " + principal.getClass().getName());
                 } catch (BadCredentialsException e) {
                     throw e;
                 }
@@ -113,25 +102,25 @@ public class WebFluxSecurityConfig {
             }
 
             // Validate Subject DN header
-            String dnValue = exchange.getRequest().getHeaders().getFirst(subjectDnHeader);
+            String dnValue = exchange.getRequest().getHeaders().getFirst(headersProperties.subjectDn());
             if (dnValue == null || dnValue.trim().isEmpty()) {
+                log.warn("Missing subject DN header");
                 return Mono.error(new BadCredentialsException(
-                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, subjectDnHeader)));
+                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.subjectDn())));
             }
             String dn = dnValue.trim();
 
             // Validate Issuer DN header (required)
-            String issuerDnValue = exchange.getRequest().getHeaders().getFirst(issuerDnHeader);
+            String issuerDnValue = exchange.getRequest().getHeaders().getFirst(headersProperties.issuerDn());
             if (issuerDnValue == null || issuerDnValue.trim().isEmpty()) {
+                log.warn("Missing issuer DN header");
                 return Mono.error(new BadCredentialsException(
-                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, issuerDnHeader)));
+                        String.format(SecurityConstants.MISSING_HEADER_MESSAGE, headersProperties.issuerDn())));
             }
 
-            // Both headers are present, pass DN as String principal
-            // Will be converted to UserInformation by AuthenticationService after looking
-            // up UserInfo from auth service
+            String issuerDn = issuerDnValue.trim();
             return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(
-                    dn,
+                    new HeaderCertificatePrincipal(dn, issuerDn),
                     null));
         };
     }

@@ -581,13 +581,13 @@ See `acme-test-integration-classic/README.md` and `acme-test-integration-reactiv
 4. **Run MVC API:**
 
    ```bash
-   make run-mvc
+   make run-api-mvc
    ```
 
 5. **Run WebFlux API:**
 
    ```bash
-   make run-webflux
+   make run-api-webflux
    ```
 
 6. **Run UI (optional):**

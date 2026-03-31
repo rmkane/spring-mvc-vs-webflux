@@ -28,16 +28,22 @@ public final class PathMatcherUtil {
      * @return true if the path matches a public endpoint pattern, false otherwise
      */
     public static boolean isPublicEndpoint(String path) {
-        return Arrays.stream(SecurityConstants.PUBLIC_ENDPOINTS)
-                .anyMatch(pattern -> {
-                    if (pattern.endsWith("/**")) {
-                        // For patterns ending with /**, check if path equals the prefix
-                        // or starts with prefix + "/" (e.g., /v3/api-docs matches /v3/api-docs/**)
-                        String prefix = pattern.substring(0, pattern.length() - 3);
-                        return path.equals(prefix) || path.startsWith(prefix + "/");
-                    }
-                    // For exact patterns, check if path equals the pattern
-                    return path.equals(pattern);
-                });
+        return matchesAnyPattern(path, SecurityConstants.PUBLIC_ENDPOINTS);
+    }
+
+    /**
+     * Returns true if {@code path} matches any of the patterns (same rules as
+     * {@link #isPublicEndpoint(String)}).
+     */
+    public static boolean matchesAnyPattern(String path, String[] patterns) {
+        return Arrays.stream(patterns).anyMatch(pattern -> matchesPattern(pattern, path));
+    }
+
+    static boolean matchesPattern(String pattern, String path) {
+        if (pattern.endsWith("/**")) {
+            String prefix = pattern.substring(0, pattern.length() - 3);
+            return path.equals(prefix) || path.startsWith(prefix + "/");
+        }
+        return path.equals(pattern);
     }
 }
