@@ -33,8 +33,7 @@
 		<!-- Eclipse formatter for Spotless; scripts pass -Dacme.spotless.eclipse.formatter for per-module mvn -f builds -->
 		<acme.spotless.eclipse.formatter>${project.parent.basedir}/../formatter.xml</acme.spotless.eclipse.formatter>
 
-		<!-- Spring Boot maven plugin versions -->
-		<!-- Must match versions in Spring Boot dependencies -->
+		<!-- Spring Boot maven plugin versions (must match spring-boot-dependencies; not inherited from BOM import) -->
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
 		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
 		<maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>

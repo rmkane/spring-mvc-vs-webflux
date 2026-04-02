@@ -21,7 +21,7 @@
 
 	<properties>
 		<!-- Spring Boot -->
-		<spring-boot.version>3.5.13</spring-boot.version>
+		<spring-boot.version>3.5.12</spring-boot.version>
 		<lombok.version>1.18.44</lombok.version>
 		<!-- Spring dependency version overrides -->
 		<commons-lang3.version>3.18.0</commons-lang3.version>
