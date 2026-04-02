@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.acme</groupId>
 		<artifactId>acme-starter-parent</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>${revision}</version>
 		<relativePath>../acme-framework/acme-pom/acme-starter-parent/pom.xml</relativePath>
 	</parent>
 
