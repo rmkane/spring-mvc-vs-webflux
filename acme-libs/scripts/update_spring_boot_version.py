@@ -128,7 +128,7 @@ class RunContext:
 
 @dataclass(frozen=True)
 class FrameworkLayout:
-    """Absolute paths under acme-framework (see acme_framework_root)."""
+    """Absolute paths under acme-libs (see acme_libs_root)."""
 
     root: Path
     framework_pom: Path
@@ -318,13 +318,13 @@ def xml_local_name(element: ET.Element) -> str:
     return element.tag.split("}", 1)[-1]
 
 
-def acme_framework_root() -> Path:
-    # This file lives at acme-framework/scripts/<name>.py; framework root is acme-framework/.
+def acme_libs_root() -> Path:
+    # This file lives at acme-libs/scripts/<name>.py; libs root is acme-libs/.
     return Path(__file__).resolve().parent.parent
 
 
 def framework_layout(cfg: UpdateSpringBootConfig) -> FrameworkLayout:
-    root = acme_framework_root()
+    root = acme_libs_root()
     return FrameworkLayout(
         root=root,
         framework_pom=root / cfg.rel_framework_pom_path,

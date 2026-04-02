@@ -4,12 +4,12 @@ WORKDIR /app
 
 ARG REVISION=1.0.0-SNAPSHOT
 
-COPY acme-framework/acme-pom ./acme-framework/acme-pom
+COPY acme-libs/acme-pom ./acme-libs/acme-pom
 COPY acme-auth-utils ./acme-auth-utils
 COPY acme-auth-client ./acme-auth-client
 COPY acme-auth-service-db ./acme-auth-service-db
 
-RUN mvn -Drevision=${REVISION} -f acme-framework/acme-pom/pom.xml clean install -DskipTests \
+RUN mvn -Drevision=${REVISION} -f acme-libs/acme-pom/pom.xml clean install -DskipTests \
 	&& mvn -Drevision=${REVISION} -f acme-auth-utils/pom.xml clean install -DskipTests \
 	&& mvn -Drevision=${REVISION} -f acme-auth-client/pom.xml clean install -DskipTests \
 	&& mvn -Drevision=${REVISION} -f acme-auth-service-db/pom.xml clean package -DskipTests

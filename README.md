@@ -15,6 +15,7 @@ A workspace of independent Maven projects comparing MVC (blocking) and WebFlux (
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Building the Project](#building-the-project)
+    - [Platform version](#platform-version)
     - [Starting Databases and LDAP](#starting-databases-and-ldap)
     - [Running Applications](#running-applications)
     - [Local Development Environment Variables](#local-development-environment-variables)
@@ -95,7 +96,7 @@ Both implementations provide the same functionality but use different execution 
 ```none
 spring-mvc-vs-webflux/
 ├── pom.xml                              # Workspace meta-POM (not a Maven reactor)
-├── acme-framework/                      # Shared framework mono-repo
+├── acme-libs/                           # Shared libraries, BOM, and parent POMs
 │   ├── acme-pom/                        # Dependency management
 │   │   ├── formatter.xml                # Eclipse formatter (Spotless) for all Java projects
 │   │   ├── acme-dependencies/           # BOM for dependency versions
@@ -131,18 +132,18 @@ make build
 
 `make build` runs a simulated multi-repo build orchestrator (`scripts/build/build-simulated-repos.sh`) that invokes Maven separately on each repository’s POM, in dependency order:
 
-1. `acme-framework/acme-pom` (BOM + parent)
+1. `acme-libs/acme-pom` (BOM + parent)
 2. auth repos (`acme-auth-*`)
-3. `acme-framework`
+3. `acme-libs`
 4. APIs (`acme-api-*`)
 
 The root `pom.xml` is intentionally **not** a multi-module reactor: each top-level Java tree is built with `mvn -f some-project/pom.xml ...` (for example via `make build`). Running `mvn install` from the repo root only installs the minimal workspace POM.
 
 ### Platform version
 
-Framework line: set **`<revision>`** in `acme-framework/acme-pom/pom.xml` (BOM, parents, and all `acme-framework` modules use `${revision}`). `make build`, Spotless, and Makefile `ACME_REVISION` read it via `scripts/build/read-revision.sh`; override with `REVISION=…` or `mvn -Drevision=…` when needed.
+Framework line: set **`<revision>`** in `acme-libs/acme-pom/pom.xml` (BOM, parents, and all `acme-libs` modules use `${revision}`). `make build`, Spotless, and Makefile `ACME_REVISION` read it via `scripts/build/read-revision.sh`; override with `REVISION=…` or `mvn -Drevision=…` when needed.
 
-Simulated **external** apps (`acme-api-*`, `acme-auth-*` outside `acme-framework`) keep a **literal** `<parent><version>…</version>` (e.g. `1.0.0-SNAPSHOT`) so they behave like real consumers pinning a released parent. When you bump the platform parent line, update that parent version in each external `pom.xml` to match.
+Simulated **external** apps (`acme-api-*`, `acme-auth-*` outside `acme-libs`) use `<parent><version>${revision}</version>` (aligned with `acme-libs`) so Maven can validate `relativePath` against a clean local repo. Pass **`-Drevision`** (as `make build` / Spotless / `read-revision.sh` do) so it matches **`<revision>`** in `acme-libs/acme-pom/pom.xml`.
 
 ### Starting Databases and LDAP
 
@@ -547,10 +548,10 @@ curl -X DELETE \
 
 ### Integration Testing
 
-Both APIs include integration tests using their respective test frameworks from `acme-framework`:
+Both APIs include integration tests using their respective test frameworks from `acme-libs`:
 
-- **MVC API**: Uses `acme-framework/acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
-- **WebFlux API**: Uses `acme-framework/acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
+- **MVC API**: Uses `acme-libs/acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
+- **WebFlux API**: Uses `acme-libs/acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
 
 Integration tests are tagged with `@Tag("integration")` and are excluded from regular test runs via Maven Surefire plugin configuration. To run integration tests explicitly:
 
@@ -562,7 +563,7 @@ cd acme-api-mvc && mvn test -Dgroups=integration
 cd acme-api-webflux && mvn test -Dgroups=integration
 ```
 
-See `acme-framework/acme-test-integration-classic/README.md` and `acme-framework/acme-test-integration-reactive/README.md` for detailed usage instructions.
+See `acme-libs/acme-test-integration-classic/README.md` and `acme-libs/acme-test-integration-reactive/README.md` for detailed usage instructions.
 
 ## Development Workflow
 
@@ -710,24 +711,24 @@ make docker-run-api-webflux
 ### Module Organization
 
 - **pom.xml** (repository root): Workspace coordinates only — not a Maven reactor
-- **acme-framework/acme-pom**: Dependency management (BOM and parent POM)
+- **acme-libs/acme-pom**: Dependency management (BOM and parent POM)
 - **acme-auth-client**: REST client wrapper for calling auth service
 - **acme-auth-utils**: Shared utility classes for DN parsing, normalization, and LDAP operations
 - **acme-auth-service-db**: Authentication service with PostgreSQL backend
 - **acme-auth-service-ldap**: Authentication service with LDAP backend
-- **acme-framework/acme-security**: Security layer with core logic and framework-specific configs
-- **acme-framework/acme-persistence-jpa**: JPA data access layer
-- **acme-framework/acme-persistence-r2dbc**: R2DBC data access layer
+- **acme-libs/acme-security**: Security layer with core logic and framework-specific configs
+- **acme-libs/acme-persistence-jpa**: JPA data access layer
+- **acme-libs/acme-persistence-r2dbc**: R2DBC data access layer
 - **acme-api-mvc**: MVC REST API
 - **acme-api-webflux**: WebFlux REST API
 - **acme-ui**: Next.js web UI for book management
-- **acme-framework/acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
-- **acme-framework/acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
+- **acme-libs/acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
+- **acme-libs/acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
 
 ### Dependency Relationships
 
-- `acme-api-mvc` depends on `acme-framework/acme-security-webmvc` and `acme-framework/acme-persistence-jpa`
-- `acme-api-webflux` depends on `acme-framework/acme-security-webflux` and `acme-framework/acme-persistence-r2dbc`
+- `acme-api-mvc` depends on `acme-libs/acme-security-webmvc` and `acme-libs/acme-persistence-jpa`
+- `acme-api-webflux` depends on `acme-libs/acme-security-webflux` and `acme-libs/acme-persistence-r2dbc`
 - `acme-security-core` depends on `acme-auth-client` (provides `AuthServiceClient`) and `acme-auth-utils` (DN utilities)
 - `acme-auth-service-ldap` depends on `acme-auth-utils` (DN utilities for LDAP operations)
 - `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean

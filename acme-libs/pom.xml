@@ -13,12 +13,12 @@
 	</parent>
 
 	<groupId>org.acme</groupId>
-	<artifactId>acme-framework</artifactId>
+	<artifactId>acme-libs</artifactId>
 	<version>${revision}</version>
 	<packaging>pom</packaging>
 
-	<name>Acme Framework</name>
-	<description>Framework monorepo for shared platform and libraries</description>
+	<name>Acme Libs</name>
+	<description>Shared platform libraries, BOM, and parent POMs (multi-module aggregator)</description>
 
 	<properties>
 		<flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>

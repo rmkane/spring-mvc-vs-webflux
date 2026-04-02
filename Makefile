@@ -17,7 +17,7 @@
 		docker-run-api-mvc docker-run-api-webflux docker-run-auth-ldap docker-run-auth-db \
 		k8s-pods k8s-logs k8s-describe k8s-deploy k8s-redeploy k8s-delete k8s-stop k8s-start k8s-status k8s-setup k8s-port-forward
 
-# Matches <revision> in acme-framework/acme-pom/pom.xml (see scripts/build/read-revision.sh).
+# Matches <revision> in acme-libs/acme-pom/pom.xml (see scripts/build/read-revision.sh).
 ACME_REVISION := $(shell ./scripts/build/read-revision.sh)
 
 help:

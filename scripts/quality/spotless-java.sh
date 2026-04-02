@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REVISION="${REVISION:-$("${ROOT_DIR}/scripts/build/read-revision.sh")}"
-FORMATTER="${ROOT_DIR}/acme-framework/acme-pom/formatter.xml"
+FORMATTER="${ROOT_DIR}/acme-libs/acme-pom/formatter.xml"
 GOAL="${1:-check}"
 
 if [[ "$GOAL" != "check" && "$GOAL" != "apply" ]]; then
@@ -14,13 +14,13 @@ fi
 POMS=(
 	"acme-api-mvc/pom.xml"
 	"acme-api-webflux/pom.xml"
-	"acme-framework/acme-security/acme-security-core/pom.xml"
-	"acme-framework/acme-security/acme-security-webmvc/pom.xml"
-	"acme-framework/acme-security/acme-security-webflux/pom.xml"
-	"acme-framework/acme-persistence-jpa/pom.xml"
-	"acme-framework/acme-persistence-r2dbc/pom.xml"
-	"acme-framework/acme-test-integration-classic/pom.xml"
-	"acme-framework/acme-test-integration-reactive/pom.xml"
+	"acme-libs/acme-security/acme-security-core/pom.xml"
+	"acme-libs/acme-security/acme-security-webmvc/pom.xml"
+	"acme-libs/acme-security/acme-security-webflux/pom.xml"
+	"acme-libs/acme-persistence-jpa/pom.xml"
+	"acme-libs/acme-persistence-r2dbc/pom.xml"
+	"acme-libs/acme-test-integration-classic/pom.xml"
+	"acme-libs/acme-test-integration-reactive/pom.xml"
 	"acme-auth-utils/pom.xml"
 	"acme-auth-client/pom.xml"
 	"acme-auth-service-ldap/pom.xml"

@@ -17,8 +17,8 @@ build_repo() {
   mvn -f "${ROOT_DIR}/${pom_path}" "${MAVEN_ARGS[@]}"
 }
 
-# Install parent/BOM coordinates first so non-framework repos can resolve parents.
-build_repo "acme-framework/acme-pom" "acme-framework/acme-pom/pom.xml"
+# Install parent/BOM coordinates first so external repos can resolve parents.
+build_repo "acme-libs/acme-pom" "acme-libs/acme-pom/pom.xml"
 
 # Simulated external auth repos.
 build_repo "acme-auth-utils" "acme-auth-utils/pom.xml"
@@ -26,8 +26,8 @@ build_repo "acme-auth-client" "acme-auth-client/pom.xml"
 build_repo "acme-auth-service-ldap" "acme-auth-service-ldap/pom.xml"
 build_repo "acme-auth-service-db" "acme-auth-service-db/pom.xml"
 
-# Simulated framework repo.
-build_repo "acme-framework" "acme-framework/pom.xml"
+# Simulated acme-libs aggregator (shared libraries).
+build_repo "acme-libs" "acme-libs/pom.xml"
 
 # Simulated API repos.
 build_repo "acme-api-mvc" "acme-api-mvc/pom.xml"

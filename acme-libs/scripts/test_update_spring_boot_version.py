@@ -790,7 +790,7 @@ class TestPrepareAndExecuteUpdate(unittest.TestCase):
         cfg = CFG
 
         # Framework root (script lives two levels below root)
-        root = tmp / "acme-framework"
+        root = tmp / "acme-libs"
 
         # framework pom.xml
         framework_pom = root / "pom.xml"
