@@ -8,11 +8,12 @@
 	<parent>
 		<groupId>org.acme</groupId>
 		<artifactId>acme-pom</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>acme-dependencies</artifactId>
+	<version>${revision}</version>
 	<packaging>pom</packaging>
 
 	<name>Acme Dependencies</name>
@@ -20,8 +21,8 @@
 
 	<properties>
 		<!-- Spring Boot -->
-		<spring-boot.version>3.5.11</spring-boot.version>
-		<lombok.version>1.18.42</lombok.version>
+		<spring-boot.version>3.5.12</spring-boot.version>
+		<lombok.version>1.18.44</lombok.version>
 		<!-- Spring dependency version overrides -->
 		<commons-lang3.version>3.18.0</commons-lang3.version>
 		<jackson-bom.version>2.18.6</jackson-bom.version>
@@ -51,6 +52,7 @@
 				<artifactId>commons-lang3</artifactId>
 				<version>${commons-lang3.version}</version>
 			</dependency>
+
 			<!-- Spring Boot BOM -->
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
@@ -59,6 +61,7 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+
 			<!-- Lombok -->
 			<dependency>
 				<groupId>org.projectlombok</groupId>
@@ -74,9 +77,15 @@
 			<!-- Mapstruct -->
 			<dependency>
 				<groupId>org.mapstruct</groupId>
+				<artifactId>mapstruct</artifactId>
+				<version>${mapstruct.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mapstruct</groupId>
 				<artifactId>mapstruct-processor</artifactId>
 				<version>${mapstruct.version}</version>
 			</dependency>
+
 			<!-- SpringDoc OpenAPI WebMVC -->
 			<dependency>
 				<groupId>org.springdoc</groupId>
@@ -89,7 +98,65 @@
 				<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
 				<version>${springdoc-openapi-webflux.version}</version>
 			</dependency>
+
+			<!-- External 2nd party libraries -->
+			<dependency>
+				<groupId>org.acme.auth</groupId>
+				<artifactId>acme-auth-client</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.auth</groupId>
+				<artifactId>acme-auth-utils</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<!-- 1st party Acme libraries -->
+			<dependency>
+				<groupId>org.acme.security</groupId>
+				<artifactId>acme-security-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.security</groupId>
+				<artifactId>acme-security-webmvc</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.security</groupId>
+				<artifactId>acme-security-webflux</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.persistence</groupId>
+				<artifactId>acme-persistence-jpa</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.persistence</groupId>
+				<artifactId>acme-persistence-r2dbc</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.test</groupId>
+				<artifactId>acme-test-integration-classic</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.acme.test</groupId>
+				<artifactId>acme-test-integration-reactive</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 </project>
 

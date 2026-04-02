@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.acme</groupId>
+		<artifactId>acme-starter-parent</artifactId>
+		<version>${revision}</version>
+		<relativePath>acme-pom/acme-starter-parent</relativePath>
+	</parent>
+
+	<groupId>org.acme</groupId>
+	<artifactId>acme-libs</artifactId>
+	<version>${revision}</version>
+	<packaging>pom</packaging>
+
+	<name>Acme Libs</name>
+	<description>Shared platform libraries, BOM, and parent POMs (multi-module aggregator)</description>
+
+	<properties>
+		<flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+		<acme.spotless.eclipse.formatter>${project.basedir}/acme-pom/formatter.xml</acme.spotless.eclipse.formatter>
+	</properties>
+
+	<modules>
+		<module>acme-pom</module>
+		<module>acme-security</module>
+		<module>acme-persistence-jpa</module>
+		<module>acme-persistence-r2dbc</module>
+		<module>acme-test-integration-classic</module>
+		<module>acme-test-integration-reactive</module>
+	</modules>
+
+	<build>
+		<plugins>
+			<!-- Spotless eclipse config: ${project.parent} must be this aggregator for leaf modules -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<configuration>
+					<java>
+						<eclipse>
+							<file>${acme.spotless.eclipse.formatter}</file>
+							<version>4.26</version>
+						</eclipse>
+					</java>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<version>${flatten-maven-plugin.version}</version>
+				<configuration>
+					<updatePomFile>true</updatePomFile>
+					<flattenMode>resolveCiFriendliesOnly</flattenMode>
+				</configuration>
+				<executions>
+					<execution>
+						<id>flatten</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>flatten</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>flatten-clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

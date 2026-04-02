@@ -2,7 +2,7 @@
 
 # Acme Multi-Module Spring Boot Application
 
-A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (reactive) implementations with LDAP-like DN-based authentication and role-based access control.
+A workspace of independent Maven projects comparing MVC (blocking) and WebFlux (reactive) implementations with LDAP-like DN-based authentication and role-based access control.
 
 <!-- omit in toc -->
 
@@ -15,6 +15,7 @@ A multi-module Spring Boot application comparing MVC (blocking) and WebFlux (rea
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Building the Project](#building-the-project)
+    - [Platform version](#platform-version)
     - [Starting Databases and LDAP](#starting-databases-and-ldap)
     - [Running Applications](#running-applications)
     - [Local Development Environment Variables](#local-development-environment-variables)
@@ -94,25 +95,24 @@ Both implementations provide the same functionality but use different execution 
 
 ```none
 spring-mvc-vs-webflux/
-├── pom.xml                          # Root aggregator
-├── acme-pom/                        # Dependency management
-│   ├── acme-dependencies/           # BOM for dependency versions
-│   └── acme-starter-parent/         # Parent POM with plugin management
-├── acme-auth-client/                # REST client wrapper for auth service
-├── acme-auth-utils/                 # Shared DN utility classes for authentication
-├── acme-auth-service-db/            # Authentication service (PostgreSQL-based)
-├── acme-auth-service-ldap/          # Authentication service (LDAP-based)
-├── acme-security/                   # Security layer
-│   ├── acme-security-core/          # Core security logic
-│   ├── acme-security-webmvc/        # MVC security configuration
-│   └── acme-security-webflux/       # WebFlux security configuration
-├── acme-persistence-jpa/            # JPA repositories and entities
-├── acme-persistence-r2dbc/          # R2DBC repositories and entities
-├── acme-api-mvc/                    # MVC REST API
-├── acme-api-webflux/                # WebFlux REST API
-├── acme-ui/                         # Next.js web UI for book management
-├── acme-test-integration-classic/   # Integration test framework (RestTemplate-based)
-└── acme-test-integration-reactive/  # Reactive integration test framework (WebClient-based)
+├── pom.xml                              # Workspace meta-POM (not a Maven reactor)
+├── acme-libs/                           # Shared libraries, BOM, and parent POMs
+│   ├── acme-pom/                        # Dependency management
+│   │   ├── formatter.xml                # Eclipse formatter (Spotless) for all Java projects
+│   │   ├── acme-dependencies/           # BOM for dependency versions
+│   │   └── acme-starter-parent/         # Parent POM with plugin management
+│   ├── acme-security/                   # Security layer
+│   ├── acme-persistence-jpa/            # JPA repositories and entities
+│   ├── acme-persistence-r2dbc/          # R2DBC repositories and entities
+│   ├── acme-test-integration-classic/   # Integration test framework (RestTemplate-based)
+│   └── acme-test-integration-reactive/  # Reactive integration test framework (WebClient-based)
+├── acme-auth-client/                    # REST client wrapper for auth service
+├── acme-auth-utils/                     # Shared DN utility classes for authentication
+├── acme-auth-service-db/                # Authentication service (PostgreSQL-based)
+├── acme-auth-service-ldap/              # Authentication service (LDAP-based)
+├── acme-api-mvc/                        # MVC REST API
+├── acme-api-webflux/                    # WebFlux REST API
+└── acme-ui/                             # Next.js web UI for book management
 ```
 
 ## Getting Started
@@ -129,6 +129,21 @@ spring-mvc-vs-webflux/
 ```bash
 make build
 ```
+
+`make build` runs a simulated multi-repo build orchestrator (`scripts/build/build-simulated-repos.sh`) that invokes Maven separately on each repository’s POM, in dependency order:
+
+1. `acme-libs/acme-pom` (BOM + parent)
+2. auth repos (`acme-auth-*`)
+3. `acme-libs`
+4. APIs (`acme-api-*`)
+
+The root `pom.xml` is intentionally **not** a multi-module reactor: each top-level Java tree is built with `mvn -f some-project/pom.xml ...` (for example via `make build`). Running `mvn install` from the repo root only installs the minimal workspace POM.
+
+### Platform version
+
+Framework line: set **`<revision>`** in `acme-libs/acme-pom/pom.xml` (BOM, parents, and all `acme-libs` modules use `${revision}`). `make build`, Spotless, and Makefile `ACME_REVISION` read it via `scripts/build/read-revision.sh`; override with `REVISION=…` or `mvn -Drevision=…` when needed.
+
+Simulated **external** apps (`acme-api-*`, `acme-auth-*` outside `acme-libs`) use `<parent><version>${revision}</version>` (aligned with `acme-libs`) so Maven can validate `relativePath` against a clean local repo. Pass **`-Drevision`** (as `make build` / Spotless / `read-revision.sh` do) so it matches **`<revision>`** in `acme-libs/acme-pom/pom.xml`.
 
 ### Starting Databases and LDAP
 
@@ -175,7 +190,7 @@ The auth service must be running before starting the API applications.
 **MVC API:**
 
 ```bash
-make run-mvc
+make run-api-mvc
 ```
 
 Runs on port 8080
@@ -183,7 +198,7 @@ Runs on port 8080
 **WebFlux API:**
 
 ```bash
-make run-webflux
+make run-api-webflux
 ```
 
 Runs on port 8081
@@ -533,10 +548,10 @@ curl -X DELETE \
 
 ### Integration Testing
 
-Both APIs include integration tests using their respective test frameworks:
+Both APIs include integration tests using their respective test frameworks from `acme-libs`:
 
-- **MVC API**: Uses `acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
-- **WebFlux API**: Uses `acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
+- **MVC API**: Uses `acme-libs/acme-test-integration-classic` framework with `RestTemplate` and `IntegrationTestSuite` base class
+- **WebFlux API**: Uses `acme-libs/acme-test-integration-reactive` framework with `WebClient` and `ReactiveIntegrationTestSuite` base class
 
 Integration tests are tagged with `@Tag("integration")` and are excluded from regular test runs via Maven Surefire plugin configuration. To run integration tests explicitly:
 
@@ -548,7 +563,7 @@ cd acme-api-mvc && mvn test -Dgroups=integration
 cd acme-api-webflux && mvn test -Dgroups=integration
 ```
 
-See `acme-test-integration-classic/README.md` and `acme-test-integration-reactive/README.md` for detailed usage instructions.
+See `acme-libs/acme-test-integration-classic/README.md` and `acme-libs/acme-test-integration-reactive/README.md` for detailed usage instructions.
 
 ## Development Workflow
 
@@ -611,8 +626,8 @@ See `acme-test-integration-classic/README.md` and `acme-test-integration-reactiv
 ```bash
 make docker-build-auth-ldap  # Build Auth Service (LDAP variant)
 make docker-build-auth-db     # Build Auth Service (Database variant)
-make docker-build-mvc
-make docker-build-webflux
+make docker-build-api-mvc
+make docker-build-api-webflux
 ```
 
 ### Run in Docker
@@ -624,8 +639,8 @@ docker compose up -d
 # Or run individually:
 make docker-run-auth-ldap  # Run Auth Service (LDAP variant)
 make docker-run-auth-db    # Run Auth Service (Database variant)
-make docker-run-mvc
-make docker-run-webflux
+make docker-run-api-mvc
+make docker-run-api-webflux
 ```
 
 ## Makefile Commands
@@ -661,9 +676,9 @@ make docker-run-webflux
 
 ### Build Operations
 
-- `make build` - Build all Maven modules
-- `make clean` - Clean all Maven modules
-- `make test` - Run all tests (Java and UI)
+- `make build` - Build simulated repos in dependency order
+- `make clean` - Clean simulated repos in dependency order
+- `make test` - Run Java tests across simulated repos and UI tests
 - `make format` - Format all code (Java with Spotless, UI with Prettier and ESLint)
 - `make lint` - Check code formatting (does not modify files, includes UI linting)
 
@@ -671,12 +686,12 @@ make docker-run-webflux
 
 - `make run-auth-ldap` - Build and run Auth Service (LDAP variant) on port 8082
 - `make run-auth-db` - Build and run Auth Service (PostgreSQL variant) on port 8082
-- `make run-mvc` - Build and run MVC API
-- `make run-webflux` - Build and run WebFlux API
+- `make run-api-mvc` - Build and run MVC API
+- `make run-api-webflux` - Build and run WebFlux API
 - `make run-ui` - Start UI application on port 3001
 - `make stop-auth` - Stop Auth Service (either variant)
-- `make stop-mvc` - Stop MVC API
-- `make stop-webflux` - Stop WebFlux API
+- `make stop-api-mvc` - Stop MVC API
+- `make stop-api-webflux` - Stop WebFlux API
 - `make stop-ui` - Stop UI application
 - `make stop-all` - Stop all applications
 
@@ -684,35 +699,36 @@ make docker-run-webflux
 
 - `make docker-build-auth-ldap` - Build Docker image for Auth Service (LDAP variant)
 - `make docker-build-auth-db` - Build Docker image for Auth Service (PostgreSQL variant)
-- `make docker-build-mvc` - Build Docker image for MVC API
-- `make docker-build-webflux` - Build Docker image for WebFlux API
+- `make docker-build-api-mvc` - Build Docker image for MVC API
+- `make docker-build-api-webflux` - Build Docker image for WebFlux API
 - `make docker-run-auth-ldap` - Run Auth Service (LDAP) in Docker container
 - `make docker-run-auth-db` - Run Auth Service (PostgreSQL) in Docker container
-- `make docker-run-mvc` - Run MVC API in Docker container
-- `make docker-run-webflux` - Run WebFlux API in Docker container
+- `make docker-run-api-mvc` - Run MVC API in Docker container
+- `make docker-run-api-webflux` - Run WebFlux API in Docker container
 
 ## Project Structure Details
 
 ### Module Organization
 
-- **acme-pom**: Dependency management (BOM and parent POM)
+- **pom.xml** (repository root): Workspace coordinates only — not a Maven reactor
+- **acme-libs/acme-pom**: Dependency management (BOM and parent POM)
 - **acme-auth-client**: REST client wrapper for calling auth service
 - **acme-auth-utils**: Shared utility classes for DN parsing, normalization, and LDAP operations
 - **acme-auth-service-db**: Authentication service with PostgreSQL backend
 - **acme-auth-service-ldap**: Authentication service with LDAP backend
-- **acme-security**: Security layer with core logic and framework-specific configs
-- **acme-persistence-jpa**: JPA data access layer
-- **acme-persistence-r2dbc**: R2DBC data access layer
+- **acme-libs/acme-security**: Security layer with core logic and framework-specific configs
+- **acme-libs/acme-persistence-jpa**: JPA data access layer
+- **acme-libs/acme-persistence-r2dbc**: R2DBC data access layer
 - **acme-api-mvc**: MVC REST API
 - **acme-api-webflux**: WebFlux REST API
 - **acme-ui**: Next.js web UI for book management
-- **acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
-- **acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
+- **acme-libs/acme-test-integration-classic**: Integration test framework using RestTemplate (for MVC APIs)
+- **acme-libs/acme-test-integration-reactive**: Reactive integration test framework using WebClient (for WebFlux APIs)
 
 ### Dependency Relationships
 
-- `acme-api-mvc` depends on `acme-security-webmvc` and `acme-persistence-jpa`
-- `acme-api-webflux` depends on `acme-security-webflux` and `acme-persistence-r2dbc`
+- `acme-api-mvc` depends on `acme-libs/acme-security-webmvc` and `acme-libs/acme-persistence-jpa`
+- `acme-api-webflux` depends on `acme-libs/acme-security-webflux` and `acme-libs/acme-persistence-r2dbc`
 - `acme-security-core` depends on `acme-auth-client` (provides `AuthServiceClient`) and `acme-auth-utils` (DN utilities)
 - `acme-auth-service-ldap` depends on `acme-auth-utils` (DN utilities for LDAP operations)
 - `acme-auth-client` provides `AuthServiceClientConfig` which creates the REST client bean

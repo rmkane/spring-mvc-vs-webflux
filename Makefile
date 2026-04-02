@@ -17,6 +17,9 @@
 		docker-run-api-mvc docker-run-api-webflux docker-run-auth-ldap docker-run-auth-db \
 		k8s-pods k8s-logs k8s-describe k8s-deploy k8s-redeploy k8s-delete k8s-stop k8s-start k8s-status k8s-setup k8s-port-forward
 
+# Matches <revision> in acme-libs/acme-pom/pom.xml (see scripts/build/read-revision.sh).
+ACME_REVISION := $(shell ./scripts/build/read-revision.sh)
+
 help:
 	@echo "Available targets:"
 	@echo ""
@@ -58,9 +61,9 @@ help:
 	@echo "  grafana-ui      - Open Grafana UI in browser"
 	@echo ""
 	@echo "Build Operations:"
-	@echo "  build          - Build all Maven modules"
-	@echo "  clean          - Clean all Maven modules"
-	@echo "  test           - Run all tests (Java and UI)"
+	@echo "  build          - Build simulated repos in dependency order"
+	@echo "  clean          - Clean simulated repos in dependency order"
+	@echo "  test           - Run Java tests across simulated repos and UI tests"
 	@echo "  format         - Format all code (Java with Spotless, UI with Prettier)"
 	@echo "  lint           - Check code formatting (does not modify files)"
 	@echo "  clean-logs     - Remove all log files from submodules"
@@ -225,44 +228,23 @@ grafana-ui:
 	@open http://localhost:3000 || xdg-open http://localhost:3000 || echo "Please open http://localhost:3000 in your browser"
 
 build:
-	mvn clean install -DskipTests
+	./scripts/build/build-simulated-repos.sh
 
 clean:
-	mvn clean
+	MAVEN_GOALS="clean" ./scripts/build/build-simulated-repos.sh
 
 test:
-	mvn test
+	MAVEN_GOALS="test" ./scripts/build/build-simulated-repos.sh
 	@echo "Running UI tests..."
 	@cd acme-ui && pnpm run test
 
-# Java modules with source code (exclude POM-only modules)
-JAVA_MODULES_LIST = \
-	acme-api-mvc \
-	acme-api-webflux \
-	acme-auth-client \
-	acme-auth-utils \
-	acme-auth-service-ldap \
-	acme-auth-service-db \
-	acme-security/acme-security-core \
-	acme-security/acme-security-webmvc \
-	acme-security/acme-security-webflux \
-	acme-persistence-jpa \
-	acme-persistence-r2dbc \
-	acme-test-integration-classic \
-	acme-test-integration-reactive
-
-# Convert space-separated list to comma-separated
-JAVA_MODULES = $(subst $(space),$(comma),$(JAVA_MODULES_LIST))
-space := $(empty) $(empty)
-comma := ,
-
 format:
-	mvn spotless:apply -pl $(JAVA_MODULES)
+	./scripts/quality/spotless-java.sh apply
 	@echo "Formatting UI code..."
 	@cd acme-ui && pnpm run format
 
 lint:
-	mvn spotless:check -pl $(JAVA_MODULES)
+	./scripts/quality/spotless-java.sh check
 	@echo "Linting UI code..."
 	@cd acme-ui && pnpm run lint
 
@@ -273,7 +255,7 @@ clean-logs:
 	@echo "Log files cleaned"
 
 run-api-mvc:
-	mvn compile -DskipTests -pl acme-api-mvc -am \
+	mvn -Drevision=$(ACME_REVISION) -f acme-api-mvc/pom.xml compile -DskipTests \
 	&& cd acme-api-mvc \
 	&& SERVER_PORT=8080 mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \
@@ -283,7 +265,7 @@ run-api-mvc:
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-api-webflux:
-	mvn compile -DskipTests -pl acme-api-webflux -am \
+	mvn -Drevision=$(ACME_REVISION) -f acme-api-webflux/pom.xml compile -DskipTests \
 	&& cd acme-api-webflux \
 	&& SERVER_PORT=8081 mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \
@@ -293,7 +275,7 @@ run-api-webflux:
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth-ldap:
-	mvn compile -DskipTests -pl acme-auth-service-ldap -am \
+	mvn -f acme-auth-service-ldap/pom.xml compile -DskipTests \
 	&& cd acme-auth-service-ldap \
 	&& SERVER_PORT=8082 SERVER_SSL_ENABLED=true mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \
@@ -303,7 +285,7 @@ run-auth-ldap:
 	-Dspring-boot.run.arguments="--spring.profiles.active=dev"
 
 run-auth-db:
-	mvn compile -DskipTests -pl acme-auth-service-db -am \
+	mvn -f acme-auth-service-db/pom.xml compile -DskipTests \
 	&& cd acme-auth-service-db \
 	&& SERVER_PORT=8082 SERVER_SSL_ENABLED=true mvn spring-boot:run \
 	-Dspring-boot.run.fork=false \
@@ -355,16 +337,16 @@ sim-traffic-start:
 	@$(SIMULATOR_SCRIPT) all
 
 docker-build-api-mvc:
-	docker build -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .
+	docker build --build-arg REVISION=$(ACME_REVISION) -f acme-api-mvc/Dockerfile -t acme-api-mvc:latest .
 
 docker-build-api-webflux:
-	docker build -f acme-api-webflux/Dockerfile -t acme-api-webflux:latest .
+	docker build --build-arg REVISION=$(ACME_REVISION) -f acme-api-webflux/Dockerfile -t acme-api-webflux:latest .
 
 docker-build-auth-ldap:
-	docker build -f acme-auth-service-ldap/Dockerfile -t acme-auth-service-ldap:latest .
+	docker build --build-arg REVISION=$(ACME_REVISION) -f acme-auth-service-ldap/Dockerfile -t acme-auth-service-ldap:latest .
 
 docker-build-auth-db:
-	docker build -f acme-auth-service-db/Dockerfile -t acme-auth-service-db:latest .
+	docker build --build-arg REVISION=$(ACME_REVISION) -f acme-auth-service-db/Dockerfile -t acme-auth-service-db:latest .
 
 docker-run-api-mvc: docker-build-api-mvc
 	docker run -p 8080:8080 --network spring-mvc-vs-webflux_acme-network --name acme-api-mvc acme-api-mvc:latest

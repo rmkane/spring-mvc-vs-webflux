@@ -36,21 +36,7 @@ jobs:
         run: pnpm install
 
       - name: Verify code formatting (Spotless)
-        run: |
-          MODULES="acme-api-mvc,\
-          acme-api-webflux,\
-          acme-auth-client,\
-          acme-auth-utils,\
-          acme-auth-service-db,\
-          acme-auth-service-ldap,\
-          acme-security/acme-security-core,\
-          acme-security/acme-security-webmvc,\
-          acme-security/acme-security-webflux,\
-          acme-persistence-jpa,\
-          acme-persistence-r2dbc,\
-          acme-test-integration-classic,\
-          acme-test-integration-reactive"
-          mvn spotless:check -pl "$MODULES"
+        run: ./scripts/quality/spotless-java.sh check
 
       - name: Verify UI code formatting
         working-directory: acme-ui
@@ -64,5 +50,5 @@ jobs:
         working-directory: acme-ui
         run: pnpm run test
 
-      - name: Build and test
-        run: mvn clean verify
+      - name: Build simulated repos
+        run: make build
